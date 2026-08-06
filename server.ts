@@ -14,6 +14,14 @@ import { calibrationController } from './simon-backend/src/controllers/calibrati
 import { auditLogController } from './simon-backend/src/controllers/auditLogController.js';
 import { historyController } from './simon-backend/src/controllers/historyController.js';
 import { SEED_DEVICES, SEED_UPT_STATIONS } from './simon-backend/src/db/seedData.js';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+
+// Bikin password acak yang aman & gampang dibaca manusia (dipakai cuma sekali,
+// waktu database masih kosong sama sekali - lihat autoSeedDatabase di bawah)
+function generateRandomPassword(): string {
+  return crypto.randomBytes(9).toString('base64url'); // ~12 karakter acak
+}
 
 const app = express();
 const PORT = 3000;
@@ -27,14 +35,25 @@ async function autoSeedDatabase() {
     if (userCount === 0) {
       console.log('🌱 Database PostgreSQL kosong. Melakukan auto-seeding data awal SIMON Aloptama...');
 
+      // Generate password ACAK & UNIK untuk tiap akun default - dicetak SEKALI ke
+      // terminal ini. Ini menggantikan password lama (inskal123/bmkg123) yang
+      // sudah tidak aman dipakai karena pernah tertulis di dokumentasi/chat.
+      const adminPassword = generateRandomPassword();
+      const uptPassword = generateRandomPassword();
+      const pimpinanPassword = generateRandomPassword();
+
+      const adminHash = await bcrypt.hash(adminPassword, 10);
+      const uptHash = await bcrypt.hash(uptPassword, 10);
+      const pimpinanHash = await bcrypt.hash(pimpinanPassword, 10);
+
       // 1. Users
       await prisma.user.upsert({
         where: { username: 'admin.inskal' },
-        update: { passwordHash: 'inskal123' },
+        update: {},
         create: {
           id: 'USR-ADMIN-001',
           username: 'admin.inskal',
-          passwordHash: 'inskal123',
+          passwordHash: adminHash,
           name: 'Ir. Fajar Nur, M.T.',
           role: 'ADMIN',
           title: 'Admin INSKAL & Kalibrasi BBMKG V',
@@ -47,11 +66,11 @@ async function autoSeedDatabase() {
 
       await prisma.user.upsert({
         where: { username: 'upt.jayapura' },
-        update: { passwordHash: 'bmkg123' },
+        update: {},
         create: {
           id: 'USR-UPT-001',
           username: 'upt.jayapura',
-          passwordHash: 'bmkg123',
+          passwordHash: uptHash,
           name: 'Agus Prasetyo, S.Tr.',
           role: 'UPT_PIMPINAN',
           title: 'Operator UPT Stamet Dok II Jayapura',
@@ -64,11 +83,11 @@ async function autoSeedDatabase() {
 
       await prisma.user.upsert({
         where: { username: 'pimpinan.balai' },
-        update: { passwordHash: 'bmkg123' },
+        update: {},
         create: {
           id: 'USR-PIMP-001',
           username: 'pimpinan.balai',
-          passwordHash: 'bmkg123',
+          passwordHash: pimpinanHash,
           name: 'Dr. Yosafat, M.Si.',
           role: 'UPT_PIMPINAN',
           title: 'Kepala BBMKG Wilayah V Papua',
@@ -78,6 +97,16 @@ async function autoSeedDatabase() {
           avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
         },
       });
+
+      console.log('\n════════════════════════════════════════════════════════════');
+      console.log('🔑  AKUN AWAL BERHASIL DIBUAT - CATAT PASSWORD INI SEKARANG!');
+      console.log('    Password ini HANYA ditampilkan sekali dan TIDAK disimpan');
+      console.log('    dalam bentuk terbaca di mana pun setelah ini.');
+      console.log('────────────────────────────────────────────────────────────');
+      console.log(`    admin.inskal    : ${adminPassword}`);
+      console.log(`    upt.jayapura    : ${uptPassword}`);
+      console.log(`    pimpinan.balai  : ${pimpinanPassword}`);
+      console.log('════════════════════════════════════════════════════════════\n');
 
       // 2. Stations
       for (const st of SEED_UPT_STATIONS) {

@@ -24,7 +24,8 @@ export interface AuthSession {
 }
 
 export interface JWTPayload {
-  sub: string;
+  sub?: string; // dipakai token offline/lokal (createJWT)
+  id?: string;  // dipakai token asli dari backend (jwt.sign di userController.ts)
   username: string;
   name: string;
   role: UserRole;

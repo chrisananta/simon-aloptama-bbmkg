@@ -1,8 +1,18 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db/prisma.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import { JWT_SECRET } from '../config/env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'simon_aloptama_bbmkg5_jwt_secret_key_2026';
+// Angka "cost factor" bcrypt - makin tinggi makin aman tapi makin lambat.
+// 10-12 adalah standar umum yang seimbang antara aman & cepat.
+const SALT_ROUNDS = 10;
+
+// Bcrypt hash SELALU diawali "$2a$", "$2b$", atau "$2y$".
+// Dipakai untuk membedakan: ini sudah hash bcrypt, atau masih teks polos peninggalan lama?
+function isBcryptHash(value: string): boolean {
+  return /^\$2[aby]\$/.test(value);
+}
 
 export const userController = {
   // Login endpoint
@@ -29,15 +39,37 @@ export const userController = {
 
       // Check password if passwordHash is present in DB
       if (user.passwordHash && password) {
-        if (user.passwordHash !== password) {
-          return res.status(401).json({ success: false, message: 'Kata sandi salah. Silakan periksa kembali kata sandi Anda.' });
+        if (isBcryptHash(user.passwordHash)) {
+          // Kasus normal: hash bcrypt asli, bandingkan pakai bcrypt.compare
+          const isMatch = await bcrypt.compare(password, user.passwordHash);
+          if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Kata sandi salah. Silakan periksa kembali kata sandi Anda.' });
+          }
+        } else {
+          // Kasus migrasi: data lama masih teks polos (peninggalan sebelum bcrypt dipasang).
+          // Bandingkan apa adanya dulu; kalau cocok, langsung hash & simpan ulang
+          // supaya login berikutnya sudah aman pakai bcrypt.
+          if (user.passwordHash !== password) {
+            return res.status(401).json({ success: false, message: 'Kata sandi salah. Silakan periksa kembali kata sandi Anda.' });
+          }
+          try {
+            const newHash = await bcrypt.hash(password, SALT_ROUNDS);
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { passwordHash: newHash },
+            });
+            console.log(`Password milik "${user.username}" berhasil dimigrasi ke bcrypt.`);
+          } catch (err) {
+            console.warn('Gagal migrasi passwordHash ke bcrypt:', err);
+          }
         }
       } else if (!user.passwordHash && password) {
-        // If user has no passwordHash in DB yet, auto set it to the provided password
+        // If user has no passwordHash in DB yet, set it (sudah di-hash) dari password yang diberikan
         try {
+          const newHash = await bcrypt.hash(password, SALT_ROUNDS);
           await prisma.user.update({
             where: { id: user.id },
-            data: { passwordHash: password },
+            data: { passwordHash: newHash },
           });
         } catch (err) {
           console.warn('Could not update user passwordHash in DB:', err);
@@ -97,7 +129,6 @@ export const userController = {
         select: {
           id: true,
           username: true,
-          passwordHash: true,
           name: true,
           role: true,
           title: true,
@@ -115,7 +146,6 @@ export const userController = {
         {
           id: 'USR-ADMIN-001',
           username: 'admin.inskal',
-          passwordHash: 'inskal123',
           name: 'Ir. Fajar Nur, M.T.',
           role: 'ADMIN',
           title: 'Admin INSKAL & Kalibrasi BBMKG V',
@@ -127,7 +157,6 @@ export const userController = {
         {
           id: 'USR-UPT-001',
           username: 'upt.jayapura',
-          passwordHash: 'bmkg123',
           name: 'Agus Prasetyo, S.Tr.',
           role: 'UPT_PIMPINAN',
           title: 'Operator UPT Stamet Dok II Jayapura',
@@ -145,10 +174,13 @@ export const userController = {
   createUser: async (req: Request, res: Response) => {
     try {
       const body = req.body;
+      const rawPassword = body.password || body.passwordHash || 'bmkg123';
+      const hashedPassword = await bcrypt.hash(rawPassword, SALT_ROUNDS);
+
       const user = await prisma.user.create({
         data: {
           username: body.username,
-          passwordHash: body.password || body.passwordHash || 'bmkg123',
+          passwordHash: hashedPassword,
           name: body.name,
           role: body.role || 'UPT_PIMPINAN',
           title: body.title || 'Operator UPT',
@@ -170,7 +202,8 @@ export const userController = {
         },
       });
 
-      return res.status(201).json({ success: true, data: user });
+      const { passwordHash: _omit, ...userWithoutPassword } = user;
+      return res.status(201).json({ success: true, data: userWithoutPassword });
     } catch (error) {
       console.error('Error createUser:', error);
       return res.status(500).json({ success: false, message: 'Gagal membuat akun pengguna baru.' });
@@ -195,7 +228,8 @@ export const userController = {
       };
 
       if (body.password || body.passwordHash) {
-        updateData.passwordHash = body.password || body.passwordHash;
+        const rawPassword = body.password || body.passwordHash;
+        updateData.passwordHash = await bcrypt.hash(rawPassword, SALT_ROUNDS);
       }
 
       const user = await prisma.user.update({
@@ -214,7 +248,9 @@ export const userController = {
         },
       });
 
-      return res.json({ success: true, data: user });
+      const { passwordHash: _omit, ...userWithoutPassword } = user;
+
+      return res.json({ success: true, data: userWithoutPassword });
     } catch (error) {
       console.error('Error updateUser:', error);
       return res.status(500).json({ success: false, message: 'Gagal memperbarui akun pengguna.' });

@@ -13,7 +13,7 @@ import {
   saveSlaOlaToServer,
   saveCalibrationToServer,
   ServerFetchResult,
-} from "../../services/serverDataService";
+} from "./serverDataService";
 
 // Export initial fallback types for backwards compatibility
 export const INITIAL_USERS: AuthUser[] = [

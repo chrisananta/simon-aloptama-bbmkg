@@ -256,11 +256,11 @@ export const authService = {
     const allUsers = apiClient.users.getAll();
     const foundUser = allUsers.find(
       (u) =>
-        (u.id && payload.sub && u.id === payload.sub) ||
+        (u.id && (payload.sub || payload.id) && u.id === (payload.sub || payload.id)) ||
         (u.username && payload.username && u.username.toLowerCase() === payload.username.toLowerCase())
     );
     const user: AuthUser = foundUser || {
-      id: payload.sub,
+      id: payload.sub || payload.id || '',
       username: payload.username || 'user',
       name: payload.name || 'User',
       role: payload.role || 'UPT_PIMPINAN',
@@ -307,7 +307,7 @@ export const authService = {
         apiClient.auditLogs.add({
           table: 'autentikasi',
           action: 'LOGOUT',
-          recordId: payload.sub,
+          recordId: payload.sub || payload.id || 'UNKNOWN',
           recordName: payload.name,
           actor: actorName,
           details: `Pengguna melakukan logout dan mengakhiri sesi aktif`,
@@ -341,11 +341,11 @@ export const authService = {
     const allUsers = apiClient.users.getAll();
     const foundUser = allUsers.find(
       (u) =>
-        (u.id && payload.sub && u.id === payload.sub) ||
+        (u.id && (payload.sub || payload.id) && u.id === (payload.sub || payload.id)) ||
         (u.username && payload.username && u.username.toLowerCase() === payload.username.toLowerCase())
     );
     const user: AuthUser = foundUser || {
-      id: payload.sub,
+      id: payload.sub || payload.id || '',
       username: payload.username || 'user',
       name: payload.name || 'User',
       role: payload.role || 'UPT_PIMPINAN',
