@@ -1,0 +1,73 @@
+export const SEED_UPT_STATIONS = [
+  { code: "MET001", name: "Stasiun Meteorologi DEO Sorong", regionGroup: "Papua Barat Daya", location: "Sorong", latitude: -0.89, longitude: 131.286 },
+  { code: "MET002", name: "Stasiun Meteorologi Torea - Fakfak", regionGroup: "Papua Barat", location: "Fakfak", latitude: -2.555, longitude: 132.526 },
+  { code: "MET003", name: "Stasiun Meteorologi Utarom - Kaimana", regionGroup: "Papua Barat", location: "Kaimana", latitude: -3.645, longitude: 133.694 },
+  { code: "MET004", name: "Stasiun Meteorologi Serui", regionGroup: "Papua", location: "Serui", latitude: -1.83, longitude: 136.064 },
+  { code: "MET005", name: "Stasiun Meteorologi Frans Kaisiepo Biak", regionGroup: "Papua", location: "Biak", latitude: -1.191, longitude: 136.104 },
+  { code: "MET006", name: "Stasiun Meteorologi Sentani", regionGroup: "Papua", location: "Kab. Jayapura", latitude: -2.576, longitude: 140.518 },
+  { code: "MET007", name: "Stasiun Meteorologi Rendani Manokwari", regionGroup: "Papua Barat", location: "Manokwari", latitude: -0.892, longitude: 134.051 },
+  { code: "MET008", name: "Stasiun Meteorologi Timika", regionGroup: "Papua Tengah", location: "Timika", latitude: -4.53, longitude: 136.893 },
+  { code: "MET009", name: "Stasiun Meteorologi Mopah Merauke", regionGroup: "Papua Selatan", location: "Merauke", latitude: -8.515, longitude: 140.415 },
+  { code: "MET010", name: "Stasiun Meteorologi Tanah Merah", regionGroup: "Papua Selatan", location: "Tanah Merah", latitude: -6.077, longitude: 140.342 },
+  { code: "MET011", name: "Stasiun Meteorologi Enarotali", regionGroup: "Papua Tengah", location: "Enarotali", latitude: -3.927, longitude: 136.353 },
+  { code: "MET012", name: "Stasiun Meteorologi Dok II Jayapura", regionGroup: "Papua", location: "Kota Jayapura", latitude: -2.532, longitude: 140.708 },
+  { code: "KLI001", name: "Stasiun Klimatologi Papua", regionGroup: "Papua", location: "Jayapura", latitude: -2.562, longitude: 140.672 },
+  { code: "GEO001", name: "Stasiun Geofisika Angkasapura Jayapura", regionGroup: "Papua", location: "Jayapura", latitude: -2.521, longitude: 140.712 },
+  { code: "GEO002", name: "Stasiun Geofisika Sorong", regionGroup: "Papua Barat Daya", location: "Sorong", latitude: -0.871, longitude: 131.258 },
+  { code: "GEO003", name: "Stasiun Geofisika Manokwari", regionGroup: "Papua Barat", location: "Manokwari", latitude: -0.865, longitude: 134.062 },
+  { code: "GEO004", name: "Stasiun Geofisika Nabire", regionGroup: "Papua Tengah", location: "Nabire", latitude: -3.361, longitude: 135.492 }
+];
+
+export const SEED_DEVICES = [
+  {
+    id: "ALT-MET-001",
+    name: "AWOS Kat. III Sentani",
+    category: "AWOS",
+    subCategory: "Vaisala TacMet",
+    uptStation: "Stasiun Meteorologi Sentani",
+    locationName: "Bandara Sentani Jayapura",
+    latitude: -2.576,
+    longitude: 140.518,
+    conditionStatus: "NORMAL",
+    calibrationStatus: "VALID",
+    lastCalibrated: "2025-08-10",
+    calibrationValidUntil: "2026-08-10",
+    calibrationAgency: "INSKAL BBMKG Wilayah V Jayapura",
+    slaScore: 99.5,
+    olaScore: 98.2
+  },
+  {
+    id: "ALT-MET-002",
+    name: "Radar Cuaca Biak",
+    category: "Radar Cuaca",
+    subCategory: "Baron C-Band Dual Pol",
+    uptStation: "Stasiun Meteorologi Frans Kaisiepo Biak",
+    locationName: "Biak Numfor",
+    latitude: -1.191,
+    longitude: 136.104,
+    conditionStatus: "NORMAL",
+    calibrationStatus: "VALID",
+    lastCalibrated: "2025-05-15",
+    calibrationValidUntil: "2026-05-15",
+    calibrationAgency: "INSKAL BBMKG Wilayah V Jayapura",
+    slaScore: 98.0,
+    olaScore: 96.5
+  },
+  {
+    id: "ALT-GEO-001",
+    name: "Seismometer Jayapura",
+    category: "Seismometer",
+    subCategory: "Nanometrics Trillium",
+    uptStation: "Stasiun Geofisika Angkasapura Jayapura",
+    locationName: "Angkasapura Jayapura",
+    latitude: -2.521,
+    longitude: 140.712,
+    conditionStatus: "NORMAL",
+    calibrationStatus: "VALID",
+    lastCalibrated: "2025-09-01",
+    calibrationValidUntil: "2026-09-01",
+    calibrationAgency: "INSKAL BBMKG Wilayah V Jayapura",
+    slaScore: 100.0,
+    olaScore: 99.0
+  }
+];

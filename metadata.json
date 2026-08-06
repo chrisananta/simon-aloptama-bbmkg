@@ -1,0 +1,6 @@
+{
+  "name": "SIMON BBMKG V",
+  "description": "Sistem Monitoring Operasional BBMKG Wilayah V Papua - BMKG Regional V Papua",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

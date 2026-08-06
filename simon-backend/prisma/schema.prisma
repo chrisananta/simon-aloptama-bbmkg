@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String?
+  name         String
+  role         Role     @default(UPT_PIMPINAN)
+  title        String
+  nip          String?
+  email        String?
+  uptStation   String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model UptStation {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  regionGroup String
+  location    String
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  devices     Device[]
+
+  @@map("upt_stations")
+}
+
+model Device {
+  id                    String              @id
+  name                  String
+  category              String
+  subCategory           String?
+  uptStation            String
+  locationName          String
+  latitude              Float
+  longitude             Float
+  conditionStatus       EquipmentStatus     @default(NORMAL)
+  calibrationStatus     CalibrationStatus   @default(VALID)
+  lastCalibrated        String
+  calibrationValidUntil String
+  calibrationAgency     String
+  lastReportedDate      String?
+  downtimeDuration      String?
+  issueDescription      String?
+  slaScore              Float?
+  olaScore              Float?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  stationId             String?
+  calibrationRecords    CalibrationRecord[]
+  station               UptStation?         @relation(fields: [stationId], references: [id])
+  slaOlaLogs            SlaOlaLog[]
+
+  @@map("devices")
+}
+
+model SlaOlaLog {
+  id         String   @id @default(uuid())
+  deviceId   String?
+  uptStation String
+  category   String
+  kondisiSla Boolean  @default(true)
+  kondisiOla Float    @default(100)
+  kendala    String?
+  status     String   @default("NORMAL")
+  actor      String   @default("Operator UPT")
+  timestamp  DateTime @default(now())
+  device     Device?  @relation(fields: [deviceId], references: [id])
+
+  @@map("sla_ola_logs")
+}
+
+model CalibrationRecord {
+  id                    String            @id @default(uuid())
+  deviceId              String
+  deviceName            String
+  uptStation            String
+  category              String
+  lastCalibrated        String
+  calibrationValidUntil String
+  calibrationAgency     String
+  certificateNumber     String?
+  calibrationStatus     CalibrationStatus @default(VALID)
+  notes                 String?
+  createdAt             DateTime          @default(now())
+  device                Device            @relation(fields: [deviceId], references: [id])
+
+  @@map("calibration_records")
+}
+
+model AuditLog {
+  id         String    @id @default(uuid())
+  timestamp  DateTime  @default(now())
+  table      LogTable
+  action     LogAction
+  recordId   String
+  recordName String
+  actor      String    @default("System")
+  details    String
+  status     String    @default("SUCCESS")
+  ipOrSource String?   @default("SIMON API")
+
+  @@map("audit_logs")
+}
+
+enum Role {
+  ADMIN
+  UPT_PIMPINAN
+}
+
+enum EquipmentStatus {
+  NORMAL
+  GANGGUAN
+  MATI
+}
+
+enum CalibrationStatus {
+  VALID
+  SEGERA_DIKALIBRASI
+  KADALUWARSA
+}
+
+enum LogAction {
+  TAMBAH
+  EDIT
+  HAPUS
+  SIMPAN_SLA_OLA
+  SIMPAN_KALIBRASI
+  SYNC_SERVER
+  RESET_DATA
+  EXPORT_DATA
+  LOGIN
+  LOGOUT
+  REFRESH_TOKEN
+}
+
+enum LogTable {
+  master_stasiun
+  master_alat
+  master_sla_ola
+  master_akun
+  kalibrasi
+  sistem
+  pengaturan
+  autentikasi
+}
