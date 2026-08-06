@@ -686,7 +686,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
             SLA & OLA ALOPTAMA
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Service Level Agreement & Operational Level Agreement Performa Alat Operasional Wilayah V
+            Service Level Agreement & Operational Level Agreement Performa ALOPTAMA BBMKG Wilayah V
           </p>
         </div>
 
@@ -847,9 +847,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
               </span>
               Rekapitulasi, Kondisi & Analisa SLA OLA ({selectedMonth} {selectedYear})
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Ringkasan performa SLA & OLA per jenis peralatan, status operasional, dan komparasi perubahan kondisi dibanding bulan sebelumnya.
-            </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs font-bold text-emerald-800 bg-emerald-50/90 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5 shadow-xs">
@@ -871,7 +868,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
                   <th colSpan={3} className="py-2 px-2 text-center border-r border-b border-slate-300 text-slate-900">KONDISI ALOPTAMA</th>
                   <th rowSpan={2} className="py-2.5 px-3 text-center w-48 border-b border-slate-300 text-slate-900">
                     ANALISA PERUBAHAN<br />
-                    <span className="text-[9px] font-normal text-slate-500 normal-case">(SLA Bulan Ini - SLA Bulan Kemarin)</span>
+                    <span className="text-[9px] font-normal text-slate-500 normal-case">(Bulan Ini - Bulan Kemarin)</span>
                   </th>
                 </tr>
                 <tr className="bg-slate-50 text-slate-800 font-bold text-[10px] uppercase border-b border-slate-300">

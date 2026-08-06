@@ -13,6 +13,7 @@ import {
 import { ActiveNavMenu, AloptamaDevice } from '../shared/types';
 import { SimonLogo } from '../shared/components/ui/SimonLogo';
 import { useAuth } from '../features/auth/AuthContext';
+import sidebarLogoImg from '../assets/images/Logosidebar.png';
 
 interface SidebarProps {
   activeMenu: ActiveNavMenu;
@@ -103,15 +104,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }`}
         >
           {!collapsed && (
-            <div className="flex-1 min-w-0 mr-2">
-              <SimonLogo variant="text" darkBg={false} />
+            <div className="flex flex-1 items-center justify-center">
+              <img 
+              src= {sidebarLogoImg}
+              alt="SIMON BBMKG V"
+              className="h-8 md:h-10 w-auto max-w-full object-contain" />
             </div>
           )}
 
           <button
             onClick={onToggleCollapse}
             className="p-1.5 md:p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors border border-slate-200 shrink-0 cursor-pointer"
-            title={collapsed ? 'Perluas Sidebar' : 'Lipat Sidebar'}
+            title={collapsed ? 'Perluas Sidebar' : 'Tutup Sidebar'}
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -192,10 +196,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 rounded-xl text-xs font-bold border border-rose-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <LogOut size={14} />
-                <span>Keluar / Logout</span>
+                <span>Keluar</span>
               </button>
               <p className="text-[10px] font-medium text-slate-400 text-center mt-0.5">
-                SIMON Aloptama © 2026 BBMKG V
+                chr$ © 2026 BBMKG V
               </p>
             </>
           ) : (

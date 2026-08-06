@@ -128,7 +128,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
             Riwayat Kalibrasi Aloptama
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Masa berlaku sertifikat & histori pelaksanaan kalibrasi instrumen meteorologi, klimatologi, dan geofisika
+            Masa berlaku sertifikat & histori pelaksanaan kalibrasi 
           </p>
         </div>
 

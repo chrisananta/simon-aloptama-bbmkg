@@ -22,7 +22,7 @@ export const LoginPage: React.FC = () => {
     setErrorMessage("");
 
     if (!username.trim()) {
-      setErrorMessage("Username atau NIP BMKG wajib diisi.");
+      setErrorMessage("Username wajib diisi.");
       return;
     }
 
@@ -46,6 +46,7 @@ export const LoginPage: React.FC = () => {
       {/* Top Header Bar */}
       <header className="max-w-5xl w-full mx-auto flex items-center justify-between py-2 border-b border-slate-200/80">
         <div className="flex items-center gap-3">
+
           {/* Logo BMKG untuk Header Atas */}
           <img
             src={bmkgLogo}
@@ -57,7 +58,7 @@ export const LoginPage: React.FC = () => {
               BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA
             </span>
             <span className="text-xs font-bold text-slate-700">
-              BBMKG WILAYAH V PAPUA
+              BBMKG WILAYAH V JAYAPURA
             </span>
           </div>
         </div>
@@ -82,8 +83,7 @@ export const LoginPage: React.FC = () => {
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-600 font-semibold leading-relaxed px-2">
-              Sistem Informasi Monitoring Aloptama &amp; Kalibrasi BBMKG Wilayah
-              V
+              Sistem Informasi Monitoring Aloptama &amp; Kalibrasi 
             </p>
           </div>
 
@@ -119,7 +119,7 @@ export const LoginPage: React.FC = () => {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Masukkan username atau NIP..."
+                  placeholder="Masukkan username atau NIP"
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white focus:border-transparent transition-all"
                 />
               </div>
@@ -127,7 +127,7 @@ export const LoginPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Kata Sandi (Password)
+                Kata Sandi
               </label>
               <div className="relative">
                 <Lock
@@ -139,7 +139,7 @@ export const LoginPage: React.FC = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan kata sandi akun..."
+                  placeholder="Masukkan kata sandi akun"
                   className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white focus:border-transparent transition-all"
                 />
                 <button
@@ -167,7 +167,7 @@ export const LoginPage: React.FC = () => {
               ) : (
                 <>
                   <KeyRound size={16} />
-                  <span>MASUK SISTEM</span>
+                  <span>Login</span>
                 </>
               )}
             </button>

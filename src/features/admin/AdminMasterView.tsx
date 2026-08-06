@@ -753,7 +753,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase rounded-full tracking-wider flex items-center gap-1">
                 <ShieldCheck size={12} />
-                Akses Langsung Admin
+                Akses Hanya Admin
               </span>
               <span className="text-xs text-slate-400 hidden xs:inline">• BBMKG Wilayah V Papua</span>
             </div>

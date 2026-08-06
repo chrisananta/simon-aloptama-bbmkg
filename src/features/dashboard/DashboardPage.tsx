@@ -84,7 +84,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ devices }) => {
                   </option>
                 ))}
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
 
             <div className="relative">
@@ -100,7 +99,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ devices }) => {
                   </option>
                 ))}
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
 
             <div className="relative">
@@ -114,7 +112,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ devices }) => {
                 <option value="GANGGUAN">🟡 Gangguan</option>
                 <option value="MATI">🔴 Mati</option>
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
           </div>
         </div>
