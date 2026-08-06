@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import html2pdf from 'html2pdf.js';
+import printlogobmkg from '../../BMKGLogo.png';
 import { 
   X, 
   Printer, 
@@ -577,9 +578,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase rounded-md border border-emerald-500/30">
-                  Laporan Resmi BMKG
+                  Laporan BBMKG Wil. V
                 </span>
-                <span className="text-xs text-slate-400">BBMKG Wilayah V Papua</span>
               </div>
               <h2 className="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
                 Buat Laporan Mingguan Monitoring Aloptama
@@ -659,7 +659,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                     <Calendar size={18} className="text-[#0052CC]" />
-                    1. Periode & Tanggal Monitoring
+                    Periode & Tanggal Monitoring
                   </h3>
                   <span className="text-[11px] font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 shrink-0">
                     {calculatedPeriodDays} Hari Operasional ({calculatedPeriodDays * 24} Jam)
@@ -710,22 +710,22 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </div>
                 </div>
 
-                {/* Live Average SLA & OLA summary card based on date input */}
+                {/* Average SLA & OLA summary card based on date input */}
                 <div className="p-3.5 bg-blue-50/90 border border-blue-200 rounded-xl space-y-2">
                   <div className="flex items-center justify-between text-xs font-extrabold text-[#0052CC]">
                     <span className="flex items-center gap-1.5">
                       <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                      <span>Rata-Rata SLA & OLA Terhitung Berdasarkan Periode Input:</span>
+                      <span>Rata-Rata SLA & OLA Berdasarkan Periode Input:</span>
                     </span>
                     <span className="font-bold text-[#0052CC]">{startDate} s.d. {endDate}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-xs pt-0.5">
                     <div className="bg-white p-2.5 rounded-lg border border-blue-100 flex justify-between items-center shadow-2xs">
-                      <span className="text-slate-600 font-semibold">Rata-Rata SLA Terhitung:</span>
+                      <span className="text-slate-600 font-semibold">Rata-Rata SLA :</span>
                       <span className="font-black text-[#0052CC] text-sm">{avgSlaTotal.toFixed(1)}%</span>
                     </div>
                     <div className="bg-white p-2.5 rounded-lg border border-blue-100 flex justify-between items-center shadow-2xs">
-                      <span className="text-slate-600 font-semibold">Rata-Rata OLA Terhitung:</span>
+                      <span className="text-slate-600 font-semibold">Rata-Rata OLA :</span>
                       <span className="font-black text-emerald-700 text-sm">{avgOlaTotal.toFixed(1)}%</span>
                     </div>
                   </div>
@@ -742,7 +742,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                     <Users size={18} className="text-[#0052CC]" />
-                    2. Personil Petugas Monitoring
+                    Personil Petugas Monitoring
                   </h3>
 
                   <div className="flex items-center gap-2">
@@ -799,7 +799,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
                   <UserCheck size={18} className="text-[#0052CC]" />
-                  3. Penanggung Jawab & Catatan Laporan
+                  Penanggung Jawab & Catatan Laporan
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -847,7 +847,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                     <ImageIcon size={18} className="text-[#0052CC]" />
-                    4. Lampiran Gambar Dokumentasi Monitoring
+                    Lampiran Gambar Dokumentasi Monitoring
                   </h3>
                   <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                     Dapat Diunggah Foto / Tangkapan Layar
@@ -860,7 +860,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <Building2 size={14} className="text-blue-600" />
-                        <span>Monitoring AWS Center</span>
+                        <span>Monitoring Website AWS Center</span>
                       </label>
                       {imgAwsCenter && (
                         <button
@@ -895,7 +895,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <FileText size={14} className="text-indigo-600" />
-                        <span>Matriks SLA & OLA</span>
+                        <span>Informasi SLA & OLA</span>
                       </label>
                       {imgSlaOla && (
                         <button
@@ -930,7 +930,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <Users size={14} className="text-emerald-600" />
-                        <span>Diseminasi WA / UPT</span>
+                        <span>Diseminasi WA Teknisi</span>
                       </label>
                       {imgDiseminasi && (
                         <button
@@ -1029,7 +1029,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       onChange={(e) => setIncludeDocumentation(e.target.checked)}
                       className="w-4 h-4 text-[#0052CC] rounded border-slate-300 focus:ring-blue-500"
                     />
-                    <span>Sertakan Halaman Lampiran Tangkapan Layar & Dokumentasi Monitoring</span>
+                    <span>Sertakan Halaman Lampiran </span>
                   </label>
 
                   <button
@@ -1038,21 +1038,21 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     className="px-5 py-2.5 bg-[#0052CC] hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
                   >
                     <Eye size={15} />
-                    <span>Lihat Pratinjau Dokumen</span>
+                    <span>Pratinjau Dokumen</span>
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 2 & PRINT AREA: OFFICIAL BMKG PRINTABLE REPORT FORMAT */}
+          {/* PRINT AREA: OFFICIAL BMKG PRINTABLE REPORT FORMAT */}
           {(activeTab === 'preview' || activeTab === 'config') && (
             <div className={activeTab === 'config' ? 'hidden' : 'block'}>
               {/* Document Actions Bar (No Print) */}
               <div className="no-print mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-900 font-medium">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={16} className="text-[#0052CC] shrink-0" />
-                  <span>Pratinjau Hasil Cetak Laporan Mingguan BMKG. Silakan unduh PDF langsung atau cetak via jendela baru.</span>
+                  <span>Pratinjau Hasil Cetak Laporan Mingguan. Silakan unduh PDF langsung atau cetak via jendela baru.</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
@@ -1092,9 +1092,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 {/* 1. KOP SURAT RESMI BMKG */}
                 <div className="border-b-4 border-slate-900 pb-3 mb-6 relative">
                   <div className="flex items-center gap-4">
-                    {/* BMKG Logo */}
                     <img 
-                      src="https://upload.wikimedia.org/wikipedia/commons/1/12/BMKG_Indonesia_Logo.png" 
+                      src="printlogobmkg" 
                       alt="Logo BMKG" 
                       className="w-16 h-20 object-contain shrink-0"
                     />
@@ -1120,7 +1119,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 {/* 2. LAPORAN TITLE HEADER */}
                 <div className="text-center my-6">
                   <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
-                    LAPORAN MINGGUAN MONITORING KONDISI
+                    LAPORAN MINGGUAN MONITORING 
                   </h2>
                   <h3 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase mt-0.5">
                     ALOPTAMA DI BBMKG WILAYAH V
@@ -1147,9 +1146,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
 
                 {/* 4. TABEL 1: REKAPITULASI SLA & OLA */}
                 <div className="my-6">
-                  <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-black">
+                  <div className="font-extrabold text-xs uppercase mb-2 text-black">
                     <span>Rekapitulasi Kinerja Aloptama:</span>
-                    <span>Rata-Rata Terhitung Periode {startDate} - {endDate}</span>
                   </div>
                   <table className="w-full border-collapse border border-black text-center text-xs">
                     <thead>
@@ -1253,7 +1251,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   <div className="page-break pt-8 mt-12 border-t-2 border-dashed border-slate-300">
                     <div className="text-center mb-6">
                       <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
-                        LAMPIRAN DOKUMENTASI MONITORING ALOPTAMA BBMKG WIL. V
+                        LAMPIRAN DOKUMENTASI MONITORING ALOPTAMA 
                       </h2>
                     </div>
 
@@ -1261,7 +1259,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       {/* Section A: Monitoring AWS Center */}
                       <div className="border border-slate-300 p-4 rounded-lg space-y-2">
                         <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                          1. Monitoring AWS Center (Map Weather Station)
+                          1. Monitoring AWS Center 
                         </h3>
                         {imgAwsCenter ? (
                           <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
@@ -1277,8 +1275,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                         ) : (
                           <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
                             <Building2 size={32} className="text-blue-600 mb-2" />
-                            <p className="font-bold text-xs text-slate-800">Tangkapan Layar Dashboard AWS Center BBMKG Wilayah V</p>
-                            <p className="text-[10px] text-slate-500 mt-1">Status Sebaran 35 Titik Stasiun Otomatis Papua & Papua Barat (Belum Diunggah)</p>
+                            <p className="font-bold text-xs text-slate-800">Tangkapan Layar Dashboard AWS Center </p>
+                            <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
                           </div>
                         )}
                       </div>
@@ -1286,7 +1284,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       {/* Section B: Monitoring SLA dan OLA */}
                       <div className="border border-slate-300 p-4 rounded-lg space-y-2">
                         <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                          2. Monitoring SLA dan OLA (Rekapitulasi Grafis & Analisa)
+                          2. Monitoring SLA dan OLA 
                         </h3>
                         {imgSlaOla ? (
                           <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
@@ -1302,8 +1300,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                         ) : (
                           <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
                             <FileText size={32} className="text-indigo-600 mb-2" />
-                            <p className="font-bold text-xs text-slate-800">Tangkapan Layar Rekapitulasi Matriks SLA dan OLA</p>
-                            <p className="text-[10px] text-slate-500 mt-1">SLA {avgSlaTotal}% | OLA {avgOlaTotal}% | Normal {percentNormal}% (Belum Diunggah)</p>
+                            <p className="font-bold text-xs text-slate-800">Tangkapan Layar Rekapitulasi Web SLA dan OLA</p>
+                            <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
                           </div>
                         )}
                       </div>
@@ -1327,8 +1325,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                         ) : (
                           <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
                             <Users size={32} className="text-emerald-600 mb-2" />
-                            <p className="font-bold text-xs text-slate-800">Laporan Diseminasi WhatsApp / Telegram UPT Lingkungan BBMKG V</p>
-                            <p className="text-[10px] text-slate-500 mt-1">Pengiriman otomatis status operasional harian & mingguan (Belum Diunggah)</p>
+                            <p className="font-bold text-xs text-slate-800">Laporan Diseminasi WhatsApp </p>
+                            <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
                           </div>
                         )}
                       </div>
