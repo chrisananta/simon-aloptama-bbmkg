@@ -1,30 +1,28 @@
-import React, { useState } from 'react';
-import { 
-  KeyRound, 
-  Lock, 
-  User, 
-  Eye, 
-  EyeOff, 
-  AlertCircle
-} from 'lucide-react';
-import { useAuth } from './AuthContext';
-import { SimonLogo } from '../../shared/components/ui/SimonLogo';
+import React, { useState } from "react";
+import { KeyRound, Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useAuth } from "./AuthContext";
+
+// 1. Import Logo BMKG untuk Header Atas
+import bmkgLogo from "../../assets/images/BMKGLogo.png";
+
+// 2. Import Logo SIMON untuk Card Form
+import simonLogo from "../../assets/images/simonlogo.png";
 
 export const LoginPage: React.FC = () => {
   const { login, isLoading } = useAuth();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
+    setErrorMessage("");
 
     if (!username.trim()) {
-      setErrorMessage('Username atau NIP BMKG wajib diisi.');
+      setErrorMessage("Username atau NIP BMKG wajib diisi.");
       return;
     }
 
@@ -32,10 +30,12 @@ export const LoginPage: React.FC = () => {
     try {
       const success = await login(username, password);
       if (!success) {
-        setErrorMessage('Autentikasi gagal. Periksa kembali username/NIP dan kata sandi Anda.');
+        setErrorMessage(
+          "Autentikasi gagal. Periksa kembali username/NIP dan kata sandi Anda.",
+        );
       }
     } catch (err) {
-      setErrorMessage('Terjadi kesalahan koneksi autentikasi ke server BMKG.');
+      setErrorMessage("Terjadi kesalahan koneksi autentikasi ke server BMKG.");
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +46,12 @@ export const LoginPage: React.FC = () => {
       {/* Top Header Bar */}
       <header className="max-w-5xl w-full mx-auto flex items-center justify-between py-2 border-b border-slate-200/80">
         <div className="flex items-center gap-3">
-          <SimonLogo variant="image" height={42} />
+          {/* Logo BMKG untuk Header Atas */}
+          <img
+            src={bmkgLogo}
+            alt="Logo BMKG"
+            className="h-10 w-auto object-contain shrink-0"
+          />
           <div>
             <span className="text-[11px] font-extrabold text-[#0052CC] tracking-wide uppercase block">
               BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA
@@ -61,19 +66,24 @@ export const LoginPage: React.FC = () => {
       {/* Main Single Centered Card */}
       <div className="my-auto py-8 flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden p-6 sm:p-10 space-y-6">
-          
           {/* Header Section */}
           <div className="text-center space-y-2">
             <div className="flex justify-center mb-2">
-              <SimonLogo variant="image" height={54} />
+              {/* Logo SIMON di Atas Form Login Card */}
+              <img
+                src={simonLogo}
+                alt="Logo SIMON"
+                className="h-14 w-auto object-contain shrink-0"
+              />
             </div>
-            
+
             <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-[#0F2D52] tracking-tight">
               SIMON
             </h1>
-            
+
             <p className="text-xs sm:text-sm text-slate-600 font-semibold leading-relaxed px-2">
-              Sistem Informasi Monitoring Aloptama &amp; Kalibrasi BBMKG Wilayah V
+              Sistem Informasi Monitoring Aloptama &amp; Kalibrasi BBMKG Wilayah
+              V
             </p>
           </div>
 
@@ -82,7 +92,10 @@ export const LoginPage: React.FC = () => {
           {/* Alert Message if Login Fails */}
           {errorMessage && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs flex items-start gap-2.5 animate-shake">
-              <AlertCircle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+              <AlertCircle
+                size={18}
+                className="text-rose-600 shrink-0 mt-0.5"
+              />
               <div>
                 <span className="font-bold block">Autentikasi Gagal</span>
                 <span>{errorMessage}</span>
@@ -97,7 +110,10 @@ export const LoginPage: React.FC = () => {
                 Username / NIP BMKG
               </label>
               <div className="relative">
-                <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <User
+                  size={18}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
                 <input
                   type="text"
                   required
@@ -114,9 +130,12 @@ export const LoginPage: React.FC = () => {
                 Kata Sandi (Password)
               </label>
               <div className="relative">
-                <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock
+                  size={18}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -127,7 +146,11 @@ export const LoginPage: React.FC = () => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-                  title={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                  title={
+                    showPassword
+                      ? "Sembunyikan kata sandi"
+                      : "Tampilkan kata sandi"
+                  }
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -154,7 +177,8 @@ export const LoginPage: React.FC = () => {
 
       {/* Footer BMKG Style */}
       <footer className="max-w-5xl w-full mx-auto text-center py-4 text-xs text-slate-500 font-medium border-t border-slate-200/80">
-        &copy; 2026 Balai Besar Meteorologi Klimatologi dan Geofisika Wilayah V Papua
+        &copy; 2026 Balai Besar Meteorologi Klimatologi dan Geofisika Wilayah V
+        Papua
       </footer>
     </div>
   );

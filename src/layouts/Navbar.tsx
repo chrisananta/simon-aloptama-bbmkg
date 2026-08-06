@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
 import { ActiveNavMenu } from '../shared/types';
-import { SimonLogo } from '../shared/components/ui/SimonLogo';
+
+// Import gambar langsung dari folder assets/images
+import simonLogo from '../assets/images/simonlogo.png';
 
 interface NavbarProps {
   activeMenu: ActiveNavMenu;
@@ -67,7 +69,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 min-w-0 flex-1 mr-2 sm:mr-4">
         {collapsed && (
           <>
-            <SimonLogo variant="image" height={36} className="max-h-9 sm:max-h-11 shrink-0" />
+            <img
+            src={simonLogo} 
+            alt="Logo Simon" 
+            className="max-h-9 sm:max-h-11 w-auto shrink-0 object-contain"
+            />
             <div className="hidden sm:block h-7 w-px bg-slate-200 shrink-0" />
           </>
         )}
