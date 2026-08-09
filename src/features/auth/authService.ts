@@ -132,6 +132,7 @@ export const authService = {
    */
   login: async (username: string, password?: string): Promise<AuthSession> => {
     const cleanUser = username.trim().toLowerCase();
+    let backendUnreachable = false;
 
     // 1. First attempt PostgreSQL database authentication via backend API
     try {
@@ -140,28 +141,55 @@ export const authService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: cleanUser, password }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.user) {
-          const token = data.token || createJWT(data.user).token;
-          const refreshToken = `REFRESH_${data.token || base64UrlEncode(JSON.stringify({ id: data.user.id, ts: Date.now() }))}`;
-          const exp = Date.now() + 24 * 60 * 60 * 1000;
 
-          localStorage.setItem(TOKEN_KEY, token);
-          localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-          localStorage.setItem(SESSION_EXP_KEY, String(exp));
-
-          return {
-            token,
-            refreshToken,
-            user: data.user,
-            expiresAt: exp,
-            createdAt: Date.now(),
-          };
-        }
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        // respons bukan JSON valid, biarkan data tetap null
       }
-    } catch (e) {
-      console.warn('Backend PostgreSQL login attempt failed, falling back to local credentials:', e);
+
+      if (res.ok && data?.success && data?.user) {
+        const token = data.token || createJWT(data.user).token;
+        const refreshToken = `REFRESH_${data.token || base64UrlEncode(JSON.stringify({ id: data.user.id, ts: Date.now() }))}`;
+        const exp = Date.now() + 24 * 60 * 60 * 1000;
+
+        localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        localStorage.setItem(SESSION_EXP_KEY, String(exp));
+
+        return {
+          token,
+          refreshToken,
+          user: data.user,
+          expiresAt: exp,
+          createdAt: Date.now(),
+        };
+      }
+
+      // PENTING: backend BERHASIL DIHUBUNGI dan memberi jawaban definitif menolak
+      // (password salah = 401, kena rate-limit = 429, dsb). JANGAN pernah jatuh ke
+      // mode fallback offline di bawah untuk kasus ini - itu lubang keamanan
+      // (fallback offline bisa meloloskan login dengan username/password apa saja).
+      throw new Error(
+        data?.message || 'Autentikasi gagal. Periksa kembali username dan kata sandi Anda.'
+      );
+    } catch (err) {
+      if (err instanceof TypeError) {
+        // fetch() gagal total: backend benar-benar tidak bisa dihubungi
+        // (server mati, tidak ada koneksi, dsb). Baru di sini boleh fallback offline.
+        backendUnreachable = true;
+        console.warn('Backend tidak bisa dihubungi, mencoba mode fallback lokal (offline):', err);
+      } else {
+        // Ini error yang SENGAJA kita lempar sendiri di atas (backend menolak
+        // login dengan alasan spesifik) - teruskan ke pemanggil apa adanya,
+        // jangan ditelan dan jangan fallback.
+        throw err;
+      }
+    }
+
+    if (!backendUnreachable) {
+      throw new Error('Autentikasi gagal.');
     }
 
     let targetUser: AuthUser | undefined;

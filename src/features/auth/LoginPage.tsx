@@ -9,7 +9,7 @@ import bmkgLogo from "../../assets/images/BMKGLogo.png";
 import simonLogo from "../../assets/images/simonlogo.png";
 
 export const LoginPage: React.FC = () => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, getLastAuthError } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +31,7 @@ export const LoginPage: React.FC = () => {
       const success = await login(username, password);
       if (!success) {
         setErrorMessage(
-          "Autentikasi gagal. Periksa kembali username/NIP dan kata sandi Anda.",
+          getLastAuthError() || "Autentikasi gagal. Periksa kembali username/NIP dan kata sandi Anda.",
         );
       }
     } catch (err) {

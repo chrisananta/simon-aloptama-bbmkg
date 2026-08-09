@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { AuthUser, AuthSession, UserRole, RBACPermissions } from './authTypes';
 import { authService } from './authService';
 import { ActiveNavMenu } from '../../shared/types';
@@ -8,6 +8,7 @@ interface AuthContextType {
   session: AuthSession | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitializing: boolean;
   permissions: RBACPermissions;
   login: (username: string, password?: string) => Promise<boolean>;
   loginAsPreset: (role: UserRole) => Promise<boolean>;
@@ -15,6 +16,7 @@ interface AuthContextType {
   refreshToken: () => Promise<boolean>;
   isMenuAllowed: (menu: ActiveNavMenu) => boolean;
   sessionTimeLeftMinutes: number;
+  getLastAuthError: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,7 +34,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<AuthSession | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  // Terpisah dari isLoading: isInitializing HANYA true selama pengecekan sesi
+  // pertama kali (pas app baru dibuka). Setelah itu SELAMANYA false - tidak
+  // ikut nyala lagi tiap kali proses login() jalan. Ini yang dipakai
+  // ProtectedRoute untuk memutuskan tampilkan spinner vs LoginPage, supaya
+  // LoginPage tidak unmount/remount tiap kali user mencoba login.
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [sessionTimeLeftMinutes, setSessionTimeLeftMinutes] = useState<number>(0);
+  // Pakai ref (bukan state) - supaya bisa dibaca LANGSUNG setelah login() selesai,
+  // tanpa nunggu React re-render (yang bisa telat / "basi" saat dibaca).
+  const lastAuthErrorRef = useRef<string | null>(null);
+  const getLastAuthError = useCallback(() => lastAuthErrorRef.current, []);
 
   // Load session on startup
   const checkSession = useCallback(() => {
@@ -55,6 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(null);
     } finally {
       setIsLoading(false);
+      setIsInitializing(false);
     }
   }, []);
 
@@ -99,6 +112,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (username: string, password?: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      lastAuthErrorRef.current = null;
       const newSession = await authService.login(username, password);
       setSession(newSession);
       setUser(newSession.user);
@@ -107,6 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return true;
     } catch (err) {
       console.error('Login failed:', err);
+      lastAuthErrorRef.current = err instanceof Error ? err.message : 'Autentikasi gagal.';
       return false;
     } finally {
       setIsLoading(false);
@@ -170,6 +185,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         session,
         isAuthenticated: !!user && !!session,
         isLoading,
+        isInitializing,
         permissions,
         login,
         loginAsPreset,
@@ -177,6 +193,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         refreshToken,
         isMenuAllowed,
         sessionTimeLeftMinutes,
+        getLastAuthError,
       }}
     >
       {children}

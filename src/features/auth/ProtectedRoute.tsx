@@ -15,9 +15,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   activeMenu,
   onRedirectToDashboard,
 }) => {
-  const { isAuthenticated, isLoading, user, isMenuAllowed } = useAuth();
+  const { isAuthenticated, isInitializing, user, isMenuAllowed } = useAuth();
 
-  if (isLoading) {
+  // Spinner cuma buat pengecekan sesi PERTAMA KALI pas app baru dibuka.
+  // Setelah itu, walau login() sedang berjalan (isLoading di context),
+  // JANGAN unmount LoginPage - biar state internalnya (pesan error, dst)
+  // tidak ikut hilang di tengah proses submit.
+  if (isInitializing) {
     return (
       <div className="min-h-screen bg-[#0A203C] text-white flex flex-col items-center justify-center p-4">
         <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-4" />
