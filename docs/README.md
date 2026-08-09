@@ -2,20 +2,20 @@
 
 Selamat datang di Dokumentasi Pengembang **SIMON BBMKG V** (Sistem Informasi Monitoring Peralatan Meteorologi, Klimatologi, dan Geofisika Wilayah V).
 
-Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, struktur kode, konvensi penamaan, validasi data, serta alur pengembangannya.
+Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, struktur kode, alur autentikasi, spesifikasi API, konvensi penamaan, serta cara menjalankan aplikasi.
 
 ---
 
 ## 📚 Daftar Isi Dokumentasi
 
-1. **[Arsitektur Sistem (ARCHITECTURE.md)](./ARCHITECTURE.md)**  
-   Penjelasan arsitektur sistem, centralized API client, mekanisme dual-storage (Local + Server Fallback), dan Audit Logging.
+1. **[Arsitektur Sistem (ARCHITECTURE.md)](./ARCHITECTURE.md)**
+   Arsitektur server gabungan (frontend + backend 1 proses), alur autentikasi JWT lengkap, model keamanan, dan struktur endpoint API.
 
-2. **[Spesifikasi API & Data Contract (API.md)](./API.md)**  
-   Dokumentasi REST API Server (`server.ts`) dan struktur response JSON untuk sync data BMKG.
+2. **[Spesifikasi API & Data Contract (API.md)](./API.md)**
+   Dokumentasi lengkap REST API (`simon-backend/src/routes/`), termasuk endpoint mana yang publik, mana yang wajib login, dan mana yang wajib role ADMIN.
 
-3. **[Panduan Pengembang & Konvensi Penamaan (DEVELOPMENT_GUIDE.md)](./DEVELOPMENT_GUIDE.md)**  
-   Standar penamaan berkas (`*Page.tsx`, `*Card.tsx`, `*Table.tsx`, `*Service.ts`, `*Types.ts`), aturan validasi Zod & React Hook Form, serta cara menambahkan fitur baru.
+3. **[Panduan Pengembang & Konvensi Penamaan (DEVELOPMENT_GUIDE.md)](./DEVELOPMENT_GUIDE.md)**
+   Standar penamaan berkas, aturan validasi Zod & React Hook Form, cara menjalankan aplikasi secara lokal, dan cara menambahkan fitur baru.
 
 ---
 
@@ -26,53 +26,75 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 | **Frontend Framework** | React 19 + TypeScript + Vite |
 | **Styling** | Tailwind CSS v4 |
 | **Form & Validation** | React Hook Form + Zod Schema Validation |
-| **State & Local Persistence** | Centralized API Layer (`apiClient`) + LocalStorage + Memory Fallback |
-| **Backend Server** | Node.js Express Server (`server.ts`) with Vite Middleware |
+| **State & API Layer** | Centralized API Client (`apiClient`) dengan cache memori + `authFetch` (auto-attach JWT) |
+| **Backend Server** | Node.js + Express (`server.ts`), digabung dengan Vite middleware (dev) / static files (production) |
+| **Database** | PostgreSQL + **Prisma ORM** (`simon-backend/prisma/schema.prisma`) |
+| **Autentikasi** | JWT (`jsonwebtoken`) + `bcrypt` untuk hashing password |
+| **Keamanan Tambahan** | `express-rate-limit` (brute-force protection pada login) |
 | **Icons & Visuals** | Lucide React Icons |
-| **Leaflet Maps** | React Leaflet / Leaflet Map for BMKG Wilayah V Stations |
+| **Peta** | React Leaflet — sebaran stasiun UPT BMKG Wilayah V |
+
+---
+
+## 🔐 Autentikasi Singkat
+
+- Login: `POST /api/login` → dapat JWT token
+- Semua endpoint lain wajib header `Authorization: Bearer <token>`
+- 2 role: `ADMIN` (Admin INSKAL — akses penuh) dan `UPT_PIMPINAN` (operator UPT — akses terbatas, tanpa hak hapus/kelola akun)
+- Detail lengkap alur login → validasi token → migrasi password otomatis, lihat [ARCHITECTURE.md](./ARCHITECTURE.md#3-alur-autentikasi-login--token--request-terproteksi)
 
 ---
 
 ## 📁 Struktur Direktori Utama
 
 ```
-src/
-├── app/
-│   └── App.tsx               # Entry Point aplikasi utama
-├── features/                 # Modular feature domains
-│   ├── dashboard/            # Dashboard SLA/OLA & Peta Stasiun
-│   │   ├── DashboardPage.tsx
-│   │   ├── DashboardCard.tsx
-│   │   ├── DashboardTable.tsx
-│   │   ├── DashboardService.ts
-│   │   └── DashboardTypes.ts
-│   ├── sla-ola/              # Pengisian & Monitoring SLA/OLA
-│   │   ├── SlaOlaPage.tsx
-│   │   ├── SlaOlaModal.tsx
-│   │   ├── SlaOlaTable.tsx
-│   │   ├── SlaOlaService.ts
-│   │   └── SlaOlaTypes.ts
-│   ├── calibration/          # Inskal Kalibrasi & Sertifikat
-│   │   ├── CalibrationPage.tsx
-│   │   ├── CalibrationModal.tsx
-│   │   ├── CalibrationTable.tsx
-│   │   ├── CalibrationService.ts
-│   │   └── CalibrationTypes.ts
-│   ├── admin/                # Master Data Management (Stasiun & Alat)
-│   │   ├── AdminMasterPage.tsx
-│   │   ├── AdminMasterService.ts
-│   │   └── AdminMasterTypes.ts
-│   ├── audit-log/            # Log Aktivitas & Perubahan System
-│   │   ├── AuditLogPage.tsx
-│   │   ├── AuditLogTable.tsx
-│   │   ├── AuditLogService.ts
-│   │   └── AuditLogTypes.ts
-│   └── certificates/         # Sertifikat Redirect & Downloads
-│       └── CertificatePage.tsx
-├── shared/                   # Shared utilities, API client, & Zod schemas
-│   ├── api/                  # Centralized API Client layer (`apiClient`)
-│   ├── schemas/              # Zod validation schemas
-│   ├── types/                # Global TypeScript definitions
-│   └── components/           # UI Modals & Error Boundary
-└── layouts/                  # Navbar & Sidebar layouts
+├── server.ts                      # Entry point backend gabungan (Express + Vite middleware / static)
+├── src/                            # Frontend React + Vite
+│   ├── app/App.tsx                 # Entry point aplikasi utama (routing menu internal)
+│   ├── features/                   # Modular feature domains
+│   │   ├── auth/                   # Login, AuthContext (session, JWT, RBAC), ProtectedRoute
+│   │   ├── dashboard/               # Dashboard SLA/OLA & Peta Stasiun
+│   │   ├── sla-ola/                 # Pengisian & Monitoring SLA/OLA
+│   │   ├── calibration/             # Repository Kalibrasi INSKAL & Sertifikat
+│   │   ├── admin/                   # Master Data Management (Stasiun, Alat, Petugas, Akun)
+│   │   ├── audit-log/               # Log Aktivitas & Perubahan Sistem
+│   │   ├── monitoring/              # Komponen monitoring tambahan
+│   │   └── certificates/            # Halaman sertifikat
+│   ├── shared/
+│   │   ├── api/                     # apiClient.ts (data layer) + http.ts (authFetch)
+│   │   ├── services/                # Service tambahan (mis. petugasService)
+│   │   ├── schemas/                 # Zod validation schemas
+│   │   ├── types/                   # Global TypeScript definitions
+│   │   └── components/              # UI Modals & Error Boundary
+│   ├── layouts/                     # Navbar & Sidebar
+│   └── assets/                      # Logo & gambar statis
+└── simon-backend/                  # Backend API
+    ├── prisma/schema.prisma         # Model data (User, UptStation, Device, SlaOlaLog,
+    │                                 # CalibrationRecord, AuditLog)
+    └── src/
+        ├── config/env.ts            # Validasi JWT_SECRET wajib ada (fail-fast jika kosong)
+        ├── middleware/               # authMiddleware.ts (verifyToken, requireAdmin),
+        │                             # rateLimiter.ts (loginRateLimiter)
+        ├── controllers/              # Logic tiap entitas (userController, deviceController, dst)
+        ├── routes/                   # Definisi endpoint per entitas + routes/index.ts (gabungan)
+        └── db/prisma.ts              # Prisma Client singleton
 ```
+
+---
+
+## ⚙️ Menjalankan Aplikasi Secara Lokal
+
+Ringkas — detail lengkap ada di [DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md).
+
+```bash
+npm install
+# Buat file .env di ROOT dan di simon-backend/ (isinya harus SAMA PERSIS):
+#   DATABASE_URL="postgresql://user:pass@localhost:5432/simon_bmkg?schema=public"
+#   JWT_SECRET="<random string 32+ karakter>"
+#   PORT=3000
+
+npx prisma migrate deploy --schema=simon-backend/prisma/schema.prisma
+npm run dev      # mode development, http://localhost:3000
+```
+
+> ⚠️ Server **menolak nyala** kalau `JWT_SECRET` belum di-set — ini disengaja (fail-fast), bukan bug.
