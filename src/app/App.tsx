@@ -20,7 +20,7 @@ import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 
 function AppContent() {
-  const { user, permissions } = useAuth();
+  const { user, permissions, isAuthenticated } = useAuth();
   const [activeMenu, setActiveMenu] = useState<ActiveNavMenu>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [lastUpdate, setLastUpdate] = useState('28 Juli 2026, 10:30 WIT');
@@ -58,11 +58,6 @@ function AppContent() {
 
   // Current actor identifier for audit log tracking
   const currentActor = user ? `${user.name} (${user.role === 'ADMIN' ? 'Admin INSKAL' : 'UPT/Pimpinan'})` : 'Operator SIMON';
-
-  // Automatically fetch fresh data from PostgreSQL server on mount/refresh
-  useEffect(() => {
-    handleSyncServer();
-  }, []);
 
   // Handle Server API Data Fetch & Sync via Centralized API
   const handleSyncServer = async () => {
@@ -157,10 +152,18 @@ function AppContent() {
     refreshAuditLogs();
   };
 
-  // Initial load sync on component mount
+  // Ambil data dari server setiap kali status login berubah jadi TERAUTENTIKASI.
+  // PENTING: AppContent ini mount SEKALI saat app dibuka (SEBELUM user sempat
+  // login), jadi kalau cuma dependency [] di sini, sync pertama pasti gagal
+  // (belum ada token -> semua request 401) dan TIDAK PERNAH dicoba ulang begitu
+  // login berhasil, karena AppContent sendiri tidak remount saat transisi
+  // login->dashboard (itu murni ProtectedRoute yang ganti tampilan di dalamnya).
+  // Makanya dependency [isAuthenticated] wajib ada di sini.
   useEffect(() => {
-    handleSyncServer();
-  }, []);
+    if (isAuthenticated) {
+      handleSyncServer();
+    }
+  }, [isAuthenticated]);
 
   return (
     <ProtectedRoute activeMenu={activeMenu} onRedirectToDashboard={() => setActiveMenu('dashboard')}>
