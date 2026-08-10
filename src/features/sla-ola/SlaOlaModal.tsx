@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 
 const EQUIPMENT_CATEGORIES: string[] = [
-  "AWOS Kategori III",
-  "AWOS Kategori II",
-  "AWOS Kategori I",
+  "AWOS Kat. III",
+  "AWOS Kat. II",
+  "AWOS Kat. I",
   "AWS",
   "ARG",
   "Radar Cuaca",
@@ -68,7 +68,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     resolver: zodResolver(slaOlaSchema),
     defaultValues: {
       uptStation: stationsList[0]?.name || "",
-      category: "AWOS Kategori III",
+      category: "AWOS Kat. III",
       deviceId: "",
       kondisiSla: true,
       kondisiOla: 100,
@@ -110,9 +110,9 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   });
 
   useEffect(() => {
-    if (watchCategory === "AWOS Kategori I") {
+    if (watchCategory === "AWOS Kat. I") {
       setAwosCategory("AWOS_I");
-    } else if (watchCategory === "AWOS Kategori II") {
+    } else if (watchCategory === "AWOS Kat. II") {
       setAwosCategory("AWOS_II");
     } else if (watchCategory.startsWith("AWOS")) {
       setAwosCategory("AWOS_III");
@@ -123,17 +123,24 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     if (d.uptStation !== watchUptStation) return false;
     if (watchCategory === "ALL") return true;
     if (watchCategory.startsWith("AWOS")) {
-      if (d.category !== "AWOS") return false;
-      if (watchCategory === "AWOS Kategori I")
-        return d.name.includes("Kat I") && !d.name.includes("Kat III");
-      if (watchCategory === "AWOS Kategori II")
-        return d.name.includes("Kat II");
-      if (watchCategory === "AWOS Kategori III")
-        return (
-          d.name.includes("Kat III") ||
-          (!d.name.includes("Kat I") && !d.name.includes("Kat II"))
-        );
-      return true;
+      // Cara baru: kategori Kat. I/II/III langsung tersimpan di field
+      // device.category (mis. "AWOS Kat. I"), jadi tinggal dicocokkan langsung.
+      if (d.category === watchCategory) return true;
+
+      // Fallback untuk device LAMA yang mungkin masih pakai category "AWOS"
+      // generik + kategori disisipkan di nama (format sebelum dipisah).
+      if (d.category === "AWOS") {
+        if (watchCategory === "AWOS Kat. I")
+          return d.name.includes("Kat I") && !d.name.includes("Kat III");
+        if (watchCategory === "AWOS Kat. II")
+          return d.name.includes("Kat II");
+        if (watchCategory === "AWOS Kat. III")
+          return (
+            d.name.includes("Kat III") ||
+            (!d.name.includes("Kat I") && !d.name.includes("Kat II"))
+          );
+      }
+      return false;
     }
     return (
       d.category === watchCategory ||
@@ -332,7 +339,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         },
       ];
     }
-    if (watchCategory === "AWOS Kategori III") {
+    if (watchCategory === "AWOS Kat. III") {
       return [
         { key: "tekanan", label: "Sensor Tekanan", weight: "5.00%" },
         { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },
@@ -358,7 +365,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "ld", label: "Sensor Lightning Detector (LD)", weight: "2.14%" },
       ];
     }
-    if (watchCategory === "AWOS Kategori II") {
+    if (watchCategory === "AWOS Kat. II") {
       return [
         { key: "tekanan", label: "Sensor Tekanan", weight: "5.00%" },
         { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },
@@ -374,7 +381,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "visibility", label: "Sensor Visibility", weight: "3.00%" },
       ];
     }
-    if (watchCategory === "AWOS Kategori I") {
+    if (watchCategory === "AWOS Kat. I") {
       return [
         { key: "tekanan", label: "Sensor Tekanan", weight: "5.00%" },
         { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },

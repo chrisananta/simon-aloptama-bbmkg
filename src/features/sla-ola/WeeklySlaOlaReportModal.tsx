@@ -262,7 +262,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         name: 'AWOS KAT. I',
         matchFn: (d: AloptamaDevice) => {
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
-          return c.includes('awos') && !c.includes('kat ii') && !c.includes('kat iii') && !c.includes('kat 2') && !c.includes('kat 3');
+          return c.includes('awos') && !c.includes('kat ii') && !c.includes('kat. ii') && !c.includes('kat iii') && !c.includes('kat. iii') && !c.includes('kat 2') && !c.includes('kat 3');
         },
         fallback: { jumlahLokasi: 24, sla: 100.0, ola: 98.7, normal: 22, gangguan: 0, mati: 0 }
       },
@@ -272,7 +272,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         name: 'AWOS KAT II & III',
         matchFn: (d: AloptamaDevice) => {
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
-          return c.includes('awos') && (c.includes('kat ii') || c.includes('kat iii') || c.includes('kat 2') || c.includes('kat 3'));
+          return c.includes('awos') && (c.includes('kat ii') || c.includes('kat. ii') || c.includes('kat iii') || c.includes('kat. iii') || c.includes('kat 2') || c.includes('kat 3'));
         },
         fallback: { jumlahLokasi: 8, sla: 87.5, ola: 84.5, normal: 7, gangguan: 0, mati: 1 }
       },

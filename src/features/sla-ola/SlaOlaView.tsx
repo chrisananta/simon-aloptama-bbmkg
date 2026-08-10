@@ -271,7 +271,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
           return (
             c.includes('awos') &&
             !c.includes('kat ii') &&
+            !c.includes('kat. ii') &&
             !c.includes('kat iii') &&
+            !c.includes('kat. iii') &&
             !c.includes('kat 2') &&
             !c.includes('kat 3') &&
             !c.includes('kategori 2') &&
@@ -290,7 +292,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
           return (
             c.includes('awos') &&
             (c.includes('kat ii') ||
+              c.includes('kat. ii') ||
               c.includes('kat iii') ||
+              c.includes('kat. iii') ||
               c.includes('kat 2') ||
               c.includes('kat 3') ||
               c.includes('kategori 2') ||

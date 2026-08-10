@@ -482,7 +482,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   const regions = Array.from(new Set(stations.map((s) => s.regionGroup).filter(Boolean)));
   
   // Unique categories list for devices
-  const categories: EquipmentCategory[] = ['AWOS', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG'];
+  const categories: EquipmentCategory[] = ['AWOS Kat. I', 'AWOS Kat. II', 'AWOS Kat. III', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG'];
 
   // Filtered stations
   const filteredStations = stations.filter((s) => {
