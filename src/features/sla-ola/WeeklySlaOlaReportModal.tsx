@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import html2pdf from 'html2pdf.js';
-import printlogobmkg from '../../BMKGLogo.png';
+import printlogobmkg from '../../assets/images/BMKGLogo.png';
 import { 
   X, 
   Printer, 
@@ -1093,7 +1093,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 <div className="border-b-4 border-slate-900 pb-3 mb-6 relative">
                   <div className="flex items-center gap-4">
                     <img 
-                      src="printlogobmkg" 
+                      src={printlogobmkg} 
                       alt="Logo BMKG" 
                       className="w-16 h-20 object-contain shrink-0"
                     />
