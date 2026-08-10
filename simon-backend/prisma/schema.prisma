@@ -102,6 +102,17 @@ model CalibrationRecord {
   @@map("calibration_records")
 }
 
+model Petugas {
+  id        String   @id @default(uuid())
+  name      String
+  nip       String?
+  jabatan   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("petugas")
+}
+
 model AuditLog {
   id         String    @id @default(uuid())
   timestamp  DateTime  @default(now())

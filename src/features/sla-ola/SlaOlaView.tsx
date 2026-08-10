@@ -690,7 +690,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
             SLA & OLA ALOPTAMA
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Service Level Agreement & Operational Level Agreement Performa ALOPTAMA BBMKG Wilayah V
+            Service Level Agreement & Operational Level Agreement Performa ALOPTAMA
           </p>
         </div>
 
