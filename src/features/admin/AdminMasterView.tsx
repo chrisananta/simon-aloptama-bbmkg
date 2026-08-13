@@ -55,9 +55,9 @@ interface AdminMasterViewProps {
   onAddStation: (station: UPTStation, actor: string) => void;
   onUpdateStation: (station: UPTStation, changesDetail: string, actor: string) => void;
   onDeleteStation: (stationId: string, stationName: string, actor: string) => void;
-  onAddDevice: (device: AloptamaDevice, actor: string) => void;
-  onUpdateDevice: (device: AloptamaDevice, changesDetail: string, actor: string) => void;
-  onDeleteDevice: (deviceId: string, deviceName: string, actor: string) => void;
+  onAddDevice: (device: AloptamaDevice, actor: string) => void | Promise<void>;
+  onUpdateDevice: (device: AloptamaDevice, changesDetail: string, actor: string) => void | Promise<void>;
+  onDeleteDevice: (deviceId: string, deviceName: string, actor: string) => void | Promise<void>;
   onClearLogs?: () => void;
 }
 
@@ -369,8 +369,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
         if (matched) {
           return {
-            sla: Math.round(matched.sla),
-            ola: Math.round(matched.ola),
+            sla: Math.round(matched.sla ?? 100),
+            ola: Math.round(matched.ola ?? 100),
           };
         }
       }
@@ -612,8 +612,12 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   // Open Modal for editing device
   const handleOpenEditDevice = (dev: AloptamaDevice) => {
     setEditingDevice(dev);
+    const existingPic = dev.picKalibrasi 
+      || (dev.calibrationAgency?.toLowerCase().includes('pusat') ? 'Pusat' : 'Balai');
+
     setDeviceForm({
       ...dev,
+      picKalibrasi: existingPic,
       slaScore: Math.round(dev.slaScore ?? 100),
       olaScore: Math.round(dev.olaScore ?? 100),
     });
@@ -621,8 +625,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   };
 
   // Submit Device Form
-  const handleSaveDevice = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveDevice = () => {
     if (!deviceForm.id || !deviceForm.name) {
       alert('ID Alat dan Nama Alat wajib diisi.');
       return;
@@ -641,6 +644,9 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       autoStatus = 'NORMAL';
     }
 
+  const pic = deviceForm.picKalibrasi || 'Balai';
+  const defaultAgency = pic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V';
+
     if (editingDevice) {
       const updated: AloptamaDevice = {
         ...editingDevice,
@@ -649,6 +655,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         category: (deviceForm.category as EquipmentCategory) || 'AWS',
         subCategory: deviceForm.subCategory || '',
         uptStation: deviceForm.uptStation || stations[0]?.name || '',
+        picKalibrasi: deviceForm.picKalibrasi || 'Balai',
         locationName: deviceForm.locationName || '',
         latitude: Number(deviceForm.latitude) || 0,
         longitude: Number(deviceForm.longitude) || 0,
@@ -656,7 +663,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         calibrationStatus: (deviceForm.calibrationStatus as CalibrationStatus) || 'VALID',
         lastCalibrated: deviceForm.lastCalibrated || '2026-07-08',
         calibrationValidUntil: deviceForm.calibrationValidUntil || '2027-07-07',
-        calibrationAgency: deviceForm.calibrationAgency || 'Balai Besar MKG Wilayah V',
+        calibrationAgency: deviceForm.calibrationAgency || (deviceForm.picKalibrasi === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'),
         slaScore: sla,
         olaScore: ola,
       };
@@ -681,6 +688,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         category: (deviceForm.category as EquipmentCategory) || 'AWS',
         subCategory: deviceForm.subCategory || '',
         uptStation: deviceForm.uptStation || stations[0]?.name || '',
+        picKalibrasi: pic,
         locationName: deviceForm.locationName || '',
         latitude: Number(deviceForm.latitude) || 0,
         longitude: Number(deviceForm.longitude) || 0,
@@ -688,7 +696,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         calibrationStatus: (deviceForm.calibrationStatus as CalibrationStatus) || 'VALID',
         lastCalibrated: deviceForm.lastCalibrated || '2026-07-08',
         calibrationValidUntil: deviceForm.calibrationValidUntil || '2027-07-07',
-        calibrationAgency: deviceForm.calibrationAgency || 'Balai Besar MKG Wilayah V',
+        calibrationAgency: deviceForm.calibrationAgency || defaultAgency,
         slaScore: sla,
         olaScore: ola,
       };
@@ -1081,7 +1089,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     <th className="p-3.5">Nama Peralatan</th>
                     <th className="p-3.5">Kategori</th>
                     <th className="p-3.5">Stasiun UPT Pengelola</th>
-                    <th className="p-3.5 text-center">Status Operasional</th>
+                    <th className="p-3.5 text-center">PIC Kalibrasi</th>
                     <th className="p-3.5 text-center">Status Kalibrasi</th>
                     <th className="p-3.5">Masa Berlaku</th>
                     <th className="p-3.5 pr-4 text-center">Aksi Master</th>
@@ -1113,19 +1121,13 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                           {dev.uptStation}
                         </td>
                         <td className="p-3.5 text-center whitespace-nowrap">
-                          {dev.conditionStatus === 'NORMAL' && (
+                          {(dev.picKalibrasi === 'Pusat' || dev.picKalibrasi === 'PUSAT') ? (
                             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] rounded-full border border-emerald-200">
-                              NORMAL
+                              PUSAT
                             </span>
-                          )}
-                          {dev.conditionStatus === 'GANGGUAN' && (
-                            <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-extrabold text-[10px] rounded-full border border-amber-200">
-                              GANGGUAN
-                            </span>
-                          )}
-                          {dev.conditionStatus === 'MATI' && (
-                            <span className="px-2 py-0.5 bg-rose-50 text-rose-700 font-extrabold text-[10px] rounded-full border border-rose-200">
-                              MATI
+                          ) : (
+                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] rounded-full border border-emerald-200">
+                              BALAI
                             </span>
                           )}
                         </td>
@@ -1194,7 +1196,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   Database Master SLA &amp; OLA Bulanan Peralatan
                 </h3>
                 <p className="text-slate-500 text-xs mt-0.5">
-                  Input, ubah, dan overwrite persentase SLA (% ON/Ketersediaan) serta OLA (% Performa) secara khusus per bulan dan tahun acuan.
+                  Input, ubah, dan overwrite persentase SLA (Ketersediaan) serta OLA (Performa) secara khusus per bulan dan tahun acuan.
                 </p>
               </div>
 
@@ -1308,7 +1310,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                 </div>
 
                 <div className="bg-white p-4 rounded-xl border border-blue-200 bg-blue-50/30">
-                  <span className="text-[11px] font-bold text-blue-700 uppercase block">Rata-Rata SLA (% ON)</span>
+                  <span className="text-[11px] font-bold text-blue-700 uppercase block">Rata-Rata SLA</span>
                   <span className="text-2xl font-black text-[#0052CC] mt-1 block">
                     {avgSla}%
                   </span>
@@ -1316,7 +1318,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                 </div>
 
                 <div className="bg-white p-4 rounded-xl border border-indigo-200 bg-indigo-50/30">
-                  <span className="text-[11px] font-bold text-indigo-700 uppercase block">Rata-Rata OLA (% Performa)</span>
+                  <span className="text-[11px] font-bold text-indigo-700 uppercase block">Rata-Rata OLA (Performa)</span>
                   <span className="text-2xl font-black text-indigo-800 mt-1 block">
                     {avgOla}%
                   </span>
@@ -1347,14 +1349,14 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    <th className="p-3.5 pl-4">ID &amp; Nama Peralatan</th>
+                    <th className="p-3.5 pl-4">Nama Peralatan &amp; ID</th>
                     <th className="p-3.5">Kategori</th>
                     <th className="p-3.5">Stasiun UPT Pengelola</th>
                     <th className="p-3.5 text-center">Bulan &amp; Tahun</th>
-                    <th className="p-3.5 text-center">SLA (% ON)</th>
-                    <th className="p-3.5 text-center">OLA (% Performa)</th>
-                    <th className="p-3.5 text-center">Status Hasil</th>
-                    <th className="p-3.5 pr-4 text-center">Aksi Direct Overwrite</th>
+                    <th className="p-3.5 text-center">SLA</th>
+                    <th className="p-3.5 text-center">OLA</th>
+                    <th className="p-3.5 text-center">Status</th>
+                    <th className="p-3.5 pr-4 text-center">Overwrite</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -1611,7 +1613,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-600 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
-                    <th className="p-3.5 pl-4">Pengguna &amp; Avatar</th>
+                    <th className="p-3.5 pl-4">Pengguna</th>
                     <th className="p-3.5">Username (ID Login)</th>
                     <th className="p-3.5 text-center">Peran Access Level</th>
                     <th className="p-3.5">Jabatan &amp; NIP</th>
@@ -2052,15 +2054,21 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-800 mb-1">Status Operasional Kondisi</label>
+                  <label className="block font-bold text-slate-800 mb-1">PIC Kalibrasi</label>
                   <select
-                    value={deviceForm.conditionStatus || 'NORMAL'}
-                    onChange={(e) => setDeviceForm({ ...deviceForm, conditionStatus: e.target.value as EquipmentStatus })}
+                    value={deviceForm.picKalibrasi || 'Balai'}
+                    onChange={(e) => {
+                      const selectedPic = e.target.value;
+                      setDeviceForm({
+                        ...deviceForm,
+                        picKalibrasi: selectedPic,
+                        calibrationAgency: selectedPic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'
+                      });
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-bold"
                   >
-                    <option value="NORMAL">NORMAL (Berfungsi Baik)</option>
-                    <option value="GANGGUAN">GANGGUAN (Rusak Sebagian)</option>
-                    <option value="MATI">MATI (Rusak Total)</option>
+                    <option value="Balai">Balai (BBMKG Wilayah V)</option>
+                    <option value="Pusat">Pusat (BMKG Pusat)</option>
                   </select>
                 </div>
 

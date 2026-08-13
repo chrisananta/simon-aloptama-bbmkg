@@ -187,8 +187,11 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
             let totalOlaLokasi = 0;
             let totalLokasi = 0;
             foundItems.forEach((fi) => {
-              totalOlaLokasi += fi.ola * fi.jumlahLokasi;
-              totalLokasi += fi.jumlahLokasi;
+              const ola = fi.ola ?? 100;
+              const jumlahLokasi = fi.jumlahLokasi ?? 0;
+
+              totalOlaLokasi += ola * jumlahLokasi;
+              totalLokasi += jumlahLokasi;
             });
             score = totalLokasi > 0 ? Math.round(totalOlaLokasi / totalLokasi) : 0;
             count = totalLokasi;
@@ -259,6 +262,16 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
   ).length;
   const terlambatCount = uptFilteredDevices.filter((d) => d.calibrationStatus === 'KADALUWARSA').length;
   const kondisiKalibrasiPercent = Math.round((tidakTerlambatCount / totalDevs) * 100);
+
+  const balaiDevices = uptFilteredDevices.filter(
+    (d) => (d.picKalibrasi || 'Balai').toLowerCase() === 'balai'
+  );
+  const balaiTotalDevs = balaiDevices.length || 1;
+  const balaiTidakTerlambatCount = balaiDevices.filter(
+    (d) => d.calibrationStatus === 'VALID' || d.calibrationStatus === 'SEGERA_DIKALIBRASI'
+  ).length;
+  const balaiTerlambatCount = balaiDevices.filter((d) => d.calibrationStatus === 'KADALUWARSA').length;
+  const balaiKondisiKalibrasiPercent = Math.round((balaiTidakTerlambatCount / balaiTotalDevs) * 100);
 
   const rekapTableData = useMemo(() => {
     const CATEGORIES = [
@@ -415,13 +428,13 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
       );
 
       if (foundPrevOfficial && selectedUpt === 'ALL') {
-        prevSla = foundPrevOfficial.sla;
+        prevSla = foundPrevOfficial.sla ?? 100;
       }
 
       if (foundOfficial && selectedUpt === 'ALL') {
-        jumlahLokasi = foundOfficial.jumlahLokasi;
-        sla = foundOfficial.sla;
-        ola = foundOfficial.ola;
+        jumlahLokasi = foundOfficial.jumlahLokasi ?? 0;
+        sla = foundOfficial.sla ?? 100;
+        ola = foundOfficial.ola ?? 100;
       } else {
         const catDevs = uptFilteredDevices.filter(catObj.matchFn);
         jumlahLokasi = catDevs.length;
@@ -535,9 +548,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
   };
 
   const filteredDevices = devices.filter((dev) => {
-    if (!isWithin31Days(dev.lastCalibrated)) {
-      return false;
-    }
+
     if (isReportedToday(dev)) {
       return false;
     }
@@ -828,15 +839,15 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
             <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-emerald-600">
-              {tidakTerlambatCount} / {uptFilteredDevices.length}
+              {balaiTidakTerlambatCount} / {balaiDevices.length}
             </span>
             <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              {kondisiKalibrasiPercent}%
+              {balaiKondisiKalibrasiPercent}%
             </span>
           </div>
           <p className="text-[11px] text-slate-600 mt-1.5 sm:mt-2 font-medium">
-            <span className="text-emerald-700 font-bold">🟢 {tidakTerlambatCount} Tidak Terlambat</span> vs{' '}
-            <span className="text-rose-600 font-bold">🔴 {terlambatCount} Terlambat</span>
+            <span className="text-emerald-700 font-bold">🟢 {balaiTidakTerlambatCount} Tidak Terlambat</span> vs{' '}
+            <span className="text-rose-600 font-bold">🔴 {balaiTerlambatCount} Terlambat</span>
           </p>
         </div>
       </div>

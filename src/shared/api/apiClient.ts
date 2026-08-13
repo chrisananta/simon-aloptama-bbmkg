@@ -317,7 +317,30 @@ export const apiClient = {
       };
     },
 
-    add: (device: AloptamaDevice, actor = "Admin INSKAL"): AloptamaDevice => {
+    add: async (device: AloptamaDevice, actor = "Admin INSKAL"): Promise<AloptamaDevice> => {
+      // PENTING: tunggu konfirmasi server DULU sebelum update tampilan.
+      const response = await authFetch("/api/devices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...device, actor }),
+      });
+
+      if (!response.ok) {
+        let message = "Gagal menyimpan alat ke server.";
+        if (response.status === 401) {
+          message = "Sesi login sudah tidak valid di perangkat/alamat ini. Silakan logout lalu login kembali, baru coba tambah alat lagi.";
+        } else {
+          try {
+            const errData = await response.json();
+            if (errData?.message) message = errData.message;
+          } catch {
+            // respons bukan JSON, biarkan pesan default
+          }
+        }
+        throw new Error(message);
+      }
+
+      // Server konfirmasi berhasil - baru update cache lokal & audit log
       memoryCache.devices = [...memoryCache.devices, device];
 
       apiClient.auditLogs.add({
@@ -329,30 +352,37 @@ export const apiClient = {
         details: `Penambahan unit aloptama baru di Stasiun ${device.uptStation} (${device.locationName}).`,
       });
 
-      // Direct write to PostgreSQL backend
-      authFetch("/api/devices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...device, actor }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            const data = await res.json();
-            if (data.data) {
-              await apiClient.devices.fetch();
-            }
-          }
-        })
-        .catch((e) => console.warn("PostgreSQL create device API sync:", e));
+      await apiClient.devices.fetch();
 
       return device;
     },
 
-    update: (
+    update: async (
       device: AloptamaDevice,
       details: string,
       actor = "Admin INSKAL"
-    ): AloptamaDevice => {
+    ): Promise<AloptamaDevice> => {
+      const response = await authFetch(`/api/devices/${device.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...device, details, actor }),
+      });
+
+      if (!response.ok) {
+        let message = "Gagal memperbarui alat di server.";
+        if (response.status === 401) {
+          message = "Sesi login sudah tidak valid di perangkat/alamat ini. Silakan logout lalu login kembali, baru coba lagi.";
+        } else {
+          try {
+            const errData = await response.json();
+            if (errData?.message) message = errData.message;
+          } catch {
+            // ignore
+          }
+        }
+        throw new Error(message);
+      }
+
       memoryCache.devices = memoryCache.devices.map((d) => (d.id === device.id ? device : d));
 
       apiClient.auditLogs.add({
@@ -364,27 +394,39 @@ export const apiClient = {
         details,
       });
 
-      // Direct write to PostgreSQL backend
-      authFetch(`/api/devices/${device.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...device, details, actor }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            await apiClient.devices.fetch();
-          }
-        })
-        .catch((e) => console.warn("PostgreSQL update device API sync:", e));
+      await apiClient.devices.fetch();
 
       return device;
     },
 
-    delete: (
+    delete: async (
       deviceId: string,
       deviceName: string,
       actor = "Admin INSKAL"
-    ): boolean => {
+    ): Promise<boolean> => {
+      const response = await authFetch(`/api/devices/${deviceId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actor }),
+      });
+
+      if (!response.ok) {
+        let message = "Gagal menghapus alat di server.";
+        if (response.status === 401) {
+          message = "Sesi login sudah tidak valid di perangkat/alamat ini. Silakan logout lalu login kembali, baru coba lagi.";
+        } else if (response.status === 403) {
+          message = "Aksi ini hanya diizinkan untuk Admin INSKAL.";
+        } else {
+          try {
+            const errData = await response.json();
+            if (errData?.message) message = errData.message;
+          } catch {
+            // ignore
+          }
+        }
+        throw new Error(message);
+      }
+
       memoryCache.devices = memoryCache.devices.filter((d) => d.id !== deviceId);
 
       apiClient.auditLogs.add({
@@ -396,18 +438,7 @@ export const apiClient = {
         details: "Penghapusan data master aloptama dari database.",
       });
 
-      // Direct delete on PostgreSQL backend
-      authFetch(`/api/devices/${deviceId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ actor }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            await apiClient.devices.fetch();
-          }
-        })
-        .catch((e) => console.warn("PostgreSQL delete device API sync:", e));
+      await apiClient.devices.fetch();
 
       return true;
     },

@@ -21,6 +21,7 @@ export interface AloptamaDevice {
   locationName: string;
   latitude: number;
   longitude: number;
+  picKalibrasi?: string; 
   conditionStatus: EquipmentStatus;
   calibrationStatus: CalibrationStatus;
   lastCalibrated: string;

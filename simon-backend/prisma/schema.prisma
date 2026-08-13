@@ -48,6 +48,7 @@ model Device {
   locationName          String
   latitude              Float
   longitude             Float
+  picKalibrasi          String?             @default("Balai")
   conditionStatus       EquipmentStatus     @default(NORMAL)
   calibrationStatus     CalibrationStatus   @default(VALID)
   lastCalibrated        String
@@ -164,6 +165,7 @@ enum LogTable {
   master_alat
   master_sla_ola
   master_akun
+  master_petugas
   kalibrasi
   sistem
   pengaturan

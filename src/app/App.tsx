@@ -129,22 +129,34 @@ function AppContent() {
   };
 
   // Handlers for Master Alat CRUD via Centralized API
-  const handleAddDevice = (device: AloptamaDevice, actor: string) => {
-    apiClient.devices.add(device, actor || currentActor);
-    setDevicesData(apiClient.devices.getAll());
-    refreshAuditLogs();
+  const handleAddDevice = async (device: AloptamaDevice, actor: string) => {
+    try {
+      await apiClient.devices.add(device, actor || currentActor);
+      setDevicesData(apiClient.devices.getAll());
+      refreshAuditLogs();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan alat ke server.');
+    }
   };
 
-  const handleUpdateDevice = (device: AloptamaDevice, details: string, actor: string) => {
-    apiClient.devices.update(device, details, actor || currentActor);
-    setDevicesData(apiClient.devices.getAll());
-    refreshAuditLogs();
+  const handleUpdateDevice = async (device: AloptamaDevice, details: string, actor: string) => {
+    try {
+      await apiClient.devices.update(device, details, actor || currentActor);
+      setDevicesData(apiClient.devices.getAll());
+      refreshAuditLogs();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal memperbarui alat di server.');
+    }
   };
 
-  const handleDeleteDevice = (deviceId: string, deviceName: string, actor: string) => {
-    apiClient.devices.delete(deviceId, deviceName, actor || currentActor);
-    setDevicesData(apiClient.devices.getAll());
-    refreshAuditLogs();
+  const handleDeleteDevice = async (deviceId: string, deviceName: string, actor: string) => {
+    try {
+      await apiClient.devices.delete(deviceId, deviceName, actor || currentActor);
+      setDevicesData(apiClient.devices.getAll());
+      refreshAuditLogs();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus alat di server.');
+    }
   };
 
   const handleClearLogs = () => {
