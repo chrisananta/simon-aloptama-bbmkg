@@ -85,6 +85,7 @@ export const createJWT = (user: AuthUser, expiresInMs = 8 * 60 * 60 * 1000): { t
 
   const encodedHeader = base64UrlEncode(JSON.stringify(header));
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  
   // Simulated HMAC SHA256 Signature hash for JWT
   const signature = base64UrlEncode(`SIMON_SECRET_KEY_BBMKG_V_${encodedHeader}.${encodedPayload}`);
 

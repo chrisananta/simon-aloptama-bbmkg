@@ -835,7 +835,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
           <span className="text-[10px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wide">
-            KONDISI KALIBRASI
+            KONDISI KALIBRASI (BALAI)
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
             <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-emerald-600">
@@ -846,7 +846,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
             </span>
           </div>
           <p className="text-[11px] text-slate-600 mt-1.5 sm:mt-2 font-medium">
-            <span className="text-emerald-700 font-bold">🟢 {balaiTidakTerlambatCount} Tidak Terlambat</span> vs{' '}
+            <span className="text-emerald-700 font-bold">🟢 {balaiTidakTerlambatCount} Tidak Terlambat</span> | {' '}
             <span className="text-rose-600 font-bold">🔴 {balaiTerlambatCount} Terlambat</span>
           </p>
         </div>
