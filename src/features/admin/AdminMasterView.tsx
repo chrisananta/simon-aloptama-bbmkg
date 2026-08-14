@@ -114,43 +114,51 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     setIsPetugasModalOpen(true);
   };
 
-  const handleSavePetugas = (e: React.FormEvent) => {
+  const handleSavePetugas = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!petugasForm.name || !petugasForm.name.trim()) {
       alert('Nama Personil Petugas Wajib Diisi.');
       return;
     }
 
-    if (editingPetugas) {
-      petugasService.update(
-        editingPetugas.id,
-        {
-          name: petugasForm.name.trim(),
-          nip: petugasForm.nip?.trim() || '',
-          jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
-        },
-        adminActor
-      );
-    } else {
-      petugasService.add(
-        {
-          name: petugasForm.name.trim(),
-          nip: petugasForm.nip?.trim() || '',
-          jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
-        },
-        adminActor
-      );
-    }
+    try {
+      if (editingPetugas) {
+        await petugasService.update(
+          editingPetugas.id,
+          {
+            name: petugasForm.name.trim(),
+            nip: petugasForm.nip?.trim() || '',
+            jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
+          },
+          adminActor
+        );
+      } else {
+        await petugasService.add(
+          {
+            name: petugasForm.name.trim(),
+            nip: petugasForm.nip?.trim() || '',
+            jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
+          },
+          adminActor
+        );
+      }
 
-    refreshPetugas();
-    setIsPetugasModalOpen(false);
+      refreshPetugas();
+      setIsPetugasModalOpen(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan data petugas ke server.');
+    }
   };
 
-  const handleConfirmDeletePetugas = () => {
+  const handleConfirmDeletePetugas = async () => {
     if (!deleteConfirmPetugas) return;
-    petugasService.delete(deleteConfirmPetugas.id, adminActor);
-    refreshPetugas();
-    setDeleteConfirmPetugas(null);
+    try {
+      await petugasService.delete(deleteConfirmPetugas.id, adminActor);
+      refreshPetugas();
+      setDeleteConfirmPetugas(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus data petugas di server.');
+    }
   };
 
   const filteredPetugas = petugasList.filter(p => {

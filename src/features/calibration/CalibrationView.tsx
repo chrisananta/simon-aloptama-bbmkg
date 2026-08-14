@@ -30,6 +30,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
   const [selectedUpt, setSelectedUpt] = useState<string>('ALL');
+  const [selectedAgency, setSelectedAgency] = useState<string>('ALL');
   const [activeTab, setActiveTab] = useState<'latest' | 'repository'>('latest');
 
   const allRecords = [
@@ -43,6 +44,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       calibrationValidUntil: dev.calibrationValidUntil,
       calibrationStatus: dev.calibrationStatus,
       calibrationAgency: dev.calibrationAgency,
+      picKalibrasi: dev.picKalibrasi || ((dev.calibrationAgency || '').toLowerCase().includes('pusat') ? 'Pusat' : 'Balai'),
       notes: dev.calibrationStatus === 'VALID' ? 'Kalibrasi Berkala Operasional' : 'Perlu Re-Kalibrasi INSKAL',
       yearCreated: dev.lastCalibrated ? dev.lastCalibrated.split('-')[0] : '2026',
       createdAt: dev.lastCalibrated,
@@ -50,6 +52,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     })),
     ...calibrationLogs.map((log) => ({
       ...log,
+      picKalibrasi: (log.calibrationAgency || '').toLowerCase().includes('pusat') ? 'Pusat' : 'Balai',
       isRepository: true,
     })),
   ];
@@ -74,7 +77,9 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
 
     const matchesUpt = selectedUpt === 'ALL' || rec.uptStation === selectedUpt;
 
-    return matchesSearch && matchesStatus && matchesYear && matchesUpt;
+    const matchesAgency = selectedAgency === 'ALL' || rec.picKalibrasi === selectedAgency;
+
+    return matchesSearch && matchesStatus && matchesYear && matchesUpt && matchesAgency;
   });
 
   const formatDateIndo = (dateStr: string) => {
@@ -204,6 +209,18 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                   {st}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <select
+              value={selectedAgency}
+              onChange={(e) => setSelectedAgency(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+            >
+              <option value="ALL">Semua Instansi Kalibrasi</option>
+              <option value="Balai">🏢 Balai (BBMKG Wilayah V)</option>
+              <option value="Pusat">🏛️ Pusat (BMKG Pusat)</option>
             </select>
           </div>
         </div>

@@ -44,11 +44,35 @@ export const petugasService = {
     window.dispatchEvent(new Event('petugas_list_updated'));
   },
 
-  add: (item: Omit<PetugasItem, 'id'>, actor = 'Admin INSKAL'): PetugasItem => {
-    const newItem: PetugasItem = {
-      ...item,
-      id: `PET-${Date.now()}`,
-    };
+  add: async (item: Omit<PetugasItem, 'id'>, actor = 'Admin INSKAL'): Promise<PetugasItem> => {
+    // PENTING: tunggu konfirmasi server DULU sebelum update tampilan - kalau
+    // langsung update tampilan tanpa nunggu, data bisa kelihatan "berhasil
+    // ditambah" padahal sebenarnya gagal tersimpan di server (mis. token
+    // sudah tidak valid), dan baru ketahuan hilang setelah refresh/reopen.
+    const response = await authFetch('/api/petugas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    });
+
+    if (!response.ok) {
+      let message = 'Gagal menyimpan petugas ke server.';
+      if (response.status === 401) {
+        message = 'Sesi login sudah tidak valid. Silakan logout lalu login kembali, baru coba lagi.';
+      } else {
+        try {
+          const errData = await response.json();
+          if (errData?.message) message = errData.message;
+        } catch {
+          // ignore
+        }
+      }
+      throw new Error(message);
+    }
+
+    const resData = await response.json();
+    const newItem: PetugasItem = resData?.data || { ...item, id: `PET-${Date.now()}` };
+
     memoryPetugasStore = [...memoryPetugasStore, newItem];
     window.dispatchEvent(new Event('petugas_list_updated'));
 
@@ -61,29 +85,38 @@ export const petugasService = {
       details: `Penambahan Personil Petugas Monitoring Baru: "${newItem.name}" (${newItem.jabatan || 'Staf Operasional'})`,
     });
 
-    // Write to backend API
-    authFetch('/api/petugas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item),
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          await petugasService.fetch();
-        }
-      })
-      .catch((e) => console.warn('Backend petugas add sync error:', e));
+    await petugasService.fetch();
 
     return newItem;
   },
 
-  update: (id: string, updatedFields: Partial<PetugasItem>, actor = 'Admin INSKAL'): boolean => {
-    const index = memoryPetugasStore.findIndex((p) => p.id === id);
-    if (index === -1) return false;
+  update: async (id: string, updatedFields: Partial<PetugasItem>, actor = 'Admin INSKAL'): Promise<boolean> => {
+    const old = memoryPetugasStore.find((p) => p.id === id);
+    if (!old) return false;
 
-    const old = memoryPetugasStore[index];
+    const response = await authFetch(`/api/petugas/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedFields),
+    });
+
+    if (!response.ok) {
+      let message = 'Gagal memperbarui petugas di server.';
+      if (response.status === 401) {
+        message = 'Sesi login sudah tidak valid. Silakan logout lalu login kembali, baru coba lagi.';
+      } else {
+        try {
+          const errData = await response.json();
+          if (errData?.message) message = errData.message;
+        } catch {
+          // ignore
+        }
+      }
+      throw new Error(message);
+    }
+
     const updated: PetugasItem = { ...old, ...updatedFields };
-    memoryPetugasStore[index] = updated;
+    memoryPetugasStore = memoryPetugasStore.map((p) => (p.id === id ? updated : p));
     window.dispatchEvent(new Event('petugas_list_updated'));
 
     apiClient.auditLogs.add({
@@ -95,25 +128,35 @@ export const petugasService = {
       details: `Pembaruan data Personil Petugas Monitoring: "${old.name}" -> "${updated.name}"`,
     });
 
-    // Write to backend API
-    authFetch(`/api/petugas/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedFields),
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          await petugasService.fetch();
-        }
-      })
-      .catch((e) => console.warn('Backend petugas update sync error:', e));
+    await petugasService.fetch();
 
     return true;
   },
 
-  delete: (id: string, actor = 'Admin INSKAL'): boolean => {
+  delete: async (id: string, actor = 'Admin INSKAL'): Promise<boolean> => {
     const target = memoryPetugasStore.find((p) => p.id === id);
     if (!target) return false;
+
+    const response = await authFetch(`/api/petugas/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      let message = 'Gagal menghapus petugas di server.';
+      if (response.status === 401) {
+        message = 'Sesi login sudah tidak valid. Silakan logout lalu login kembali, baru coba lagi.';
+      } else if (response.status === 403) {
+        message = 'Aksi ini hanya diizinkan untuk Admin INSKAL.';
+      } else {
+        try {
+          const errData = await response.json();
+          if (errData?.message) message = errData.message;
+        } catch {
+          // ignore
+        }
+      }
+      throw new Error(message);
+    }
 
     memoryPetugasStore = memoryPetugasStore.filter((p) => p.id !== id);
     window.dispatchEvent(new Event('petugas_list_updated'));
@@ -127,16 +170,7 @@ export const petugasService = {
       details: `Penghapusan Personil Petugas Monitoring: "${target.name}"`,
     });
 
-    // Write to backend API
-    authFetch(`/api/petugas/${id}`, {
-      method: 'DELETE',
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          await petugasService.fetch();
-        }
-      })
-      .catch((e) => console.warn('Backend petugas delete sync error:', e));
+    await petugasService.fetch();
 
     return true;
   },
