@@ -8,16 +8,10 @@ export interface PetugasItem {
   jabatan?: string;
 }
 
-export const INITIAL_PETUGAS_LIST: PetugasItem[] = [
-  { id: '1', name: 'Asrul Sani Arifin, S.Tr', nip: '19950312 201801 1 001', jabatan: 'Staf Inskal & Kalibrasi' },
-  { id: '2', name: 'M. Rizky R, S.Tr', nip: '19960724 201902 1 002', jabatan: 'Staf Operasional Aloptama' },
-  { id: '3', name: 'Fajar Nur, M.T.', nip: '19850412 201012 1 001', jabatan: 'Admin INSKAL BMKG V' },
-];
-
-let memoryPetugasStore: PetugasItem[] = [...INITIAL_PETUGAS_LIST];
+let memoryPetugasStore: PetugasItem[] = [];
 
 export const petugasService = {
-  // Sync/Fetch from Backend Database API
+  // Sync/Fetch dari Backend Database API (PostgreSQL)
   fetch: async (): Promise<PetugasItem[]> => {
     try {
       const res = await authFetch('/api/petugas');

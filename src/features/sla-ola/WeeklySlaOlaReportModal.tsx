@@ -117,17 +117,75 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     return Math.max(1, days);
   }, [startDateIso, endDateIso]);
 
-  // 2. Petugas Monitoring List & Count
-  const [petugasList, setPetugasList] = useState<PetugasItem[]>(() => petugasService.getAll());
+  // --- 2. LOGIKA PETUGAS MONITORING ---
 
-  useEffect(() => {
-    const handlePetugasUpdate = () => {
-      setPetugasList(petugasService.getAll());
+    // 1. State Master Petugas & List Laporan (di-load dinamis dari PostgreSQL)
+    const [masterPetugas, setMasterPetugas] = useState<PetugasItem[]>(() => petugasService.getAll());
+    const [petugasList, setPetugasList] = useState<PetugasItem[]>([]);
+    const [inputPersonel, setInputPersonel] = useState<string>('');
+
+    // 2. Sync Async Data dari Database PostgreSQL
+    useEffect(() => {
+      petugasService.fetch().then((data) => {
+        if (data && data.length > 0) {
+          setMasterPetugas(data);
+          // Ambil 3 data pertama dari database jika petugasList masih kosong
+          setPetugasList((prev) => (prev.length === 0 ? data.slice(0, 3) : prev));
+        }
+      });
+
+      const handlePetugasUpdate = () => {
+        setMasterPetugas(petugasService.getAll());
+      };
+
+      window.addEventListener('petugas_list_updated', handlePetugasUpdate);
+      return () => window.removeEventListener('petugas_list_updated', handlePetugasUpdate);
+    }, []);
+
+    // 3. Filter Master Petugas yang BELUM ada di laporan (Aman dari null & di-memoize)
+    const unselectedMasterPetugas = useMemo(() => {
+      return masterPetugas.filter(
+        (master) =>
+          master?.name &&
+          !petugasList.some(
+            (p) => p.id === master.id || (p?.name || '').toLowerCase() === (master?.name || '').toLowerCase()
+          )
+      );
+    }, [masterPetugas, petugasList]);
+
+    // 4. Fungsi Tambah Personel dari Saran Master / Input Manual
+    const handleAddPersonelFromMaster = () => {
+      const trimmed = inputPersonel.trim();
+      if (!trimmed) return;
+
+      // Cari apakah nama cocok dengan salah satu di Master Petugas (Aman dari null)
+      const matchedMaster = masterPetugas.find(
+        (p) =>
+          (p?.name || '').toLowerCase() === trimmed.toLowerCase() ||
+          p.id === trimmed
+      );
+
+      if (matchedMaster) {
+        if (!petugasList.some((p) => p.id === matchedMaster.id)) {
+          setPetugasList((prev) => [...prev, matchedMaster]);
+        }
+      } else {
+        // Jika mengetik nama baru yang belum ada di Master
+        const newCustomPetugas: PetugasItem = {
+          id: `CUSTOM-${Date.now()}`,
+          name: trimmed,
+          jabatan: 'Staf Operasional',
+        };
+        setPetugasList((prev) => [...prev, newCustomPetugas]);
+      }
+
+      setInputPersonel(''); // Reset input setelah berhasil
     };
-    window.addEventListener('petugas_list_updated', handlePetugasUpdate);
-    return () => window.removeEventListener('petugas_list_updated', handlePetugasUpdate);
-  }, []);
 
+    // 5. Fungsi Hapus Personel dari Laporan
+    const handleRemovePersonel = (id: string) => {
+      setPetugasList((prev) => prev.filter((p) => p.id !== id));
+    };
   // 3. Pejabat Mengetahui / Penanggung Jawab
   const [jabatanMengetahui, setJabatanMengetahui] = useState<string>(
     'Ketua Tim Kerja Instrumentasi dan Kalibrasi'
@@ -569,6 +627,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
       `}</style>
 
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl my-4 overflow-hidden flex flex-col max-h-[95vh] animate-scaleUp">
+
         {/* MODAL HEADER (NO PRINT) */}
         <div className="no-print bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
@@ -739,61 +798,91 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
 
               {/* PETUGAS MONITORING SECTION */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                {/* 1. HEADER (Judul & Jumlah Personil) */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                     <Users size={18} className="text-[#0052CC]" />
-                    Personil Petugas Monitoring
+                    Petugas Monitoring
                   </h3>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-600">Jumlah Personil:</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={petugasList.length}
-                      onChange={(e) => handlePersonelCountChange(parseInt(e.target.value) || 1)}
-                      className="w-16 px-2 py-1 bg-blue-50 border border-blue-200 rounded-lg text-center font-bold text-xs text-[#0052CC]"
-                    />
+                    <span className="text-xs font-bold text-slate-600">Jumlah Personel:</span>
+                    <span className="px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg font-extrabold text-xs text-[#0052CC]">
+                      {petugasList.length}
+                    </span>
                   </div>
                 </div>
 
-                <div className="space-y-2.5">
-                  {petugasList.map((petugas, index) => (
-                    <div key={petugas.id} className="flex items-center gap-2 animate-fadeIn">
-                      <span className="w-6 text-center text-xs font-extrabold text-slate-400">
-                        {index + 1}.
-                      </span>
-                      <input
-                        type="text"
-                        value={petugas.name}
-                        onChange={(e) => handleUpdatePetugasName(petugas.id, e.target.value)}
-                        placeholder={`Nama Lengkap & Gelar Personel #${index + 1}`}
-                        className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
-                      />
-                      {petugasList.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePetugas(petugas.id)}
-                          className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"
-                          title="Hapus personil ini"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
+                {/* 2. ELEMEN DATALIST (Wadah Saran Nama dari Master Data PostgreSQL) */}
+                <datalist id="master-petugas-suggestions">
+                  {unselectedMasterPetugas.map((master) => (
+                    <option key={master.id} value={master.name}>
+                      {master.jabatan || 'Staf BMKG'}
+                    </option>
                   ))}
-                </div>
+                </datalist>
 
-                <button
-                  type="button"
-                  onClick={handleAddPetugas}
-                  className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Plus size={15} className="text-[#0052CC]" />
-                  <span>Tambah Personel Petugas Monitoring</span>
-                </button>
+                {/* 3. DAFTAR NAMA PETUGAS LAPORAN (Default 3 Nama Pertama) */}
+                {petugasList.length === 0 ? (
+                  <div className="py-3 text-center text-xs text-slate-400">
+                    Memuat data petugas dari database...
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {petugasList.map((petugas, index) => (
+                      <div key={petugas.id || index} className="flex items-center gap-2 animate-fadeIn">
+                        <span className="w-6 text-center text-xs font-extrabold text-slate-400">
+                          {index + 1}.
+                        </span>
+                        <span className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
+                          {petugas.name}
+                        </span>
+                        {petugasList.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePersonel(petugas.id)}
+                            className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                            title="Hapus personil ini"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 4. BAGIAN BAWAH: INPUT SARAN + TOMBOL TAMBAH PERSONEL */}
+                <div className="pt-3 border-t border-dashed border-slate-200 space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Tambah Personel
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                    {/* Input Teks yang Terhubung ke Datalist Saran */}
+                    <input
+                      type="text"
+                      list="master-petugas-suggestions"
+                      value={inputPersonel}
+                      onChange={(e) => setInputPersonel(e.target.value)}
+                      placeholder="Pilih Nama Personel"
+                      className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
+                    />
+
+                    {/* Tombol Tambah */}
+                    <button
+                      type="button"
+                      onClick={handleAddPersonelFromMaster}
+                      disabled={!inputPersonel.trim()}
+                      className="px-4 py-2 bg-[#0052CC] hover:bg-blue-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+                    >
+                      <Plus size={14} />
+                      <span>Tambah</span>
+                    </button>
+                  </div>
+                </div>
               </div>
+
 
               {/* PEJABAT MENGETAHUI & CATATAN */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">

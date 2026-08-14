@@ -81,95 +81,101 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('master_stasiun');
   const [adminActor, setAdminActor] = useState<string>('Admin INSKAL BBMKG V');
 
-  // --- MASTER PETUGAS MONITORING STATES ---
-  const [petugasList, setPetugasList] = useState<PetugasItem[]>(() => petugasService.getAll());
-  const [petugasSearch, setPetugasSearch] = useState<string>('');
-  const [isPetugasModalOpen, setIsPetugasModalOpen] = useState<boolean>(false);
-  const [editingPetugas, setEditingPetugas] = useState<PetugasItem | null>(null);
-  const [petugasForm, setPetugasForm] = useState<Partial<PetugasItem>>({});
-  const [deleteConfirmPetugas, setDeleteConfirmPetugas] = useState<PetugasItem | null>(null);
+ // --- MASTER PETUGAS MONITORING STATES ---
+const [petugasList, setPetugasList] = useState<PetugasItem[]>(() => petugasService.getAll());
+const [petugasSearch, setPetugasSearch] = useState<string>('');
+const [isPetugasModalOpen, setIsPetugasModalOpen] = useState<boolean>(false);
+const [editingPetugas, setEditingPetugas] = useState<PetugasItem | null>(null);
+const [petugasForm, setPetugasForm] = useState<Partial<PetugasItem>>({});
+const [deleteConfirmPetugas, setDeleteConfirmPetugas] = useState<PetugasItem | null>(null);
 
-  const refreshPetugas = () => {
-    setPetugasList(petugasService.getAll());
-  };
+const refreshPetugas = () => {
+  setPetugasList(petugasService.getAll());
+};
 
-  useEffect(() => {
-    window.addEventListener('petugas_list_updated', refreshPetugas);
-    return () => window.removeEventListener('petugas_list_updated', refreshPetugas);
-  }, []);
-
-  const handleOpenAddPetugas = () => {
-    setEditingPetugas(null);
-    setPetugasForm({
-      name: '',
-      nip: '',
-      jabatan: 'Staf Inskal & Kalibrasi',
-    });
-    setIsPetugasModalOpen(true);
-  };
-
-  const handleOpenEditPetugas = (p: PetugasItem) => {
-    setEditingPetugas(p);
-    setPetugasForm({ ...p });
-    setIsPetugasModalOpen(true);
-  };
-
-  const handleSavePetugas = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!petugasForm.name || !petugasForm.name.trim()) {
-      alert('Nama Personil Petugas Wajib Diisi.');
-      return;
-    }
-
-    try {
-      if (editingPetugas) {
-        await petugasService.update(
-          editingPetugas.id,
-          {
-            name: petugasForm.name.trim(),
-            nip: petugasForm.nip?.trim() || '',
-            jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
-          },
-          adminActor
-        );
-      } else {
-        await petugasService.add(
-          {
-            name: petugasForm.name.trim(),
-            nip: petugasForm.nip?.trim() || '',
-            jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
-          },
-          adminActor
-        );
-      }
-
-      refreshPetugas();
-      setIsPetugasModalOpen(false);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Gagal menyimpan data petugas ke server.');
-    }
-  };
-
-  const handleConfirmDeletePetugas = async () => {
-    if (!deleteConfirmPetugas) return;
-    try {
-      await petugasService.delete(deleteConfirmPetugas.id, adminActor);
-      refreshPetugas();
-      setDeleteConfirmPetugas(null);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Gagal menghapus data petugas di server.');
-    }
-  };
-
-  const filteredPetugas = petugasList.filter(p => {
-    const q = petugasSearch.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(q) ||
-      (p.nip || '').toLowerCase().includes(q) ||
-      (p.jabatan || '').toLowerCase().includes(q) ||
-      p.id.toLowerCase().includes(q)
-    );
+useEffect(() => {
+  // 1. Ambil data secara eksplisit saat komponen dipasang
+  petugasService.fetch().then(() => {
+    refreshPetugas();
   });
+
+  // 2. Pasang listener untuk update otomatis (misal setelah Tambah/Edit/Hapus)
+  window.addEventListener('petugas_list_updated', refreshPetugas);
+  return () => window.removeEventListener('petugas_list_updated', refreshPetugas);
+}, []);
+
+const handleOpenAddPetugas = () => {
+  setEditingPetugas(null);
+  setPetugasForm({
+    name: '',
+    nip: '',
+    jabatan: 'Staf Instrumentasi & Kalibrasi',
+  });
+  setIsPetugasModalOpen(true);
+};
+
+const handleOpenEditPetugas = (p: PetugasItem) => {
+  setEditingPetugas(p);
+  setPetugasForm({ ...p });
+  setIsPetugasModalOpen(true);
+};
+
+const handleSavePetugas = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!petugasForm.name || !petugasForm.name.trim()) {
+    alert('Nama Personil Petugas Wajib Diisi.');
+    return;
+  }
+
+  try {
+    if (editingPetugas) {
+      await petugasService.update(
+        editingPetugas.id,
+        {
+          name: petugasForm.name.trim(),
+          nip: petugasForm.nip?.trim() || '',
+          jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
+        },
+        adminActor
+      );
+    } else {
+      await petugasService.add(
+        {
+          name: petugasForm.name.trim(),
+          nip: petugasForm.nip?.trim() || '',
+          jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
+        },
+        adminActor
+      );
+    }
+
+    refreshPetugas();
+    setIsPetugasModalOpen(false);
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Gagal menyimpan data petugas ke server.');
+  }
+};
+
+const handleConfirmDeletePetugas = async () => {
+  if (!deleteConfirmPetugas) return;
+  try {
+    await petugasService.delete(deleteConfirmPetugas.id, adminActor);
+    refreshPetugas();
+    setDeleteConfirmPetugas(null);
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Gagal menghapus data petugas di server.');
+  }
+};
+
+const filteredPetugas = petugasList.filter(p => {
+  const q = petugasSearch.toLowerCase();
+  return (
+    p.name.toLowerCase().includes(q) ||
+    (p.nip || '').toLowerCase().includes(q) ||
+    (p.jabatan || '').toLowerCase().includes(q) ||
+    p.id.toLowerCase().includes(q)
+  );
+});
 
   // --- MASTER AKUN / USER MANAGEMENT STATES ---
   const [users, setUsers] = useState<AuthUser[]>(() => apiClient.users.getAll());
