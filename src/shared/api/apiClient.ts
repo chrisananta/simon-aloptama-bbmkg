@@ -15,45 +15,8 @@ import {
   ServerFetchResult,
 } from "./serverDataService";
 
-// Export initial fallback types for backwards compatibility
-export const INITIAL_USERS: AuthUser[] = [
-  {
-    id: "USR-ADMIN-001",
-    username: "admin.inskal",
-    name: "Ir. Fajar Nur, M.T.",
-    role: "ADMIN",
-    title: "Admin INSKAL & Kalibrasi BBMKG V",
-    nip: "19850412 201012 1 001",
-    email: "fajar.nur@bmkg.go.id",
-    uptStation: "BBMKG Wilayah V Papua",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80",
-  },
-  {
-    id: "USR-UPT-001",
-    username: "upt.jayapura",
-    name: "Agus Prasetyo, S.Tr.",
-    role: "UPT_PIMPINAN",
-    title: "Operator UPT Stamet Dok II Jayapura",
-    nip: "19920815 201503 1 002",
-    email: "stamet.jayapura@bmkg.go.id",
-    uptStation: "Stasiun Meteorologi Dok II Jayapura",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80",
-  },
-  {
-    id: "USR-PIMP-001",
-    username: "pimpinan.balai",
-    name: "Dr. Yosafat, M.Si.",
-    role: "UPT_PIMPINAN",
-    title: "Kepala BBMKG Wilayah V Papua",
-    nip: "19760310 199903 1 001",
-    email: "pimpinan.balai5@bmkg.go.id",
-    uptStation: "BBMKG Wilayah V Papua",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80",
-  },
-];
+// Initial users list dikosongkan (sepenuhnya mengandalkan DB PostgreSQL)
+export const INITIAL_USERS: AuthUser[] = [];
 
 // In-Memory Live Cache connected directly to PostgreSQL Backend
 const memoryCache = {
@@ -81,6 +44,7 @@ export const getFormattedTimestamp = (): string => {
  * Direct PostgreSQL Backend API Client (No LocalStorage reliance)
  */
 export const apiClient = {
+
   // ----------------------------------------------------
   // AUDIT LOG API
   // ----------------------------------------------------
@@ -574,7 +538,30 @@ export const apiClient = {
       return memoryCache.stations;
     },
 
-    add: (station: UPTStation, actor = "Admin INSKAL"): UPTStation => {
+    add: async (station: UPTStation, actor = "Admin INSKAL"): Promise<UPTStation> => {
+      // 1. Kirim request ke backend PostgreSQL & tunggu konfirmasi
+      const response = await authFetch("/api/stations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...station, actor }),
+      });
+
+      if (!response.ok) {
+        let message = "Gagal menyimpan stasiun ke server.";
+        if (response.status === 401) {
+          message = "Sesi login sudah tidak valid. Silakan logout lalu login kembali.";
+        } else {
+          try {
+            const errData = await response.json();
+            if (errData?.message) message = errData.message;
+          } catch {
+            // respons bukan JSON
+          }
+        }
+        throw new Error(message);
+      }
+
+      // 2. Server sukses -> perbarui cache lokal & catat audit log
       memoryCache.stations = [...memoryCache.stations, station];
 
       apiClient.auditLogs.add({
@@ -586,27 +573,39 @@ export const apiClient = {
         details: `Penambahan master stasiun UPT baru di wilayah ${station.regionGroup} (${station.location}).`,
       });
 
-      // Direct write to PostgreSQL backend
-      authFetch("/api/stations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...station, actor }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            await apiClient.stations.fetch();
-          }
-        })
-        .catch((e) => console.warn("PostgreSQL create station API sync:", e));
+      await apiClient.stations.fetch();
 
       return station;
     },
 
-    update: (
+    update: async (
       station: UPTStation,
       details: string,
       actor = "Admin INSKAL"
-    ): UPTStation => {
+    ): Promise<UPTStation> => {
+      // 1. Kirim request update ke backend PostgreSQL & tunggu konfirmasi
+      const response = await authFetch(`/api/stations/${station.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...station, details, actor }),
+      });
+
+      if (!response.ok) {
+        let message = "Gagal memperbarui stasiun di server.";
+        if (response.status === 401) {
+          message = "Sesi login sudah tidak valid. Silakan logout lalu login kembali.";
+        } else {
+          try {
+            const errData = await response.json();
+            if (errData?.message) message = errData.message;
+          } catch {
+            // respons bukan JSON
+          }
+        }
+        throw new Error(message);
+      }
+
+      // 2. Server sukses -> perbarui cache lokal & catat audit log
       memoryCache.stations = memoryCache.stations.map((s) => (s.id === station.id ? station : s));
 
       apiClient.auditLogs.add({
@@ -618,27 +617,41 @@ export const apiClient = {
         details,
       });
 
-      // Direct write to PostgreSQL backend
-      authFetch(`/api/stations/${station.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...station, details, actor }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            await apiClient.stations.fetch();
-          }
-        })
-        .catch((e) => console.warn("PostgreSQL update station API sync:", e));
+      await apiClient.stations.fetch();
 
       return station;
     },
 
-    delete: (
+    delete: async (
       stationId: string,
       stationName: string,
       actor = "Admin INSKAL"
-    ): boolean => {
+    ): Promise<boolean> => {
+      // 1. Kirim request hapus ke backend PostgreSQL & tunggu konfirmasi
+      const response = await authFetch(`/api/stations/${stationId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actor }),
+      });
+
+      if (!response.ok) {
+        let message = "Gagal menghapus stasiun di server.";
+        if (response.status === 401) {
+          message = "Sesi login sudah tidak valid. Silakan logout lalu login kembali.";
+        } else if (response.status === 403) {
+          message = "Aksi ini hanya diizinkan untuk Admin INSKAL.";
+        } else {
+          try {
+            const errData = await response.json();
+            if (errData?.message) message = errData.message;
+          } catch {
+            // respons bukan JSON
+          }
+        }
+        throw new Error(message);
+      }
+
+      // 2. Server sukses -> hapus dari cache lokal & catat audit log
       memoryCache.stations = memoryCache.stations.filter((s) => s.id !== stationId);
 
       apiClient.auditLogs.add({
@@ -650,18 +663,7 @@ export const apiClient = {
         details: "Penghapusan data master stasiun UPT dari database.",
       });
 
-      // Direct delete on PostgreSQL backend
-      authFetch(`/api/stations/${stationId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ actor }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            await apiClient.stations.fetch();
-          }
-        })
-        .catch((e) => console.warn("PostgreSQL delete station API sync:", e));
+      await apiClient.stations.fetch();
 
       return true;
     },

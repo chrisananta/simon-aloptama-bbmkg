@@ -141,35 +141,10 @@ export const userController = {
       });
       return res.json({ success: true, count: users.length, data: users });
     } catch (error) {
-      console.warn('getAllUsers PostgreSQL note:', (error as any)?.message || error);
-      const fallbackUsers = [
-        {
-          id: 'USR-ADMIN-001',
-          username: 'admin.inskal',
-          name: 'Ir. Fajar Nur, M.T.',
-          role: 'ADMIN',
-          title: 'Admin INSKAL & Kalibrasi BBMKG V',
-          nip: '19850412 201012 1 001',
-          email: 'fajar.nur@bmkg.go.id',
-          uptStation: 'BBMKG Wilayah V Papua',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-        },
-        {
-          id: 'USR-UPT-001',
-          username: 'upt.jayapura',
-          name: 'Agus Prasetyo, S.Tr.',
-          role: 'UPT_PIMPINAN',
-          title: 'Operator UPT Stamet Dok II Jayapura',
-          nip: '19920815 201503 1 002',
-          email: 'stamet.jayapura@bmkg.go.id',
-          uptStation: 'Stasiun Meteorologi Dok II Jayapura',
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
-        },
-      ];
-      return res.json({ success: true, count: fallbackUsers.length, data: fallbackUsers });
+      console.error('getAllUsers PostgreSQL error:', (error as any)?.message || error);
+          return res.status(500).json({ success: false, message: 'Gagal mengambil data akun dari database PostgreSQL.' });
     }
-  },
-
+  },     
   // Create user
   createUser: async (req: Request, res: Response) => {
     try {

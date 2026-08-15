@@ -6,49 +6,10 @@ const TOKEN_KEY = 'simon_jwt_token';
 const REFRESH_TOKEN_KEY = 'simon_refresh_token';
 const SESSION_EXP_KEY = 'simon_session_exp';
 
-// Default mock accounts
-export const PRESET_USERS: Record<string, AuthUser & { defaultPass: string }> = {
-  admin: {
-    id: 'USR-ADMIN-001',
-    username: 'admin.inskal',
-    defaultPass: 'inskal123',
-    name: 'Ir. Fajar Nur, M.T.',
-    role: 'ADMIN',
-    title: 'Admin INSKAL & Kalibrasi BBMKG V',
-    nip: '19850412 201012 1 001',
-    email: 'fajar.nur@bmkg.go.id',
-    uptStation: 'BBMKG Wilayah V Papua',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-  },
-  upt_jayapura: {
-    id: 'USR-UPT-001',
-    username: 'upt.jayapura',
-    defaultPass: 'bmkg123',
-    name: 'Agus Prasetyo, S.Tr.',
-    role: 'UPT_PIMPINAN',
-    title: 'Operator UPT Stamet Dok II Jayapura',
-    nip: '19920815 201503 1 002',
-    email: 'stamet.jayapura@bmkg.go.id',
-    uptStation: 'Stasiun Meteorologi Dok II Jayapura',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
-  },
-  pimpinan: {
-    id: 'USR-PIMP-001',
-    username: 'pimpinan.balai',
-    defaultPass: 'bmkg123',
-    name: 'Dr. Yosafat, M.Si.',
-    role: 'UPT_PIMPINAN',
-    title: 'Kepala BBMKG Wilayah V Papua',
-    nip: '19760310 199903 1 001',
-    email: 'pimpinan.balai5@bmkg.go.id',
-    uptStation: 'BBMKG Wilayah V Papua',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
-  },
-};
+// Mockup preset dinonaktifkan - Otentikasi murni via PostgreSQL
+export const PRESET_USERS: Record<string, AuthUser & { defaultPass: string }> = {};
 
-/**
- * Base64URL encoder & decoder helper
- */
+/*Base64URL encoder & decoder helper*/
 const base64UrlEncode = (str: string): string => {
   return btoa(unescape(encodeURIComponent(str)))
     .replace(/\+/g, '-')
@@ -65,9 +26,9 @@ const base64UrlDecode = (str: string): string => {
 };
 
 /**
- * Generate JWT Token (Header.Payload.Signature)
+ * Generate JWT Token lokal untuk fallback sesi jika diperlukan (Default 24 jam)
  */
-export const createJWT = (user: AuthUser, expiresInMs = 8 * 60 * 60 * 1000): { token: string; exp: number; iat: number } => {
+export const createJWT = (user: AuthUser, expiresInMs = 24 * 60 * 60 * 1000): { token: string; exp: number; iat: number } => {
   const iat = Math.floor(Date.now() / 1000);
   const exp = Math.floor((Date.now() + expiresInMs) / 1000);
 
@@ -125,17 +86,16 @@ export const validateToken = (token: string): { valid: boolean; payload: JWTPayl
 };
 
 /**
- * Authentication Service
+ * Authentication Service (Terhubung Langsung ke PostgreSQL)
  */
 export const authService = {
-  /**
-   * Login user with username & password or preset
+
+/**
+   * Login user melalui Backend API PostgreSQL
    */
   login: async (username: string, password?: string): Promise<AuthSession> => {
     const cleanUser = username.trim().toLowerCase();
-    let backendUnreachable = false;
 
-    // 1. First attempt PostgreSQL database authentication via backend API
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -147,7 +107,7 @@ export const authService = {
       try {
         data = await res.json();
       } catch {
-        // respons bukan JSON valid, biarkan data tetap null
+        // Respons bukan JSON valid
       }
 
       if (res.ok && data?.success && data?.user) {
@@ -168,109 +128,26 @@ export const authService = {
         };
       }
 
-      // PENTING: backend BERHASIL DIHUBUNGI dan memberi jawaban definitif menolak
-      // (password salah = 401, kena rate-limit = 429, dsb). JANGAN pernah jatuh ke
-      // mode fallback offline di bawah untuk kasus ini - itu lubang keamanan
-      // (fallback offline bisa meloloskan login dengan username/password apa saja).
       throw new Error(
         data?.message || 'Autentikasi gagal. Periksa kembali username dan kata sandi Anda.'
       );
     } catch (err) {
       if (err instanceof TypeError) {
-        // fetch() gagal total: backend benar-benar tidak bisa dihubungi
-        // (server mati, tidak ada koneksi, dsb). Baru di sini boleh fallback offline.
-        backendUnreachable = true;
-        console.warn('Backend tidak bisa dihubungi, mencoba mode fallback lokal (offline):', err);
-      } else {
-        // Ini error yang SENGAJA kita lempar sendiri di atas (backend menolak
-        // login dengan alasan spesifik) - teruskan ke pemanggil apa adanya,
-        // jangan ditelan dan jangan fallback.
-        throw err;
+        throw new Error('Gagal terhubung ke server PostgreSQL backend. Silakan periksa koneksi jaringan / server Anda.');
       }
+      throw err;
     }
-
-    if (!backendUnreachable) {
-      throw new Error('Autentikasi gagal.');
-    }
-
-    let targetUser: AuthUser | undefined;
-
-    // Search in dynamic users storage
-    const allUsers = apiClient.users.getAll();
-    targetUser = allUsers.find(
-      (u) => u.username.toLowerCase() === cleanUser || u.id.toLowerCase() === cleanUser
-    );
-
-    if (!targetUser) {
-      // Check presets
-      const foundPreset = Object.values(PRESET_USERS).find(
-        (u) => u.username.toLowerCase() === cleanUser || u.id.toLowerCase() === cleanUser
-      );
-
-      if (foundPreset) {
-        targetUser = foundPreset;
-      } else {
-        // Dynamic fallback user generation based on username rule
-        const isAdmin = cleanUser.includes('admin') || cleanUser.includes('inskal');
-        const role: UserRole = isAdmin ? 'ADMIN' : 'UPT_PIMPINAN';
-        
-        targetUser = {
-          id: `USR-${Date.now().toString().slice(-4)}`,
-          username: cleanUser,
-          name: cleanUser.charAt(0).toUpperCase() + cleanUser.slice(1),
-          role,
-          title: isAdmin ? 'Admin Sistem INSKAL BMKG' : 'Operator / Pimpinan UPT BMKG',
-          uptStation: isAdmin ? 'BBMKG Wilayah V Papua' : 'Stasiun UPT Papua',
-          nip: '19900101 201801 1 001',
-        };
-      }
-    }
-
-    // Generate JWT & Refresh Tokens
-    const { token, exp, iat } = createJWT(targetUser);
-    const refreshToken = `REFRESH_${base64UrlEncode(JSON.stringify({ id: targetUser.id, ts: Date.now() }))}`;
-
-    // Store in localStorage
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    localStorage.setItem(SESSION_EXP_KEY, String(exp));
-
-    const session: AuthSession = {
-      token,
-      refreshToken,
-      user: targetUser,
-      expiresAt: exp,
-      createdAt: iat,
-    };
-
-    // Log login activity to audit log
-    apiClient.auditLogs.add({
-      table: 'autentikasi',
-      action: 'LOGIN',
-      recordId: targetUser.id,
-      recordName: targetUser.name,
-      actor: `${targetUser.name} (${targetUser.role})`,
-      details: `Berhasil login ke sistem SIMON sebagai ${targetUser.role} [${targetUser.title}]`,
-      status: 'SUCCESS',
-      ipOrSource: 'Session JWT Web Client',
-    });
-
-    return session;
   },
 
   /**
    * Preset Quick Login (for demo/convenience)
    */
-  loginAsPreset: async (rolePreset: UserRole): Promise<AuthSession> => {
-    if (rolePreset === 'ADMIN') {
-      return await authService.login(PRESET_USERS.admin.username);
-    } else {
-      return await authService.login(PRESET_USERS.upt_jayapura.username);
-    }
+ loginAsPreset: async (rolePreset: UserRole): Promise<AuthSession> => {
+    throw new Error('Mode preset login dinonaktifkan. Silakan login menggunakan akun terdaftar di PostgreSQL.');
   },
 
   /**
-   * Refresh Token
+   * Perbarui Token Sesi
    */
   refreshToken: async (): Promise<AuthSession | null> => {
     const currentToken = localStorage.getItem(TOKEN_KEY);
@@ -281,7 +158,6 @@ export const authService = {
     const payload = parseJWT(currentToken);
     if (!payload) return null;
 
-    // Find full user details
     const allUsers = apiClient.users.getAll();
     const foundUser = allUsers.find(
       (u) =>
@@ -297,8 +173,8 @@ export const authService = {
       uptStation: payload.uptStation || 'BBMKG Wilayah V Papua',
     };
 
-    // Create fresh token with extended expiry (8 hours)
-    const { token: newToken, exp, iat } = createJWT(user, 8 * 60 * 60 * 1000);
+    // Create fresh token with extended expiry (24 hours)
+    const { token: newToken, exp, iat } = createJWT(user, 24 * 60 * 60 * 1000);
     const newRefreshToken = `REFRESH_${base64UrlEncode(JSON.stringify({ id: user.id, ts: Date.now() }))}`;
 
     localStorage.setItem(TOKEN_KEY, newToken);
@@ -361,7 +237,6 @@ export const authService = {
 
     const validation = validateToken(token);
     if (!validation.valid || !validation.payload) {
-      // Token expired, attempt to auto-refresh token if refreshToken exists
       console.warn('JWT Token invalid or expired:', validation.reason);
       return null;
     }
@@ -392,7 +267,7 @@ export const authService = {
   },
 
   /**
-   * RBAC Permissions helper
+   *Pembagian Hak Akses RBAC
    */
   getRBACPermissions: (role: UserRole): RBACPermissions => {
     if (role === 'ADMIN') {
@@ -418,7 +293,7 @@ export const authService = {
   },
 
   /**
-   * Check if a route menu is accessible by role
+   * Cek izin menu navigasi
    */
   isMenuAllowed: (role: UserRole, menu: ActiveNavMenu): boolean => {
     const permissions = authService.getRBACPermissions(role);

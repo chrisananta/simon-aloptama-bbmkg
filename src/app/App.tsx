@@ -15,7 +15,7 @@ import { CalibrationInputModal } from '../features/calibration/CalibrationInputM
 import { CalibrationRecord } from '../features/calibration/CalibrationTypes';
 import { ErrorBoundary } from '../shared/components/ErrorBoundary';
 import { apiClient } from '../shared/api';
-import { ServerFetchResult } from '../services/serverDataService';
+import { ServerFetchResult } from '../shared/api/serverDataService';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 
@@ -110,22 +110,34 @@ function AppContent() {
   };
 
   // Handlers for Master Stasiun CRUD via Centralized API
-  const handleAddStation = (station: UPTStation, actor: string) => {
-    apiClient.stations.add(station, actor || currentActor);
-    setStationsData(apiClient.stations.getAll());
-    refreshAuditLogs();
+  const handleAddStation = async (station: UPTStation, actor: string) => {
+    try {
+      await apiClient.stations.add(station, actor || currentActor);
+      setStationsData(apiClient.stations.getAll()); 
+      refreshAuditLogs();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan stasiun ke server.');
+    }
   };
 
-  const handleUpdateStation = (station: UPTStation, details: string, actor: string) => {
-    apiClient.stations.update(station, details, actor || currentActor);
-    setStationsData(apiClient.stations.getAll());
-    refreshAuditLogs();
+  const handleUpdateStation = async (station: UPTStation, details: string, actor: string) => {
+    try {
+      await apiClient.stations.update(station, details, actor || currentActor);
+      setStationsData(apiClient.stations.getAll());
+      refreshAuditLogs();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal memperbarui stasiun di server.');
+    }
   };
 
-  const handleDeleteStation = (stationId: string, stationName: string, actor: string) => {
-    apiClient.stations.delete(stationId, stationName, actor || currentActor);
-    setStationsData(apiClient.stations.getAll());
-    refreshAuditLogs();
+  const handleDeleteStation = async (stationId: string, stationName: string, actor: string) => {
+    try {
+      await apiClient.stations.delete(stationId, stationName, actor || currentActor);
+      setStationsData(apiClient.stations.getAll());
+      refreshAuditLogs();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus stasiun di server.');
+    }
   };
 
   // Handlers for Master Alat CRUD via Centralized API

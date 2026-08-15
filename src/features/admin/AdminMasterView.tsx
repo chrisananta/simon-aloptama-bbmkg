@@ -1289,32 +1289,23 @@ const filteredPetugas = petugasList.filter(p => {
             </div>
           </div>
 
-          {/* Metric Overview Cards for Selected Month & Year */}
-          {(() => {
-            const devScores = filteredSlaDevices.map(d => getSlaOlaForDevice(d, selectedMonthSlaOla, selectedYearSlaOla));
-            
-            const isDefaultFilter = slaOlaUptFilter === 'ALL' && slaOlaCategoryFilter === 'ALL' && !slaOlaSearchQuery;
-            const overallRekap = getMonthlyOverallRekap(selectedMonthSlaOla, Number(selectedYearSlaOla));
-
-            let avgSla = 0;
-            let avgOla = 0;
-
-            if (isDefaultFilter && overallRekap) {
-              avgSla = overallRekap.avgSla;
-              avgOla = overallRekap.avgOla;
-            } else {
-              avgSla = filteredSlaDevices.length > 0
+            {/* Metric Overview Cards for Selected Month & Year */}
+            {(() => {
+              const devScores = filteredSlaDevices.map(d => getSlaOlaForDevice(d, selectedMonthSlaOla, selectedYearSlaOla));
+              
+              // Hitung rata-rata riil langsung dari devScores per alat
+              const avgSla = filteredSlaDevices.length > 0
                 ? Math.round(devScores.reduce((sum, s) => sum + s.sla, 0) / filteredSlaDevices.length)
                 : 0;
-              avgOla = filteredSlaDevices.length > 0
+
+              const avgOla = filteredSlaDevices.length > 0
                 ? Math.round(devScores.reduce((sum, s) => sum + s.ola, 0) / filteredSlaDevices.length)
                 : 0;
-            }
-            
-            const normalCount = devScores.filter(s => s.sla > 0 && s.ola >= 97).length;
-            const gangguanCount = devScores.filter(s => (s.sla > 0 || s.ola > 0) && s.ola < 97).length;
-            const matiCount = devScores.filter(s => s.sla === 0 && s.ola === 0).length;
-
+              
+              const normalCount = devScores.filter(s => s.sla > 0 && s.ola >= 97).length;
+              const gangguanCount = devScores.filter(s => (s.sla > 0 || s.ola > 0) && s.ola < 97).length;
+              const matiCount = devScores.filter(s => s.sla === 0 && s.ola === 0).length;
+              
             return (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 text-slate-800">

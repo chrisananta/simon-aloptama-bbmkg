@@ -99,31 +99,14 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     Juli: 6, Agustus: 7, September: 8, Oktober: 9, November: 10, Desember: 11
   };
 
+  // SlaOlaView
   const slaTrendData = useMemo(() => {
     return MONTHS_LIST.map((mObj, idx) => {
-      if (selectedYear === '2026') {
-        if (selectedUpt === 'ALL' && idx <= 6) {
-          const rekap = getMonthlyOverallRekap(mObj.name, 2026);
-          return {
-            month: mObj.short,
-            sla: rekap?.avgSla ?? 0,
-            ola: rekap?.avgOla ?? 0,
-          };
-        }
-
-        if (selectedUpt !== 'ALL' && idx <= 6) {
-          return {
-            month: mObj.short,
-            sla: 0,
-            ola: 0,
-          };
-        }
-      }
-
       const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
       const targetMonthNum = idx + 1;
       const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
+      // Filter peralatan yang memiliki laporan riil di bulan & tahun tersebut
       const reportedInThisMonthAndYear = targetDevs.filter((d) => {
         if (d.slaScore === undefined && d.olaScore === undefined) return false;
         if (!d.lastReportedDate) return false;
@@ -135,6 +118,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         return { month: mObj.short, sla: 0, ola: 0 };
       }
 
+      // Hitung rata-rata riil dari database PostgreSQL
       const avgSla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.slaScore ?? 0), 0) / reportedInThisMonthAndYear.length;
       const avgOla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedInThisMonthAndYear.length;
 
@@ -146,115 +130,57 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     });
   }, [selectedYear, selectedUpt, uptFilteredDevices, devices]);
 
-  const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
-  const currentMonthData = slaTrendData[monthIdx] || { month: 'Ags', sla: 0, ola: 0 };
-  
-  const monthlySlaValue = currentMonthData.sla;
-  const monthlyOlaValue = currentMonthData.ola;
+      const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
+      const currentMonthData = slaTrendData[monthIdx] || { month: 'Ags', sla: 0, ola: 0 };
+      
+      const monthlySlaValue = currentMonthData.sla;
+      const monthlyOlaValue = currentMonthData.ola;
 
-  const olaByCategoryData = useMemo(() => {
-    const CATEGORIES = [
-      { key: 'AWOS', name: 'AWOS' },
-      { key: 'AWS', name: 'AWS' },
-      { key: 'ARG', name: 'ARG' },
-      { key: 'Radar Cuaca', name: 'Radar Cuaca' },
-      { key: 'Lightning Detector', name: 'Lightning Detector' },
-      { key: 'Seismometer', name: 'Seismometer' },
-      { key: 'Accelerograph', name: 'Accelerograph' },
-      { key: 'WRS NG', name: 'WRS NG' },
-      { key: 'Sirene', name: 'Sirene' },
-    ];
+      const olaByCategoryData = useMemo(() => {
+          const CATEGORIES = [
+            { key: 'AWOS', name: 'AWOS' },
+            { key: 'AWS', name: 'AWS' },
+            { key: 'ARG', name: 'ARG' },
+            { key: 'Radar Cuaca', name: 'Radar Cuaca' },
+            { key: 'Lightning Detector', name: 'Lightning Detector' },
+            { key: 'Seismometer', name: 'Seismometer' },
+            { key: 'Accelerograph', name: 'Accelerograph' },
+            { key: 'WRS NG', name: 'WRS NG' },
+            { key: 'Sirene', name: 'Sirene' },
+          ];
 
-    if (selectedYear === '2026') {
-      if (selectedUpt === 'ALL' && monthIdx <= 6) {
-        const monthRekapItems = OFFICIAL_SLA_OLA_REKAP.filter(
-          (item) => item.tahun === 2026 && item.bulan.toLowerCase() === selectedMonth.toLowerCase()
-        );
+          const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
+          const targetMonthNum = monthIdx + 1;
+          const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
-        return CATEGORIES.map((catObj) => {
-          const foundItems = monthRekapItems.filter((i) =>
-            i.peralatan.toLowerCase().includes(catObj.key.toLowerCase()) ||
-            (catObj.key === 'Radar Cuaca' && i.peralatan.toLowerCase().includes('radar')) ||
-            (catObj.key === 'WRS NG' && i.peralatan.toLowerCase().includes('wrs')) ||
-            (catObj.key === 'Lightning Detector' && i.peralatan.toLowerCase().includes('lightning')) ||
-            (catObj.key === 'Accelerograph' && i.peralatan.toLowerCase().includes('accelerograph'))
-          );
+          return CATEGORIES.map((catObj) => {
+            const catDevs = targetDevs.filter((d) =>
+              (d.category || '').toLowerCase().includes(catObj.key.toLowerCase()) ||
+              (catObj.key === 'Radar Cuaca' && (d.category || '').toLowerCase().includes('radar')) ||
+              (catObj.key === 'WRS NG' && (d.category || '').toLowerCase().includes('wrs')) ||
+              (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
+            );
 
-          let score = 0;
-          let count = 0;
-
-          if (foundItems.length > 0) {
-            let totalOlaLokasi = 0;
-            let totalLokasi = 0;
-            foundItems.forEach((fi) => {
-              const ola = fi.ola ?? 100;
-              const jumlahLokasi = fi.jumlahLokasi ?? 0;
-
-              totalOlaLokasi += ola * jumlahLokasi;
-              totalLokasi += jumlahLokasi;
+            const reportedInSelectedMonthAndYearCatDevs = catDevs.filter((d) => {
+              if (d.olaScore === undefined) return false;
+              if (!d.lastReportedDate) return false;
+              const parts = d.lastReportedDate.split('-');
+              return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
             });
-            score = totalLokasi > 0 ? Math.round(totalOlaLokasi / totalLokasi) : 0;
-            count = totalLokasi;
-          }
 
-          return {
-            category: catObj.name,
-            score,
-            count,
-          };
-        });
-      }
+            let score = 0;
+            if (reportedInSelectedMonthAndYearCatDevs.length > 0) {
+              const avgOla = reportedInSelectedMonthAndYearCatDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedInSelectedMonthAndYearCatDevs.length;
+              score = Math.round(avgOla);
+            }
 
-      if (selectedUpt !== 'ALL' && monthIdx <= 6) {
-        const targetDevs = uptFilteredDevices;
-        return CATEGORIES.map((catObj) => {
-          const catDevs = targetDevs.filter((d) =>
-            (d.category || '').toLowerCase().includes(catObj.key.toLowerCase()) ||
-            (catObj.key === 'Radar Cuaca' && (d.category || '').toLowerCase().includes('radar')) ||
-            (catObj.key === 'WRS NG' && (d.category || '').toLowerCase().includes('wrs')) ||
-            (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
-          );
-          return {
-            category: catObj.name,
-            score: 0,
-            count: catDevs.length,
-          };
-        });
-      }
-    }
-
-    const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
-    const targetMonthNum = monthIdx + 1;
-    const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
-
-    return CATEGORIES.map((catObj) => {
-      const catDevs = targetDevs.filter((d) =>
-        (d.category || '').toLowerCase().includes(catObj.key.toLowerCase()) ||
-        (catObj.key === 'Radar Cuaca' && (d.category || '').toLowerCase().includes('radar')) ||
-        (catObj.key === 'WRS NG' && (d.category || '').toLowerCase().includes('wrs')) ||
-        (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
-      );
-
-      const reportedInSelectedMonthAndYearCatDevs = catDevs.filter((d) => {
-        if (d.olaScore === undefined) return false;
-        if (!d.lastReportedDate) return false;
-        const parts = d.lastReportedDate.split('-');
-        return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
-      });
-
-      let score = 0;
-      if (reportedInSelectedMonthAndYearCatDevs.length > 0) {
-        const avgOla = reportedInSelectedMonthAndYearCatDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedInSelectedMonthAndYearCatDevs.length;
-        score = Math.round(avgOla);
-      }
-
-      return {
-        category: catObj.name,
-        score,
-        count: catDevs.length,
-      };
-    });
-  }, [selectedYear, selectedUpt, selectedMonth, monthIdx, devices, uptFilteredDevices]);
+            return {
+              category: catObj.name,
+              score,
+              count: catDevs.length,
+            };
+          });
+        }, [selectedYear, selectedUpt, selectedMonth, monthIdx, devices, uptFilteredDevices]);
 
   const totalDevs = uptFilteredDevices.length || 1;
   const tidakTerlambatCount = uptFilteredDevices.filter(
@@ -391,85 +317,37 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
       },
     ];
 
-    const prevMonthName = monthIdx > 0 ? MONTHS_LIST[monthIdx - 1].name : null;
-
-    const monthOfficialItems = OFFICIAL_SLA_OLA_REKAP.filter(
-      (i) => i.tahun === Number(selectedYear) && i.bulan.toLowerCase() === selectedMonth.toLowerCase()
-    );
-
-    const prevOfficialItems = prevMonthName
-      ? OFFICIAL_SLA_OLA_REKAP.filter(
-          (i) => i.tahun === Number(selectedYear) && i.bulan.toLowerCase() === prevMonthName.toLowerCase()
-        )
-      : [];
+    const targetMonthNum = monthIdx + 1;
+    const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
     return CATEGORIES.map((catObj) => {
-      let jumlahLokasi = 0;
+      const catDevs = uptFilteredDevices.filter(catObj.matchFn);
+      const jumlahLokasi = catDevs.length;
+
+      const reportedDevs = catDevs.filter((d) => {
+        if (d.slaScore === undefined && d.olaScore === undefined) return false;
+        if (!d.lastReportedDate) return false;
+        const parts = d.lastReportedDate.split('-');
+        return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
+      });
+
       let sla = 0;
       let ola = 0;
-      let prevSla: number | null = null;
-
-      const foundOfficial = monthOfficialItems.find(
-        (i) =>
-          i.peralatan.toLowerCase().includes(catObj.key.toLowerCase()) ||
-          (catObj.key === 'RADAR CUACA' && i.peralatan.toLowerCase().includes('radar')) ||
-          (catObj.key === 'WRS NEW GENERATION' && i.peralatan.toLowerCase().includes('wrs')) ||
-          (catObj.key === 'LIGHTNING DETECTOR' && i.peralatan.toLowerCase().includes('lightning')) ||
-          (catObj.key === 'ACCELEROGRAPH NC' && i.peralatan.toLowerCase().includes('accelerograph'))
-      );
-
-      const foundPrevOfficial = prevOfficialItems.find(
-        (i) =>
-          i.peralatan.toLowerCase().includes(catObj.key.toLowerCase()) ||
-          (catObj.key === 'RADAR CUACA' && i.peralatan.toLowerCase().includes('radar')) ||
-          (catObj.key === 'WRS NEW GENERATION' && i.peralatan.toLowerCase().includes('wrs')) ||
-          (catObj.key === 'LIGHTNING DETECTOR' && i.peralatan.toLowerCase().includes('lightning')) ||
-          (catObj.key === 'ACCELEROGRAPH NC' && i.peralatan.toLowerCase().includes('accelerograph'))
-      );
-
-      if (foundPrevOfficial && selectedUpt === 'ALL') {
-        prevSla = foundPrevOfficial.sla ?? 100;
-      }
-
-      if (foundOfficial && selectedUpt === 'ALL') {
-        jumlahLokasi = foundOfficial.jumlahLokasi ?? 0;
-        sla = foundOfficial.sla ?? 100;
-        ola = foundOfficial.ola ?? 100;
-      } else {
-        const catDevs = uptFilteredDevices.filter(catObj.matchFn);
-        jumlahLokasi = catDevs.length;
-        if (catDevs.length > 0) {
-          const avgSla = catDevs.reduce((sum, d) => sum + (d.slaScore ?? 90), 0) / catDevs.length;
-          const avgOla = catDevs.reduce((sum, d) => sum + (d.olaScore ?? 85), 0) / catDevs.length;
-          sla = Number(avgSla.toFixed(1));
-          ola = Number(avgOla.toFixed(1));
-        }
-      }
-
-      if (prevSla === null && sla > 0) {
-        // Compute realistic SLA bulan kemarin if prev month data is not present in static official rekap
-        const variance = ((catObj.no * 3) % 4) - 1.5;
-        prevSla = Number(Math.min(100, Math.max(50, sla - variance)).toFixed(1));
-      }
-
-      const catDevs = uptFilteredDevices.filter(catObj.matchFn);
       let normalCount = 0;
       let gangguanCount = 0;
       let matiCount = 0;
 
-      if (catDevs.length > 0 && selectedUpt !== 'ALL') {
-        normalCount = catDevs.filter((d) => d.conditionStatus === 'NORMAL').length;
-        gangguanCount = catDevs.filter((d) => d.conditionStatus === 'GANGGUAN').length;
-        matiCount = catDevs.filter((d) => d.conditionStatus === 'MATI').length;
-      } else if (jumlahLokasi > 0) {
-        normalCount = Math.round(jumlahLokasi * (ola >= 90 ? ola / 100 : sla / 100));
-        matiCount = Math.round(jumlahLokasi * Math.max(0, 1 - sla / 100));
-        gangguanCount = Math.max(0, jumlahLokasi - normalCount - matiCount);
-      }
+      if (reportedDevs.length > 0) {
+        const avgSla = reportedDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0) / reportedDevs.length;
+        const avgOla = reportedDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedDevs.length;
+        sla = Number(avgSla.toFixed(1));
+        ola = Number(avgOla.toFixed(1));
 
-      let diff: number | null = null;
-      if (prevSla !== null && prevSla !== undefined) {
-        diff = Number((sla - prevSla).toFixed(2));
+        normalCount = reportedDevs.filter((d) => d.conditionStatus === 'NORMAL').length;
+        gangguanCount = reportedDevs.filter((d) => d.conditionStatus === 'GANGGUAN').length;
+        matiCount = reportedDevs.filter((d) => d.conditionStatus === 'MATI').length;
+      } else {
+        matiCount = jumlahLokasi;
       }
 
       return {
@@ -481,7 +359,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         normalCount,
         gangguanCount,
         matiCount,
-        diff,
+        diff: null as number | null,
       };
     });
   }, [selectedYear, selectedMonth, monthIdx, selectedUpt, uptFilteredDevices]);
@@ -668,22 +546,35 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
       }));
   }
 
-  const hasDataForSelectedFilter = useMemo(() => {
-    // 1. Official rekap check (Januari - Juli 2026 for ALL UPTs)
-    if (selectedYear === '2026' && selectedUpt === 'ALL' && monthIdx <= 6) {
-      return true;
-    }
-
-    // 2. Check if any device in the filtered list has a report for the selected month & year
+    const hasDataForSelectedFilter = useMemo(() => {
     const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
     const targetMonthNum = monthIdx + 1;
-    const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
+    const monthPaddedStr = String(targetMonthNum).padStart(2, '0');
 
     const hasReport = targetDevs.some((d) => {
       if (d.slaScore === undefined && d.olaScore === undefined) return false;
       if (!d.lastReportedDate) return false;
+
+      // Parsing Date aman untuk format apapun (ISO / YYYY-MM-DD / DD-MM-YYYY)
+      const dateObj = new Date(d.lastReportedDate);
+      if (!isNaN(dateObj.getTime())) {
+        const year = dateObj.getFullYear().toString();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        return year === selectedYear && month === monthPaddedStr;
+      }
+
+      // Fallback manual string split
       const parts = d.lastReportedDate.split('-');
-      return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
+      if (parts.length >= 3) {
+        if (parts[0].length === 4) { // YYYY-MM-DD
+          return parts[0] === selectedYear && parts[1] === monthPaddedStr;
+        }
+        if (parts[2].length === 4) { // DD-MM-YYYY
+          return parts[2] === selectedYear && parts[1] === monthPaddedStr;
+        }
+      }
+
+      return false;
     });
 
     return hasReport;
@@ -748,15 +639,12 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
 
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700">
             <span>Tahun:</span>
-            <select
+           <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
               className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer"
             >
-              {Array.from(
-                { length: Math.max(5, new Date().getFullYear() - 2024 + 3) },
-                (_, i) => (2024 + i).toString()
-              ).map((y) => (
+              {Array.from({ length: 3 }, (_, i) => (2026 + i).toString()).map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>
