@@ -1,0 +1,22 @@
+ID_STASIUN,NAMA_STASIUN,JENIS_STASIUN,KOTA
+MET001,Stasiun Meteorologi DEO Sorong,Meteorologi,Sorong
+MET002,Stasiun Meteorologi Torea - Fakfak,Meteorologi,Fakfak
+MET003,Stasiun Meteorologi Utarom - Kaimana,Meteorologi,Kaimana
+MET004,Stasiun Meteorologi Serui,Meteorologi,Serui
+MET005,Stasiun Meteorologi Frans Kaisiepo Biak,Meteorologi,Biak
+MET006,Stasiun Meteorologi Sentani,Meteorologi,Kab. Jayapura
+MET007,Stasiun Meteorologi Rendani Manokwari,Meteorologi,Manokwari
+MET008,Stasiun Meteorologi Timika,Meteorologi,Timika
+MET009,Stasiun Meteorologi Mopah Merauke,Meteorologi,Merauke
+MET010,Stasiun Meteorologi Tanah Merah,Meteorologi,Tanah Merah
+MET011,Stasiun Meteorologi Enarotali,Meteorologi,Enarotali
+MET012,Stasiun Meteorologi Wamena,Meteorologi,Wamena
+MET013,Stasiun Meteorologi Nabire,Meteorologi,Nabire
+MET014,Stasiun Meteorologi Sarmi,Meteorologi,Kab. Sarmi
+KLI001,Stasiun Klimatologi Papua,Klimatologi,Kab. Jayapura
+KLI002,Stasiun Klimatologi Papua Barat,Klimatologi,Manokwari
+KLI003,Stasiun Klimatologi Papua Selatan,Klimatologi,Merauke
+MAR001,Stasiun Maritim Dok II,Maritim,Jayapura
+GEO001,Stasiun Geofisika Angkasa,Geofisika,Jayapura
+GEO002,Stasiun Geofisika Nabire,Geofisika,Nabire
+GEO003,Stasiun Geofisika Sorong,Geofisika,Sorong
