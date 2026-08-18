@@ -291,28 +291,11 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     setPetugasList(petugasList.filter(p => p.id !== id));
   };
 
-  // Calculate Equipment Category Data dynamically from devices prop or official defaults based on selected input timeframe
+  // Calculate Equipment Category Data dynamically from real device data only.
+  // Kategori tanpa data asli akan tampil 0% / 0 lokasi apa adanya (tidak ada lagi
+  // angka dummy/fallback yang dikarang, dan tidak ada lagi faktor musiman palsu
+  // yang dulu ikut mengubah angka real).
   const rekapData = useMemo(() => {
-    // Determine monthly variation factor from start date
-    const startObj = startDateIso ? new Date(startDateIso) : new Date('2026-06-15');
-    const startMonth = isNaN(startObj.getTime()) ? 5 : startObj.getMonth();
-
-    const monthVariationMap: Record<number, number> = {
-      0: 0.985, // Jan
-      1: 0.992, // Feb
-      2: 1.010, // Mar
-      3: 0.975, // Apr
-      4: 1.015, // Mei
-      5: 1.000, // Jun
-      6: 0.965, // Jul
-      7: 0.980, // Ags
-      8: 1.008, // Sep
-      9: 0.990, // Okt
-      10: 1.002, // Nov
-      11: 1.018, // Des
-    };
-    const timeFactor = monthVariationMap[startMonth] ?? 1.0;
-
     const CATEGORIES = [
       {
         no: 1,
@@ -322,7 +305,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('awos') && !c.includes('kat ii') && !c.includes('kat. ii') && !c.includes('kat iii') && !c.includes('kat. iii') && !c.includes('kat 2') && !c.includes('kat 3');
         },
-        fallback: { jumlahLokasi: 24, sla: 100.0, ola: 98.7, normal: 22, gangguan: 0, mati: 0 }
       },
       {
         no: 2,
@@ -332,7 +314,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('awos') && (c.includes('kat ii') || c.includes('kat. ii') || c.includes('kat iii') || c.includes('kat. iii') || c.includes('kat 2') || c.includes('kat 3'));
         },
-        fallback: { jumlahLokasi: 8, sla: 87.5, ola: 84.5, normal: 7, gangguan: 0, mati: 1 }
       },
       {
         no: 3,
@@ -342,7 +323,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('radar');
         },
-        fallback: { jumlahLokasi: 6, sla: 100.0, ola: 99.5, normal: 6, gangguan: 0, mati: 0 }
       },
       {
         no: 4,
@@ -352,7 +332,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return (c.includes('aws') || c.includes('automatic weather')) && !c.includes('awos');
         },
-        fallback: { jumlahLokasi: 35, sla: 94.7, ola: 90.2, normal: 30, gangguan: 4, mati: 1 }
       },
       {
         no: 5,
@@ -362,7 +341,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('arg') || c.includes('automatic rain');
         },
-        fallback: { jumlahLokasi: 33, sla: 82.3, ola: 80.6, normal: 23, gangguan: 7, mati: 3 }
       },
       {
         no: 6,
@@ -372,7 +350,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('seismo');
         },
-        fallback: { jumlahLokasi: 52, sla: 77.0, ola: 76.8, normal: 36, gangguan: 7, mati: 9 }
       },
       {
         no: 7,
@@ -382,7 +359,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('lightning') || c.includes('petir');
         },
-        fallback: { jumlahLokasi: 7, sla: 100.0, ola: 97.3, normal: 7, gangguan: 0, mati: 0 }
       },
       {
         no: 8,
@@ -392,7 +368,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('accelerograph') || c.includes('akselero') || c.includes('strong motion');
         },
-        fallback: { jumlahLokasi: 7, sla: 100.0, ola: 96.5, normal: 7, gangguan: 0, mati: 0 }
       },
       {
         no: 9,
@@ -402,7 +377,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('wrs') || c.includes('warning receiver');
         },
-        fallback: { jumlahLokasi: 16, sla: 88.8, ola: 88.6, normal: 14, gangguan: 1, mati: 1 }
       },
       {
         no: 10,
@@ -412,37 +386,32 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
           return c.includes('sirene') || c.includes('siren');
         },
-        fallback: { jumlahLokasi: 2, sla: 94.6, ola: 95.5, normal: 1, gangguan: 1, mati: 0 }
       }
     ];
 
     return CATEGORIES.map((cat) => {
       const catDevs = devices.filter(cat.matchFn);
-      
-      let jumlahLokasi = catDevs.length > 0 ? catDevs.length : cat.fallback.jumlahLokasi;
-      let sla = Math.min(100, Math.max(50, Number((cat.fallback.sla * timeFactor).toFixed(1))));
-      let ola = Math.min(100, Math.max(50, Number((cat.fallback.ola * timeFactor).toFixed(1))));
-      let normal = cat.fallback.normal;
-      let gangguan = cat.fallback.gangguan;
-      let mati = cat.fallback.mati;
+
+      let jumlahLokasi = catDevs.length;
+      let sla = 0;
+      let ola = 0;
+      let normal = 0;
+      let gangguan = 0;
+      let mati = 0;
 
       if (catDevs.length > 0) {
-        const avgSla = catDevs.reduce((sum, d) => sum + (d.slaScore ?? 90), 0) / catDevs.length;
-        const avgOla = catDevs.reduce((sum, d) => sum + (d.olaScore ?? 85), 0) / catDevs.length;
-        sla = Number((avgSla * timeFactor).toFixed(1));
-        ola = Number((avgOla * timeFactor).toFixed(1));
+        // Belum pernah diinput (slaScore/olaScore null) dihitung sebagai 0%,
+        // BUKAN diisi angka karangan seperti sebelumnya.
+        const avgSla = catDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0) / catDevs.length;
+        const avgOla = catDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / catDevs.length;
+        sla = Number(avgSla.toFixed(1));
+        ola = Number(avgOla.toFixed(1));
         sla = Math.min(100, Math.max(0, sla));
         ola = Math.min(100, Math.max(0, ola));
 
         normal = catDevs.filter(d => d.conditionStatus === 'NORMAL').length;
         gangguan = catDevs.filter(d => d.conditionStatus === 'GANGGUAN').length;
         mati = catDevs.filter(d => d.conditionStatus === 'MATI').length;
-
-        if (normal + gangguan + mati === 0) {
-          normal = Math.round(jumlahLokasi * (ola / 100));
-          mati = Math.round(jumlahLokasi * (1 - sla / 100));
-          gangguan = Math.max(0, jumlahLokasi - normal - mati);
-        }
       }
 
       return {
@@ -456,7 +425,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         mati
       };
     });
-  }, [devices, startDateIso, endDateIso, calculatedPeriodDays]);
+  }, [devices]);
 
   // Overall totals
   const totalLokasiSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.jumlahLokasi, 0), [rekapData]);
