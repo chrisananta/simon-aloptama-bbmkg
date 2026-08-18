@@ -3,19 +3,10 @@ import { ActiveNavMenu } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 
 const TOKEN_KEY = 'simon_jwt_token';
-const REFRESH_TOKEN_KEY = 'simon_refresh_token';
 const SESSION_EXP_KEY = 'simon_session_exp';
 
 // Mockup preset dinonaktifkan - Otentikasi murni via PostgreSQL
 export const PRESET_USERS: Record<string, AuthUser & { defaultPass: string }> = {};
-
-/*Base64URL encoder & decoder helper*/
-const base64UrlEncode = (str: string): string => {
-  return btoa(unescape(encodeURIComponent(str)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-};
 
 const base64UrlDecode = (str: string): string => {
   let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -23,35 +14,6 @@ const base64UrlDecode = (str: string): string => {
     base64 += '=';
   }
   return decodeURIComponent(escape(atob(base64)));
-};
-
-/**
- * Generate JWT Token lokal untuk fallback sesi jika diperlukan (Default 24 jam)
- */
-export const createJWT = (user: AuthUser, expiresInMs = 24 * 60 * 60 * 1000): { token: string; exp: number; iat: number } => {
-  const iat = Math.floor(Date.now() / 1000);
-  const exp = Math.floor((Date.now() + expiresInMs) / 1000);
-
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const payload: JWTPayload = {
-    sub: user.id,
-    username: user.username,
-    name: user.name,
-    role: user.role,
-    title: user.title,
-    uptStation: user.uptStation,
-    iat,
-    exp,
-  };
-
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  
-  // Simulated HMAC SHA256 Signature hash for JWT
-  const signature = base64UrlEncode(`SIMON_SECRET_KEY_BBMKG_V_${encodedHeader}.${encodedPayload}`);
-
-  const token = `${encodedHeader}.${encodedPayload}.${signature}`;
-  return { token, exp: exp * 1000, iat: iat * 1000 };
 };
 
 /**
@@ -111,17 +73,21 @@ export const authService = {
       }
 
       if (res.ok && data?.success && data?.user) {
-        const token = data.token || createJWT(data.user).token;
-        const refreshToken = `REFRESH_${data.token || base64UrlEncode(JSON.stringify({ id: data.user.id, ts: Date.now() }))}`;
-        const exp = Date.now() + 24 * 60 * 60 * 1000;
+        // Sesi hanya sah jika token diterbitkan dan ditandatangani backend.
+        if (typeof data.token !== 'string' || !data.token) {
+          throw new Error('Server tidak mengirim token autentikasi yang valid.');
+        }
+        const token = data.token;
+        const payload = parseJWT(token);
+        if (!payload?.exp || !payload?.iat) throw new Error('Token autentikasi server tidak valid.');
+        const exp = payload.exp * 1000;
 
         localStorage.setItem(TOKEN_KEY, token);
-        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
         localStorage.setItem(SESSION_EXP_KEY, String(exp));
 
         return {
           token,
-          refreshToken,
+          refreshToken: '',
           user: data.user,
           expiresAt: exp,
           createdAt: Date.now(),
@@ -147,58 +113,11 @@ export const authService = {
   },
 
   /**
-   * Perbarui Token Sesi
+   * Aplikasi tidak membuat atau memperpanjang JWT sendiri. Token yang habis
+   * harus diperbarui melalui login kembali sampai endpoint refresh server tersedia.
    */
   refreshToken: async (): Promise<AuthSession | null> => {
-    const currentToken = localStorage.getItem(TOKEN_KEY);
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-
-    if (!currentToken || !refreshToken) return null;
-
-    const payload = parseJWT(currentToken);
-    if (!payload) return null;
-
-    const allUsers = apiClient.users.getAll();
-    const foundUser = allUsers.find(
-      (u) =>
-        (u.id && (payload.sub || payload.id) && u.id === (payload.sub || payload.id)) ||
-        (u.username && payload.username && u.username.toLowerCase() === payload.username.toLowerCase())
-    );
-    const user: AuthUser = foundUser || {
-      id: payload.sub || payload.id || '',
-      username: payload.username || 'user',
-      name: payload.name || 'User',
-      role: payload.role || 'UPT_PIMPINAN',
-      title: payload.title || 'Operator UPT',
-      uptStation: payload.uptStation || 'BBMKG Wilayah V Papua',
-    };
-
-    // Create fresh token with extended expiry (24 hours)
-    const { token: newToken, exp, iat } = createJWT(user, 24 * 60 * 60 * 1000);
-    const newRefreshToken = `REFRESH_${base64UrlEncode(JSON.stringify({ id: user.id, ts: Date.now() }))}`;
-
-    localStorage.setItem(TOKEN_KEY, newToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
-    localStorage.setItem(SESSION_EXP_KEY, String(exp));
-
-    // Audit log
-    apiClient.auditLogs.add({
-      table: 'autentikasi',
-      action: 'REFRESH_TOKEN',
-      recordId: user.id,
-      recordName: user.name,
-      actor: `${user.name} (${user.role})`,
-      details: `Memperbarui token JWT autentikasi sesi aktif (Refresh Token)`,
-      status: 'SUCCESS',
-    });
-
-    return {
-      token: newToken,
-      refreshToken: newRefreshToken,
-      user,
-      expiresAt: exp,
-      createdAt: iat,
-    };
+    return null;
   },
 
   /**
@@ -222,7 +141,6 @@ export const authService = {
     }
 
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(SESSION_EXP_KEY);
   },
 
@@ -231,9 +149,7 @@ export const authService = {
    */
   getCurrentSession: (): AuthSession | null => {
     const token = localStorage.getItem(TOKEN_KEY);
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-
-    if (!token || !refreshToken) return null;
+    if (!token) return null;
 
     const validation = validateToken(token);
     if (!validation.valid || !validation.payload) {
@@ -259,7 +175,7 @@ export const authService = {
 
     return {
       token,
-      refreshToken,
+      refreshToken: '',
       user,
       expiresAt: payload.exp * 1000,
       createdAt: payload.iat * 1000,

@@ -1,47 +1,59 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { randomUUID } from 'crypto';
+import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
+import { AuthRequest } from '../middleware/authMiddleware.js';
+
+const deviceInput = z.object({
+  id: z.string().trim().min(1).max(64).optional(),
+  name: z.string().trim().min(1).max(200),
+  category: z.string().trim().min(1).max(100),
+  subCategory: z.string().trim().max(100).nullable().optional(),
+  uptStation: z.string().trim().min(1).max(200),
+  picKalibrasi: z.string().trim().max(200).optional(),
+  locationName: z.string().trim().max(200).optional(),
+  latitude: z.coerce.number().finite().min(-90).max(90),
+  longitude: z.coerce.number().finite().min(-180).max(180),
+  conditionStatus: z.enum(['NORMAL', 'GANGGUAN', 'MATI']).optional(),
+  calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA']).optional(),
+  lastCalibrated: z.string().trim().min(1).max(20).optional(),
+  calibrationValidUntil: z.string().trim().min(1).max(20).optional(),
+  calibrationAgency: z.string().trim().min(1).max(200).optional(),
+  issueDescription: z.string().trim().max(2000).nullable().optional(),
+  downtimeDuration: z.string().trim().max(200).nullable().optional(),
+  slaScore: z.coerce.number().finite().min(0).max(100).optional(),
+  olaScore: z.coerce.number().finite().min(0).max(100).optional(),
+});
+
+const deviceUpdate = deviceInput.partial().omit({ id: true });
+const actorName = (req: AuthRequest) => req.user?.name || 'System';
+
+function badInput(res: Response, error: z.ZodError) {
+  return res.status(400).json({ success: false, message: 'Data perangkat tidak valid.', errors: z.flattenError(error).fieldErrors });
+}
+
+function databaseError(res: Response, error: unknown, fallback: string) {
+  const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+  if (code === 'P2002') return res.status(409).json({ success: false, message: 'ID perangkat sudah digunakan.' });
+  if (code === 'P2025') return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+  return res.status(500).json({ success: false, message: fallback });
+}
 
 export const deviceController = {
-  // Get all devices
-  getAllDevices: async (req: Request, res: Response) => {
+  getAllDevices: async (_req: AuthRequest, res: Response) => {
     try {
-      const devices = await prisma.device.findMany({
-        orderBy: { name: 'asc' },
-      });
-      return res.json({
-        success: true,
-        count: devices.length,
-        data: devices,
-        devices,
-        totalDevices: devices.length,
-        source: 'POSTGRESQL_PRISMA_STORAGE',
-        lastUpdate: new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jayapura' }) + ' WIT',
-      });
+      const devices = await prisma.device.findMany({ orderBy: { name: 'asc' } });
+      return res.json({ success: true, count: devices.length, data: devices, devices, totalDevices: devices.length, source: 'POSTGRESQL_PRISMA_STORAGE', lastUpdate: new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jayapura' }) + ' WIT' });
     } catch (error) {
-      console.warn('getAllDevices PostgreSQL connection note:', (error as any)?.message || error);
-      return res.json({
-        success: true,
-        count: 0,
-        data: [],
-        devices: [],
-        totalDevices: 0,
-        source: 'POSTGRESQL_PRISMA_STORAGE',
-        lastUpdate: new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jayapura' }) + ' WIT',
-      });
+      console.error('getAllDevices PostgreSQL error:', error);
+      return res.status(503).json({ success: false, message: 'Database tidak tersedia. Data perangkat tidak dapat dimuat.' });
     }
   },
 
-  // Get device by ID
-  getDeviceById: async (req: Request, res: Response) => {
+  getDeviceById: async (req: AuthRequest, res: Response) => {
     try {
-      const { id } = req.params;
-      const device = await prisma.device.findUnique({
-        where: { id },
-        include: { slaOlaLogs: true, calibrationRecords: true },
-      });
-      if (!device) {
-        return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
-      }
+      const device = await prisma.device.findUnique({ where: { id: req.params.id }, include: { slaOlaLogs: true, calibrationRecords: true } });
+      if (!device) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
       return res.json({ success: true, data: device });
     } catch (error) {
       console.error('Error getDeviceById:', error);
@@ -49,126 +61,58 @@ export const deviceController = {
     }
   },
 
-  // Create new device
-  createDevice: async (req: Request, res: Response) => {
+  createDevice: async (req: AuthRequest, res: Response) => {
+    const parsed = deviceInput.safeParse(req.body);
+    if (!parsed.success) return badInput(res, parsed.error);
     try {
-      const body = req.body;
-      const newDevice = await prisma.device.create({
-        data: {
-          id: body.id || `ALT${Math.floor(1000 + Math.random() * 9000)}`,
-          name: body.name,
-          category: body.category,
-          subCategory: body.subCategory || null,
-          uptStation: body.uptStation,
-          picKalibrasi: body.picKalibrasi || 'Balai',
-          locationName: body.locationName || body.uptStation,
-          latitude: Number(body.latitude) || -2.54,
-          longitude: Number(body.longitude) || 140.7,
-          conditionStatus: body.conditionStatus || 'NORMAL',
-          calibrationStatus: body.calibrationStatus || 'VALID',
-          lastCalibrated: body.lastCalibrated || new Date().toISOString().split('T')[0],
-          calibrationValidUntil: body.calibrationValidUntil || new Date().toISOString().split('T')[0],
-          calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG V',
-          issueDescription: body.issueDescription || null,
-          downtimeDuration: body.downtimeDuration || null,
-        },
+      const body = parsed.data;
+      const station = await prisma.uptStation.findFirst({ where: { name: body.uptStation } });
+      if (!station) return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan. Buat atau pilih stasiun yang terdaftar.' });
+      const today = new Date().toISOString().slice(0, 10);
+      const newDevice = await prisma.$transaction(async (tx) => {
+        const created = await tx.device.create({ data: { ...body, id: body.id || `ALT-${randomUUID()}`, subCategory: body.subCategory || null, picKalibrasi: body.picKalibrasi || 'Balai', locationName: body.locationName || body.uptStation, conditionStatus: body.conditionStatus || 'NORMAL', calibrationStatus: body.calibrationStatus || 'VALID', lastCalibrated: body.lastCalibrated || today, calibrationValidUntil: body.calibrationValidUntil || today, calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG V', issueDescription: body.issueDescription || null, downtimeDuration: body.downtimeDuration || null, stationId: station.id } });
+        await tx.auditLog.create({ data: { table: 'master_alat', action: 'TAMBAH', recordId: created.id, recordName: `${created.name} (${created.category})`, actor: actorName(req), details: `Penambahan unit aloptama baru di Stasiun ${created.uptStation}.` } });
+        return created;
       });
-
-      // Audit Log
-      await prisma.auditLog.create({
-        data: {
-          table: 'master_alat',
-          action: 'TAMBAH',
-          recordId: newDevice.id,
-          recordName: `${newDevice.name} (${newDevice.category})`,
-          actor: body.actor || 'Admin INSKAL',
-          details: `Penambahan unit aloptama baru di Stasiun ${newDevice.uptStation}.`,
-        },
-      });
-
       return res.status(201).json({ success: true, data: newDevice });
     } catch (error) {
       console.error('Error createDevice:', error);
-      return res.status(500).json({ success: false, message: 'Gagal menambahkan perangkat baru.' });
+      return databaseError(res, error, 'Gagal menambahkan perangkat baru.');
     }
   },
 
-  // Update device
-  updateDevice: async (req: Request, res: Response) => {
+  updateDevice: async (req: AuthRequest, res: Response) => {
+    const parsed = deviceUpdate.safeParse(req.body);
+    if (!parsed.success) return badInput(res, parsed.error);
+    if (Object.keys(parsed.data).length === 0) return res.status(400).json({ success: false, message: 'Tidak ada data yang dapat diperbarui.' });
     try {
-      const { id } = req.params;
-      const body = req.body;
-
-      const updated = await prisma.device.update({
-        where: { id },
-        data: {
-          name: body.name,
-          category: body.category,
-          subCategory: body.subCategory,
-          uptStation: body.uptStation,
-          picKalibrasi: body.picKalibrasi || 'Balai',
-          locationName: body.locationName,
-          latitude: body.latitude !== undefined ? Number(body.latitude) : undefined,
-          longitude: body.longitude !== undefined ? Number(body.longitude) : undefined,
-          conditionStatus: body.conditionStatus,
-          calibrationStatus: body.calibrationStatus,
-          lastCalibrated: body.lastCalibrated,
-          calibrationValidUntil: body.calibrationValidUntil,
-          calibrationAgency: body.calibrationAgency,
-          issueDescription: body.issueDescription,
-          downtimeDuration: body.downtimeDuration,
-          slaScore: body.slaScore !== undefined ? Number(body.slaScore) : undefined,
-          olaScore: body.olaScore !== undefined ? Number(body.olaScore) : undefined,
-        },
+      const body = parsed.data;
+      const station = body.uptStation ? await prisma.uptStation.findFirst({ where: { name: body.uptStation } }) : null;
+      if (body.uptStation && !station) return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan.' });
+      const updated = await prisma.$transaction(async (tx) => {
+        const device = await tx.device.update({ where: { id: req.params.id }, data: { ...body, stationId: station?.id } });
+        await tx.auditLog.create({ data: { table: 'master_alat', action: 'EDIT', recordId: device.id, recordName: `${device.name} (${device.category})`, actor: actorName(req), details: `Pembaruan data master aloptama ${device.name}.` } });
+        return device;
       });
-
-      // Audit Log
-      await prisma.auditLog.create({
-        data: {
-          table: 'master_alat',
-          action: 'EDIT',
-          recordId: updated.id,
-          recordName: `${updated.name} (${updated.category})`,
-          actor: body.actor || 'Admin INSKAL',
-          details: body.details || `Pembaruan data master aloptama ${updated.name}.`,
-        },
-      });
-
       return res.json({ success: true, data: updated });
     } catch (error) {
       console.error('Error updateDevice:', error);
-      return res.status(500).json({ success: false, message: 'Gagal memperbarui data perangkat.' });
+      return databaseError(res, error, 'Gagal memperbarui data perangkat.');
     }
   },
 
-  // Delete device
-  deleteDevice: async (req: Request, res: Response) => {
+  deleteDevice: async (req: AuthRequest, res: Response) => {
     try {
-      const { id } = req.params;
-      const device = await prisma.device.findUnique({ where: { id } });
-
-      if (!device) {
-        return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
-      }
-
-      await prisma.device.delete({ where: { id } });
-
-      // Audit Log
-      await prisma.auditLog.create({
-        data: {
-          table: 'master_alat',
-          action: 'HAPUS',
-          recordId: id,
-          recordName: device.name,
-          actor: (req.body && req.body.actor) || 'Admin INSKAL',
-          details: `Penghapusan data master aloptama ${device.name} (${device.category}).`,
-        },
+      const device = await prisma.device.findUnique({ where: { id: req.params.id } });
+      if (!device) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+      await prisma.$transaction(async (tx) => {
+        await tx.device.delete({ where: { id: device.id } });
+        await tx.auditLog.create({ data: { table: 'master_alat', action: 'HAPUS', recordId: device.id, recordName: device.name, actor: actorName(req), details: `Penghapusan data master aloptama ${device.name} (${device.category}).` } });
       });
-
       return res.json({ success: true, message: 'Perangkat berhasil dihapus.' });
     } catch (error) {
       console.error('Error deleteDevice:', error);
-      return res.status(500).json({ success: false, message: 'Gagal menghapus data perangkat.' });
+      return databaseError(res, error, 'Gagal menghapus data perangkat.');
     }
   },
 };

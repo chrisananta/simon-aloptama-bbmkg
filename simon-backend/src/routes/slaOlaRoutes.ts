@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { slaOlaController } from '../controllers/slaOlaController.js';
-import { verifyToken } from '../middleware/authMiddleware.js';
+import { verifyToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
@@ -10,7 +10,7 @@ router.post('/sla-ola/save', verifyToken, slaOlaController.saveSlaOla);
 router.post('/sla-ola', verifyToken, slaOlaController.saveSlaOla);
 
 // Input SLA/OLA per-bulan khusus Admin Master View
-router.get('/sla-ola/monthly', verifyToken, slaOlaController.getMonthlySlaOla);
-router.post('/sla-ola/monthly', verifyToken, slaOlaController.saveMonthlySlaOla);
+router.get('/sla-ola/monthly', verifyToken, requireAdmin, slaOlaController.getMonthlySlaOla);
+router.post('/sla-ola/monthly', verifyToken, requireAdmin, slaOlaController.saveMonthlySlaOla);
 
 export default router;

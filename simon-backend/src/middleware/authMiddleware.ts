@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
     username: string;
     role: string;
     name: string;
+    uptStation: string;
   };
 }
 

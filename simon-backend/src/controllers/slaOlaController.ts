@@ -1,15 +1,27 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { prisma } from '../db/prisma.js';
+import { AuthRequest } from '../middleware/authMiddleware.js';
 
 export const slaOlaController = {
   // Save SLA OLA entry and update matching device status
-  saveSlaOla: async (req: Request, res: Response) => {
+  saveSlaOla: async (req: AuthRequest, res: Response) => {
     try {
       const { uptStation, category, deviceId, kondisiSla, kondisiOla, kendala, actor } = req.body;
 
+      if (!uptStation || !category || !req.user) return res.status(400).json({ success: false, message: 'Stasiun dan kategori wajib diisi.' });
+      const slaOn = kondisiSla === true || kondisiSla === 'true' || kondisiSla === 1 || kondisiSla === '1';
+      const ola = Number(kondisiOla);
+      if (!Number.isFinite(ola) || ola < 0 || ola > 100) return res.status(400).json({ success: false, message: 'Nilai OLA harus antara 0 sampai 100.' });
+      if (req.user.role !== 'ADMIN' && req.user.uptStation !== uptStation) return res.status(403).json({ success: false, message: 'Anda hanya dapat mengisi SLA/OLA untuk UPT sendiri.' });
+      if (deviceId) {
+        const targetDevice = await prisma.device.findUnique({ where: { id: deviceId } });
+        if (!targetDevice) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+        if (req.user.role !== 'ADMIN' && targetDevice.uptStation !== req.user.uptStation) return res.status(403).json({ success: false, message: 'Perangkat bukan milik UPT Anda.' });
+      }
+
       // Determine new status
       let newStatus: 'NORMAL' | 'GANGGUAN' | 'MATI' = 'NORMAL';
-      if (!kondisiSla || Number(kondisiOla) === 0) {
+      if (!slaOn || ola === 0) {
         newStatus = 'MATI';
       } else if (Number(kondisiOla) >= 100) {
         newStatus = 'NORMAL';
@@ -23,11 +35,11 @@ export const slaOlaController = {
           uptStation,
           category,
           deviceId: deviceId || null,
-          kondisiSla: Boolean(kondisiSla),
-          kondisiOla: Number(kondisiOla) || 0,
+          kondisiSla: slaOn,
+          kondisiOla: ola,
           kendala: kendala || '',
           status: newStatus,
-          actor: actor || 'Operator UPT',
+          actor: req.user.name,
         },
       });
 
@@ -36,15 +48,15 @@ export const slaOlaController = {
       let targetDevices = [];
 
       if (deviceId) {
-        const dev = await prisma.device.findUnique({ where: { id: deviceId } });
-        if (dev) {
+          const dev = await prisma.device.findUnique({ where: { id: deviceId } });
+          if (dev) {
           updatedDeviceName = dev.name;
           await prisma.device.update({
             where: { id: deviceId },
             data: {
               conditionStatus: newStatus,
-              slaScore: kondisiSla ? 100 : 0,
-              olaScore: Number(kondisiOla),
+              slaScore: slaOn ? 100 : 0,
+              olaScore: ola,
               issueDescription: kendala || (newStatus === 'NORMAL' ? null : 'Kendala operasional dilaporkan UPT'),
               downtimeDuration: newStatus === 'NORMAL' ? null : newStatus === 'MATI' ? 'Mati Total (0%)' : 'Dalam Penanganan UPT',
               lastReportedDate: new Date().toISOString().split('T')[0],
@@ -62,8 +74,8 @@ export const slaOlaController = {
             where: { id: dev.id },
             data: {
               conditionStatus: newStatus,
-              slaScore: kondisiSla ? 100 : 0,
-              olaScore: Number(kondisiOla),
+              slaScore: slaOn ? 100 : 0,
+              olaScore: ola,
               issueDescription: kendala || (newStatus === 'NORMAL' ? null : 'Kendala operasional dilaporkan UPT'),
               downtimeDuration: newStatus === 'NORMAL' ? null : newStatus === 'MATI' ? 'Mati Total (0%)' : 'Dalam Penanganan UPT',
               lastReportedDate: new Date().toISOString().split('T')[0],
@@ -79,8 +91,8 @@ export const slaOlaController = {
           action: 'SIMPAN_SLA_OLA',
           recordId: deviceId || uptStation,
           recordName: updatedDeviceName || `${category} - ${uptStation}`,
-          actor: actor || 'Operator UPT BMKG',
-          details: `Pengisian SLA/OLA: SLA=${kondisiSla ? 'ON (100%)' : 'OFF (0%)'}, OLA=${kondisiOla}%. Kendala: "${kendala || '-'}"`,
+          actor: req.user.name,
+          details: `Pengisian SLA/OLA: SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA=${ola}%. Kendala: "${kendala || '-'}"`,
         },
       });
 
@@ -111,7 +123,7 @@ export const slaOlaController = {
   // di memori browser yang hilang saat refresh seperti sebelumnya).
 
   // Simpan/perbarui nilai SLA & OLA untuk 1 alat pada bulan & tahun tertentu
-  saveMonthlySlaOla: async (req: Request, res: Response) => {
+  saveMonthlySlaOla: async (req: AuthRequest, res: Response) => {
     try {
       const { deviceId, uptStation, category, kondisiSla, ola, bulan, tahun, actor } = req.body;
 
@@ -143,7 +155,7 @@ export const slaOlaController = {
           kondisiSla: slaOn,
           kondisiOla: olaNum,
           status: newStatus,
-          actor: actor || 'Admin INSKAL',
+          actor: req.user?.name || 'System',
           timestamp: targetTimestamp,
         },
       });
@@ -179,7 +191,7 @@ export const slaOlaController = {
           action: 'SIMPAN_SLA_OLA',
           recordId: deviceId,
           recordName: updatedDeviceName,
-          actor: actor || 'Admin INSKAL',
+          actor: req.user?.name || 'System',
           details: `Input SLA/OLA bulanan [${bulanNum}/${tahunNum}] pada alat "${updatedDeviceName}": SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA ${olaNum}% (Status ${newStatus})`,
         },
       });
@@ -199,7 +211,7 @@ export const slaOlaController = {
   },
 
   // Ambil nilai SLA & OLA terakhir per alat untuk bulan & tahun tertentu
-  getMonthlySlaOla: async (req: Request, res: Response) => {
+  getMonthlySlaOla: async (req: AuthRequest, res: Response) => {
     try {
       const bulanNum = Number(req.query.bulan);
       const tahunNum = Number(req.query.tahun);
@@ -240,7 +252,7 @@ export const slaOlaController = {
   },
 
   // Get SLA/OLA history logs
-  getSlaOlaLogs: async (req: Request, res: Response) => {
+  getSlaOlaLogs: async (_req: AuthRequest, res: Response) => {
     try {
       const logs = await prisma.slaOlaLog.findMany({
         orderBy: { timestamp: 'desc' },

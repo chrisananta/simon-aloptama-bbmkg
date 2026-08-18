@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db/prisma.js';
+import { AuthRequest } from '../middleware/authMiddleware.js';
 
 export const auditLogController = {
   // Get all audit logs
-  getAuditLogs: async (req: Request, res: Response) => {
+  getAuditLogs: async (_req: AuthRequest, res: Response) => {
     try {
       const logs = await prisma.auditLog.findMany({
         orderBy: { timestamp: 'desc' },
@@ -17,9 +18,9 @@ export const auditLogController = {
   },
 
   // Create manual audit log entry
-  createAuditLog: async (req: Request, res: Response) => {
+  createAuditLog: async (req: AuthRequest, res: Response) => {
     try {
-      const { table, action, recordId, recordName, actor, details, status, ipOrSource } = req.body;
+      const { table, action, recordId, recordName, details, status } = req.body;
 
       const newLog = await prisma.auditLog.create({
         data: {
@@ -27,10 +28,10 @@ export const auditLogController = {
           action,
           recordId,
           recordName,
-          actor: actor || 'Operator SIMON',
+          actor: req.user?.name || 'System',
           details,
           status: status || 'SUCCESS',
-          ipOrSource: ipOrSource || 'Centralized API Client',
+          ipOrSource: req.ip || 'SIMON API',
         },
       });
 
@@ -42,9 +43,8 @@ export const auditLogController = {
   },
 
   // Clear all audit logs
-  clearAuditLogs: async (req: Request, res: Response) => {
+  clearAuditLogs: async (req: AuthRequest, res: Response) => {
     try {
-      const { actor } = req.body;
       await prisma.auditLog.deleteMany({});
 
       await prisma.auditLog.create({
@@ -53,7 +53,7 @@ export const auditLogController = {
           action: 'RESET_DATA',
           recordId: 'AUDIT_LOG_CLEAR',
           recordName: 'Repository Log Aktivitas',
-          actor: actor || 'Admin INSKAL',
+          actor: req.user?.name || 'System',
           details: 'Semua riwayat log aktivitas audit sistem dibersihkan oleh administrator.',
         },
       });

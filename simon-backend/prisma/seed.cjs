@@ -1,20 +1,20 @@
-const { PrismaClient } = require('@prisma/client');
-const fs = require('fs');
-const path = require('path');
+const { PrismaClient } = require("@prisma/client");
+const fs = require("fs");
+const path = require("path");
 
 const prisma = new PrismaClient();
 
 function parseCSVLine(line) {
   const result = [];
-  let current = '';
+  let current = "";
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     if (char === '"' || char === "'") {
       inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === "," && !inQuotes) {
       result.push(current.trim());
-      current = '';
+      current = "";
     } else {
       current += char;
     }
@@ -29,24 +29,27 @@ function readCSV(filename) {
     console.error(`File ${filename} tidak ditemukan di: ${filePath}`);
     return [];
   }
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.trim().split('\n').map(l => l.replace(/\r/g, ''));
+  const content = fs.readFileSync(filePath, "utf-8");
+  const lines = content
+    .trim()
+    .split("\n")
+    .map((l) => l.replace(/\r/g, ""));
   const headers = parseCSVLine(lines[0]);
-  return lines.slice(1).map(line => {
+  return lines.slice(1).map((line) => {
     const values = parseCSVLine(line);
     const row = {};
     headers.forEach((h, i) => {
-      row[h] = values[i] !== undefined && values[i] !== '' ? values[i] : null;
+      row[h] = values[i] !== undefined && values[i] !== "" ? values[i] : null;
     });
     return row;
   });
 }
 
 async function main() {
-  console.log('Memulai import data master CSV...');
+  console.log("Memulai import data master CSV...");
 
   // 1. Import Master Stasiun (UptStation)
-  const stasiunList = readCSV('MASTER_STASIUN.csv');
+  const stasiunList = readCSV("MASTER_STASIUN.csv");
   let stasiunCount = 0;
   for (const item of stasiunList) {
     if (!item.ID_STASIUN) continue;
@@ -75,37 +78,43 @@ async function main() {
   console.log(`[OK] Berhasil mengimpor ${stasiunCount} Stasiun.`);
 
   // 2. Import Master Peralatan (Device)
-  const alatList = readCSV('MASTER_PERALATAN.csv');
+  const alatList = readCSV("MASTER_PERALATAN.csv");
   let alatCount = 0;
   for (const item of alatList) {
     if (!item.ID_ALAT) continue;
-    const lat = item.LATITUDE && !isNaN(parseFloat(item.LATITUDE)) ? parseFloat(item.LATITUDE) : 0.0;
-    const lng = item.LONGITUDE && !isNaN(parseFloat(item.LONGITUDE)) ? parseFloat(item.LONGITUDE) : 0.0;
+    const lat =
+      item.LATITUDE && !isNaN(parseFloat(item.LATITUDE))
+        ? parseFloat(item.LATITUDE)
+        : 0.0;
+    const lng =
+      item.LONGITUDE && !isNaN(parseFloat(item.LONGITUDE))
+        ? parseFloat(item.LONGITUDE)
+        : 0.0;
 
     try {
       await prisma.device.upsert({
         where: { id: item.ID_ALAT },
         update: {
           name: item.NAMA_PERALATAN || item.ID_ALAT,
-          category: item.JENIS_PERALATAN || 'Umum',
-          subCategory: item.MERK || '',
-          uptStation: item.ID_STASIUN || '-',
-          locationName: item.NAMA_PERALATAN || '-',
+          category: item.JENIS_PERALATAN || "Umum",
+          subCategory: item.MERK || "",
+          uptStation: item.ID_STASIUN || "-",
+          locationName: item.NAMA_PERALATAN || "-",
           latitude: lat,
           longitude: lng,
         },
         create: {
           id: item.ID_ALAT,
           name: item.NAMA_PERALATAN || item.ID_ALAT,
-          category: item.JENIS_PERALATAN || 'Umum',
-          subCategory: item.MERK || '',
-          uptStation: item.ID_STASIUN || '-',
-          locationName: item.NAMA_PERALATAN || '-',
+          category: item.JENIS_PERALATAN || "Umum",
+          subCategory: item.MERK || "",
+          uptStation: item.ID_STASIUN || "-",
+          locationName: item.NAMA_PERALATAN || "-",
           latitude: lat,
           longitude: lng,
-          lastCalibrated: '2025-01-01',
-          calibrationValidUntil: '2026-01-01',
-          calibrationAgency: 'Balai Besar MKG Wilayah V',
+          lastCalibrated: "2025-01-01",
+          calibrationValidUntil: "2026-01-01",
+          calibrationAgency: "Balai Besar MKG Wilayah V",
         },
       });
       alatCount++;

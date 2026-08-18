@@ -1,112 +1,82 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
+import { AuthRequest } from '../middleware/authMiddleware.js';
+
+const stationInput = z.object({
+  code: z.string().trim().min(1).max(30),
+  name: z.string().trim().min(1).max(200),
+  regionGroup: z.string().trim().min(1).max(100).optional(),
+  location: z.string().trim().min(1).max(300).optional(),
+  latitude: z.coerce.number().finite().min(-90).max(90),
+  longitude: z.coerce.number().finite().min(-180).max(180),
+});
+const stationUpdate = stationInput.partial();
+const actorName = (req: AuthRequest) => req.user?.name || 'System';
+
+function invalid(res: Response, error: z.ZodError) {
+  return res.status(400).json({ success: false, message: 'Data stasiun tidak valid.', errors: z.flattenError(error).fieldErrors });
+}
 
 export const stationController = {
-  // Get all UPT Stations
-  getAllStations: async (req: Request, res: Response) => {
+  getAllStations: async (_req: AuthRequest, res: Response) => {
     try {
-      const stations = await prisma.uptStation.findMany({
-        orderBy: { code: 'asc' },
-      });
+      const stations = await prisma.uptStation.findMany({ orderBy: { code: 'asc' } });
       return res.json({ success: true, count: stations.length, data: stations, stations });
     } catch (error) {
-      console.warn('getAllStations PostgreSQL connection note:', (error as any)?.message || error);
-      return res.json({ success: true, count: 0, data: [], stations: [] });
+      console.error('getAllStations PostgreSQL error:', error);
+      return res.status(503).json({ success: false, message: 'Database tidak tersedia. Data stasiun tidak dapat dimuat.' });
     }
   },
 
-  // Create UPT Station
-  createStation: async (req: Request, res: Response) => {
+  createStation: async (req: AuthRequest, res: Response) => {
+    const parsed = stationInput.safeParse(req.body);
+    if (!parsed.success) return invalid(res, parsed.error);
     try {
-      const body = req.body;
-      const station = await prisma.uptStation.create({
-        data: {
-          code: body.code,
-          name: body.name,
-          regionGroup: body.regionGroup || 'Papua',
-          location: body.location || body.name,
-          latitude: Number(body.latitude) || -2.54,
-          longitude: Number(body.longitude) || 140.7,
-        },
+      const body = parsed.data;
+      const station = await prisma.$transaction(async (tx) => {
+        const created = await tx.uptStation.create({ data: { code: body.code, name: body.name, regionGroup: body.regionGroup || 'Papua', location: body.location || body.name, latitude: body.latitude, longitude: body.longitude } });
+        await tx.auditLog.create({ data: { table: 'master_stasiun', action: 'TAMBAH', recordId: created.code, recordName: created.name, actor: actorName(req), details: `Penambahan stasiun UPT baru: ${created.name} (${created.regionGroup}).` } });
+        return created;
       });
-
-      await prisma.auditLog.create({
-        data: {
-          table: 'master_stasiun',
-          action: 'TAMBAH',
-          recordId: station.code,
-          recordName: station.name,
-          actor: body.actor || 'Admin INSKAL',
-          details: `Penambahan stasiun UPT baru: ${station.name} (${station.regionGroup}).`,
-        },
-      });
-
       return res.status(201).json({ success: true, data: station });
     } catch (error) {
       console.error('Error createStation:', error);
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') return res.status(409).json({ success: false, message: 'Kode stasiun sudah digunakan.' });
       return res.status(500).json({ success: false, message: 'Gagal menambahkan stasiun UPT.' });
     }
   },
 
-  // Update UPT Station
-  updateStation: async (req: Request, res: Response) => {
+  updateStation: async (req: AuthRequest, res: Response) => {
+    const parsed = stationUpdate.safeParse(req.body);
+    if (!parsed.success) return invalid(res, parsed.error);
+    if (Object.keys(parsed.data).length === 0) return res.status(400).json({ success: false, message: 'Tidak ada data yang dapat diperbarui.' });
     try {
-      const { id } = req.params;
-      const body = req.body;
-
-      const station = await prisma.uptStation.update({
-        where: { id },
-        data: {
-          code: body.code,
-          name: body.name,
-          regionGroup: body.regionGroup,
-          location: body.location,
-          latitude: body.latitude !== undefined ? Number(body.latitude) : undefined,
-          longitude: body.longitude !== undefined ? Number(body.longitude) : undefined,
-        },
+      const station = await prisma.$transaction(async (tx) => {
+        const updated = await tx.uptStation.update({ where: { id: req.params.id }, data: parsed.data });
+        await tx.auditLog.create({ data: { table: 'master_stasiun', action: 'EDIT', recordId: updated.code, recordName: updated.name, actor: actorName(req), details: `Pembaruan data stasiun UPT ${updated.name}.` } });
+        return updated;
       });
-
-      await prisma.auditLog.create({
-        data: {
-          table: 'master_stasiun',
-          action: 'EDIT',
-          recordId: station.code,
-          recordName: station.name,
-          actor: body.actor || 'Admin INSKAL',
-          details: body.details || `Pembaruan data stasiun UPT ${station.name}.`,
-        },
-      });
-
       return res.json({ success: true, data: station });
     } catch (error) {
       console.error('Error updateStation:', error);
+      const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+      if (code === 'P2002') return res.status(409).json({ success: false, message: 'Kode stasiun sudah digunakan.' });
+      if (code === 'P2025') return res.status(404).json({ success: false, message: 'Stasiun tidak ditemukan.' });
       return res.status(500).json({ success: false, message: 'Gagal memperbarui stasiun UPT.' });
     }
   },
 
-  // Delete UPT Station
-  deleteStation: async (req: Request, res: Response) => {
+  deleteStation: async (req: AuthRequest, res: Response) => {
     try {
-      const { id } = req.params;
-      const station = await prisma.uptStation.findUnique({ where: { id } });
-
-      if (!station) {
-        return res.status(404).json({ success: false, message: 'Stasiun tidak ditemukan.' });
-      }
-
-      await prisma.uptStation.delete({ where: { id } });
-
-      await prisma.auditLog.create({
-        data: {
-          table: 'master_stasiun',
-          action: 'HAPUS',
-          recordId: station.code,
-          recordName: station.name,
-          actor: (req.body && req.body.actor) || 'Admin INSKAL',
-          details: `Penghapusan stasiun UPT ${station.name}.`,
-        },
+      const station = await prisma.uptStation.findUnique({ where: { id: req.params.id } });
+      if (!station) return res.status(404).json({ success: false, message: 'Stasiun tidak ditemukan.' });
+      const deviceCount = await prisma.device.count({ where: { OR: [{ stationId: station.id }, { uptStation: station.name }] } });
+      if (deviceCount > 0) return res.status(409).json({ success: false, message: `Stasiun tidak dapat dihapus karena masih memiliki ${deviceCount} perangkat. Pindahkan atau hapus perangkat terlebih dahulu.` });
+      await prisma.$transaction(async (tx) => {
+        await tx.uptStation.delete({ where: { id: station.id } });
+        await tx.auditLog.create({ data: { table: 'master_stasiun', action: 'HAPUS', recordId: station.code, recordName: station.name, actor: actorName(req), details: `Penghapusan stasiun UPT ${station.name}.` } });
       });
-
       return res.json({ success: true, message: 'Stasiun UPT berhasil dihapus.' });
     } catch (error) {
       console.error('Error deleteStation:', error);

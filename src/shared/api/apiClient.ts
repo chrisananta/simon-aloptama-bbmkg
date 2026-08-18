@@ -226,58 +226,34 @@ export const apiClient = {
       kendala: string;
       actor?: string;
     }): Promise<{ devices: AloptamaDevice[]; lastSync: string }> => {
-      try {
-        const response = await authFetch("/api/sla-ola", {
+      const response = await authFetch("/api/sla-ola", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
-        });
-        if (response.ok) {
-          const resData = await response.json();
-          if (resData?.devices && Array.isArray(resData.devices)) {
-            memoryCache.devices = resData.devices;
-            return {
-              devices: resData.devices,
-              lastSync: resData.lastSync || new Date().toLocaleString("id-ID"),
-            };
-          }
-        }
-      } catch (e) {
-        console.warn("Backend API saveSlaOla error:", e);
-      }
-
-      // Fallback update in memory if network issue
-      const updatedDevices = memoryCache.devices.map((dev) => {
-        const isMatch = data.deviceId
-          ? dev.id === data.deviceId
-          : dev.uptStation === data.uptStation && dev.category === data.category;
-        if (isMatch) {
-          let newStatus: "NORMAL" | "GANGGUAN" | "MATI" = "NORMAL";
-          if (!data.kondisiSla || data.kondisiOla === 0) {
-            newStatus = "MATI";
-          } else if (data.kondisiOla >= 100) {
-            newStatus = "NORMAL";
-          } else {
-            newStatus = "GANGGUAN";
-          }
-
-          return {
-            ...dev,
-            conditionStatus: newStatus,
-            olaScore: data.kondisiOla,
-            slaScore: data.kondisiSla ? 100 : 0,
-            issueDescription: data.kendala || (newStatus === "NORMAL" ? undefined : "Kendala operasional dilaporkan UPT"),
-            downtimeDuration: newStatus === "NORMAL" ? undefined : newStatus === "MATI" ? "Mati Total (0%)" : "Dalam Penanganan Teknisi UPT",
-            lastReportedDate: new Date().toISOString().split("T")[0],
-          };
-        }
-        return dev;
       });
 
-      memoryCache.devices = updatedDevices;
+      // Mutasi data harus selalu dikonfirmasi server. Jangan memperlakukan
+      // 401/403/5xx sebagai "offline", karena itu dapat membuat UI seolah
+      // perubahan berhasil padahal server menolaknya.
+      if (!response.ok) {
+        let message = "Gagal menyimpan SLA/OLA ke server.";
+        try {
+          const errorData = await response.json();
+          if (errorData?.message) message = errorData.message;
+        } catch {
+          // Respons error bukan JSON; gunakan pesan umum.
+        }
+        throw new Error(message);
+      }
+
+      const resData = await response.json();
+      if (!resData?.devices || !Array.isArray(resData.devices)) {
+        throw new Error(resData?.message || "Server tidak mengembalikan data perangkat yang valid.");
+      }
+      memoryCache.devices = resData.devices;
       return {
-        devices: updatedDevices,
-        lastSync: new Date().toLocaleString("id-ID"),
+        devices: resData.devices,
+        lastSync: resData.lastSync || new Date().toLocaleString("id-ID"),
       };
     },
 

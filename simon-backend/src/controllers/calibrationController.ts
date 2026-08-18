@@ -1,109 +1,50 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
+import { AuthRequest } from '../middleware/authMiddleware.js';
+
+const calibrationInput = z.object({
+  deviceId: z.string().trim().min(1),
+  deviceName: z.string().trim().max(200).optional(),
+  uptStation: z.string().trim().max(200).optional(),
+  category: z.string().trim().max(100).optional(),
+  lastCalibrated: z.string().trim().min(1).max(20),
+  calibrationValidUntil: z.string().trim().min(1).max(20),
+  calibrationAgency: z.string().trim().min(1).max(200).optional(),
+  calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA']).optional(),
+  certificateNumber: z.string().trim().max(200).nullable().optional(),
+  notes: z.string().trim().max(3000).nullable().optional(),
+});
 
 export const calibrationController = {
-  // Save Calibration record and update device
-  saveCalibration: async (req: Request, res: Response) => {
+  saveCalibration: async (req: AuthRequest, res: Response) => {
+    const parsed = calibrationInput.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ success: false, message: 'Data kalibrasi tidak valid.', errors: z.flattenError(parsed.error).fieldErrors });
     try {
-      const {
-        deviceId,
-        deviceName,
-        uptStation,
-        category,
-        lastCalibrated,
-        calibrationValidUntil,
-        calibrationAgency,
-        calibrationStatus,
-        certificateNumber,
-        notes,
-        actor,
-      } = req.body;
-
-      let record: any = null;
-      let allDevices: any[] = [];
-
-      try {
-        // 1. Create CalibrationRecord
-        record = await prisma.calibrationRecord.create({
-          data: {
-            deviceId,
-            deviceName: deviceName || 'Aloptama Device',
-            uptStation: uptStation || 'UPT BMKG',
-            category: category || 'AWOS',
-            lastCalibrated,
-            calibrationValidUntil,
-            calibrationAgency: calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura',
-            calibrationStatus: calibrationStatus || 'VALID',
-            certificateNumber: certificateNumber || null,
-            notes: notes || null,
-          },
-        });
-
-        // 2. Update Device calibration status
-        await prisma.device.update({
-          where: { id: deviceId },
-          data: {
-            lastCalibrated,
-            calibrationValidUntil,
-            calibrationAgency: calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura',
-            calibrationStatus: calibrationStatus || 'VALID',
-          },
-        });
-
-        // 3. Audit Log
-        await prisma.auditLog.create({
-          data: {
-            table: 'kalibrasi',
-            action: 'SIMPAN_KALIBRASI',
-            recordId: deviceId,
-            recordName: deviceName || deviceId,
-            actor: actor || calibrationAgency || 'Tim INSKAL',
-            details: `Pembaruan Kalibrasi: Status=${calibrationStatus}, Berlaku s/d ${calibrationValidUntil}. Sertifikat: "${certificateNumber || '-'}"`,
-          },
-        });
-
-        allDevices = await prisma.device.findMany({ orderBy: { name: 'asc' } });
-      } catch (dbErr) {
-        console.warn('PostgreSQL write note in saveCalibration:', (dbErr as any)?.message || dbErr);
-      }
-
-      const safeRecord = record || {
-        id: 'CAL-' + Date.now(),
-        deviceId,
-        deviceName: deviceName || 'Aloptama Device',
-        uptStation: uptStation || 'UPT BMKG',
-        category: category || 'AWOS',
-        lastCalibrated,
-        calibrationValidUntil,
-        calibrationAgency: calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura',
-        calibrationStatus: calibrationStatus || 'VALID',
-        certificateNumber: certificateNumber || null,
-        notes: notes || null,
-        createdAt: new Date().toISOString(),
-      };
-
-      return res.json({
-        success: true,
-        message: 'Data kalibrasi berhasil disimpan.',
-        data: safeRecord,
-        devices: allDevices,
+      const body = parsed.data;
+      const device = await prisma.device.findUnique({ where: { id: body.deviceId } });
+      if (!device) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+      const record = await prisma.$transaction(async (tx) => {
+        const created = await tx.calibrationRecord.create({ data: { deviceId: device.id, deviceName: body.deviceName || device.name, uptStation: body.uptStation || device.uptStation, category: body.category || device.category, lastCalibrated: body.lastCalibrated, calibrationValidUntil: body.calibrationValidUntil, calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura', calibrationStatus: body.calibrationStatus || 'VALID', certificateNumber: body.certificateNumber || null, notes: body.notes || null } });
+        await tx.device.update({ where: { id: device.id }, data: { lastCalibrated: body.lastCalibrated, calibrationValidUntil: body.calibrationValidUntil, calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura', calibrationStatus: body.calibrationStatus || 'VALID' } });
+        await tx.auditLog.create({ data: { table: 'kalibrasi', action: 'SIMPAN_KALIBRASI', recordId: device.id, recordName: device.name, actor: req.user?.name || 'System', details: `Pembaruan Kalibrasi: Status=${body.calibrationStatus || 'VALID'}, Berlaku s/d ${body.calibrationValidUntil}. Sertifikat: "${body.certificateNumber || '-'}"` } });
+        return created;
       });
+      const devices = await prisma.device.findMany({ orderBy: { name: 'asc' } });
+      return res.json({ success: true, message: 'Data kalibrasi berhasil disimpan.', data: record, devices });
     } catch (error) {
-      console.warn('Error in saveCalibration:', error);
-      return res.json({ success: true, message: 'Data kalibrasi berhasil diproses.' });
+      console.error('Error saveCalibration:', error);
+      return res.status(500).json({ success: false, message: 'Gagal menyimpan data kalibrasi.' });
     }
   },
 
-  // Get all calibration records
-  getCalibrationRecords: async (req: Request, res: Response) => {
+  getCalibrationRecords: async (_req: AuthRequest, res: Response) => {
     try {
-      const records = await prisma.calibrationRecord.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
+      const records = await prisma.calibrationRecord.findMany({ orderBy: { createdAt: 'desc' } });
       return res.json({ success: true, count: records.length, data: records });
     } catch (error) {
-      console.warn('getCalibrationRecords PostgreSQL note:', (error as any)?.message || error);
-      return res.json({ success: true, count: 0, data: [], source: 'FALLBACK' });
+      console.error('getCalibrationRecords PostgreSQL error:', error);
+      return res.status(503).json({ success: false, message: 'Database tidak tersedia. Riwayat kalibrasi tidak dapat dimuat.' });
     }
   },
 };

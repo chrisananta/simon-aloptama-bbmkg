@@ -45,12 +45,12 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
       deviceName: devices[0]?.name || '',
       category: devices[0]?.category || '',
       uptStation: devices[0]?.uptStation || '',
-      lastCalibrated: '2026-07-08',
-      calibrationValidUntil: '2027-07-07',
+      lastCalibrated: '',
+      calibrationValidUntil: '',
       calibrationStatus: 'VALID' as const,
       calibrationAgency: 'Tim INSKAL BBMKG Wilayah V',
       notes: 'Telah dilakukan kalibrasi & pengujian fungsi sensor operasional.',
-      yearCreated: '2026',
+      yearCreated: new Date().getFullYear().toString(),
     },
   });
 
