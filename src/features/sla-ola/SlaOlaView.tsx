@@ -28,7 +28,6 @@ import {
 import { AloptamaDevice } from '../../shared/types';
 import { WaReportModal } from '../monitoring/WaReportModal';
 import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
-import { OFFICIAL_SLA_OLA_REKAP, getMonthlyOverallRekap } from '../../shared/constants/slaOlaConstants';
 import { useAuth } from '../auth/AuthContext';
 
 interface SlaOlaViewProps {

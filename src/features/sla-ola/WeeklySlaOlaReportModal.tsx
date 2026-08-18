@@ -26,7 +26,6 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
-import { OFFICIAL_SLA_OLA_REKAP } from '../../shared/constants/slaOlaConstants';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 
 interface WeeklySlaOlaReportModalProps {

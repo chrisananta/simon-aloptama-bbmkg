@@ -65,6 +65,7 @@ model Device {
   calibrationRecords    CalibrationRecord[]
   station               UptStation?         @relation(fields: [stationId], references: [id])
   slaOlaLogs            SlaOlaLog[]
+  monthlyScores         DeviceMonthlyScore[]
 
   @@map("devices")
 }
@@ -83,6 +84,27 @@ model SlaOlaLog {
   device     Device?  @relation(fields: [deviceId], references: [id])
 
   @@map("sla_ola_logs")
+}
+
+// Nilai SLA/OLA per alat, per bulan & tahun acuan. Satu baris = satu alat
+// untuk satu periode bulan tertentu (mis. AWOS Sentani - Juli - 2026).
+// Ini yang membuat data SLA/OLA per bulan beneran tersimpan permanen di
+// database, bukan sekadar tampilan sementara di browser yang hilang saat
+// refresh.
+model DeviceMonthlyScore {
+  id        String   @id @default(uuid())
+  deviceId  String
+  month     String // nama bulan dalam Bahasa Indonesia, mis. "Juli"
+  year      Int
+  sla       Float
+  ola       Float
+  actor     String   @default("Admin INSKAL")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, month, year])
+  @@map("device_monthly_scores")
 }
 
 model CalibrationRecord {

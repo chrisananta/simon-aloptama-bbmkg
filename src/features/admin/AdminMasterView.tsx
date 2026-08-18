@@ -45,7 +45,6 @@ import {
 import { AuthUser, UserRole } from '../auth/authTypes';
 import { useAuth } from '../auth/AuthContext';
 import { apiClient } from '../../shared/api';
-import { OFFICIAL_SLA_OLA_REKAP, getMonthlyOverallRekap } from '../../shared/constants/slaOlaConstants';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 
 interface AdminMasterViewProps {
@@ -59,6 +58,8 @@ interface AdminMasterViewProps {
   onUpdateDevice: (device: AloptamaDevice, changesDetail: string, actor: string) => void | Promise<void>;
   onDeleteDevice: (deviceId: string, deviceName: string, actor: string) => void | Promise<void>;
   onClearLogs?: () => void;
+  // Dipakai buat sinkronkan daftar device global setelah simpan SLA/OLA bulanan
+  onSyncDevicesFromServer?: (devices: AloptamaDevice[]) => void;
 }
 
 type TabType = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'master_petugas' | 'master_akun' | 'Log_Perubahan';
@@ -74,6 +75,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   onUpdateDevice,
   onDeleteDevice,
   onClearLogs,
+  onSyncDevicesFromServer,
 }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
@@ -335,8 +337,34 @@ const filteredPetugas = petugasList.filter(p => {
   const [slaOlaUptFilter, setSlaOlaUptFilter] = useState<string>('ALL');
   const [slaOlaCategoryFilter, setSlaOlaCategoryFilter] = useState<string>('ALL');
 
-  // Overrides map for custom edits per device per month/year
-  const [monthlySlaOlaOverrides, setMonthlySlaOlaOverrides] = useState<Record<string, { sla: number; ola: number }>>({});
+  // Overrides map for custom edits per device per month/year - diisi dari
+  // database (bukan lagi cuma memori browser yang hilang saat refresh)
+  const [monthlySlaOlaData, setMonthlySlaOlaData] = useState<Record<string, { sla: number; ola: number }>>({});
+  const [isLoadingMonthlySlaOla, setIsLoadingMonthlySlaOla] = useState<boolean>(false);
+
+  const MONTH_NAME_TO_NUMBER: Record<string, number> = {
+    'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4, 'Mei': 5, 'Juni': 6,
+    'Juli': 7, 'Agustus': 8, 'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12,
+  };
+
+  // Setiap kali filter bulan/tahun berubah, ambil ulang data dari database
+  useEffect(() => {
+    const bulanNum = MONTH_NAME_TO_NUMBER[selectedMonthSlaOla];
+    const tahunNum = Number(selectedYearSlaOla);
+    if (!bulanNum || !tahunNum) return;
+
+    let cancelled = false;
+    setIsLoadingMonthlySlaOla(true);
+    apiClient.devices.getMonthlySlaOla(bulanNum, tahunNum)
+      .then((data) => {
+        if (!cancelled) setMonthlySlaOlaData(data);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingMonthlySlaOla(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [selectedMonthSlaOla, selectedYearSlaOla]);
 
   // Edit SLA OLA Modal State
   const [isSlaOlaEditModalOpen, setIsSlaOlaEditModalOpen] = useState<boolean>(false);
@@ -352,100 +380,58 @@ const filteredPetugas = petugasList.filter(p => {
     dynamicYears.push(y.toString());
   }
 
-  // Helper untuk mengambil SLA & OLA riil sesuai data SLA OLA ALOPTAMA
-  const getSlaOlaForDevice = (dev: AloptamaDevice, month: string, year: string) => {
-    const overrideKey = `${dev.id}_${month}_${year}`;
-    if (monthlySlaOlaOverrides[overrideKey]) {
-      return monthlySlaOlaOverrides[overrideKey];
-    }
-
-    // Jika tahun 2026 dan bulan merupakan data rekap resmi (Januari - Juli)
-    if (year === '2026') {
-      const monthItems = OFFICIAL_SLA_OLA_REKAP.filter(
-        (item) => item.tahun === 2026 && item.bulan.toLowerCase() === month.toLowerCase()
-      );
-
-      if (monthItems.length > 0) {
-        const devCat = (dev.category || '').toLowerCase();
-        const devSub = (dev.subCategory || '').toLowerCase();
-        const devName = (dev.name || '').toLowerCase();
-
-        const matched = monthItems.find((item) => {
-          const itemCat = item.peralatan.toLowerCase();
-          if (devCat.includes('awos') || itemCat.includes('awos')) {
-            if (devSub.includes('kat ii') || devSub.includes('kat iii') || devName.includes('kat ii') || devName.includes('kat iii')) {
-              return itemCat.includes('kat ii & iii') || itemCat.includes('kat ii') || itemCat.includes('kat iii');
-            }
-            return itemCat.includes('kat. i') || itemCat.includes('kat i');
-          }
-          if (devCat.includes('radar') || itemCat.includes('radar')) return itemCat.includes('radar');
-          if ((devCat === 'aws' || devCat.includes('aws')) && !devCat.includes('awos')) return itemCat === 'aws';
-          if (devCat === 'arg' || devCat.includes('arg')) return itemCat === 'arg';
-          if (devCat.includes('seismometer') || itemCat.includes('seismometer')) return itemCat.includes('seismometer');
-          if (devCat.includes('lightning') || itemCat.includes('lightning')) return itemCat.includes('lightning');
-          if (devCat.includes('accelerograph') || itemCat.includes('accelerograph')) return itemCat.includes('accelerograph');
-          if (devCat.includes('wrs') || itemCat.includes('wrs')) return itemCat.includes('wrs');
-          if (devCat.includes('sirene') || itemCat.includes('sirene')) return itemCat.includes('sirene');
-          return false;
-        });
-
-        if (matched) {
-          return {
-            sla: Math.round(matched.sla ?? 100),
-            ola: Math.round(matched.ola ?? 100),
-          };
-        }
-      }
-    }
-
-    // Jika bulan baru / tidak ada datanya: buat 0
-    return { sla: 0, ola: 0 };
+  // Helper untuk mengambil SLA & OLA riil sesuai data yang tersimpan di
+  // database untuk bulan & tahun yang dipilih. Alat yang belum pernah
+  // diinput akan tampil 0% apa adanya (bukan angka karangan).
+  const getSlaOlaForDevice = (dev: AloptamaDevice) => {
+    return monthlySlaOlaData[dev.id] ?? { sla: 0, ola: 0 };
   };
 
   const handleOpenEditSlaOla = (dev: AloptamaDevice) => {
     setEditingSlaDevice(dev);
-    const currentVal = getSlaOlaForDevice(dev, selectedMonthSlaOla, selectedYearSlaOla);
+    const currentVal = getSlaOlaForDevice(dev);
     setEditSlaVal(currentVal.sla);
     setEditOlaVal(currentVal.ola);
     setIsSlaOlaEditModalOpen(true);
   };
 
-  const handleSaveSlaOla = (e: React.FormEvent) => {
+  const handleSaveSlaOla = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSlaDevice) return;
 
     const sla = Math.min(100, Math.max(0, Math.round(Number(editSlaVal))));
     const ola = Math.min(100, Math.max(0, Math.round(Number(editOlaVal))));
+    const bulanNum = MONTH_NAME_TO_NUMBER[selectedMonthSlaOla];
+    const tahunNum = Number(selectedYearSlaOla);
 
-    const overrideKey = `${editingSlaDevice.id}_${selectedMonthSlaOla}_${selectedYearSlaOla}`;
-    setMonthlySlaOlaOverrides((prev) => ({
-      ...prev,
-      [overrideKey]: { sla, ola },
-    }));
+    try {
+      const { devices: updatedDevices } = await apiClient.devices.saveMonthlySlaOla({
+        deviceId: editingSlaDevice.id,
+        uptStation: editingSlaDevice.uptStation,
+        category: editingSlaDevice.category,
+        kondisiSla: sla >= 100, // SLA tetap ON/OFF, bukan persentase bebas
+        ola,
+        bulan: bulanNum,
+        tahun: tahunNum,
+        actor: adminActor,
+      });
 
-    let newStatus: EquipmentStatus = 'NORMAL';
-    if (sla === 0 || ola === 0) {
-      newStatus = 'MATI';
-    } else if (ola < 100) {
-      newStatus = 'GANGGUAN';
-    } else {
-      newStatus = 'NORMAL';
+      // Update tampilan bulan yang sedang aktif dilihat
+      setMonthlySlaOlaData((prev) => ({
+        ...prev,
+        [editingSlaDevice.id]: { sla: sla >= 100 ? 100 : 0, ola },
+      }));
+
+      // Sinkronkan juga daftar device utama (kalau bulan yang diedit = bulan berjalan)
+      if (updatedDevices?.length) {
+        onSyncDevicesFromServer?.(updatedDevices);
+      }
+
+      setIsSlaOlaEditModalOpen(false);
+      setEditingSlaDevice(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan data SLA/OLA.');
     }
-
-    const updatedDev: AloptamaDevice = {
-      ...editingSlaDevice,
-      slaScore: sla,
-      olaScore: ola,
-      conditionStatus: newStatus,
-      lastReportedDate: new Date().toISOString().split('T')[0],
-      issueDescription: newStatus === 'NORMAL' ? undefined : (newStatus === 'MATI' ? 'Mati Total (0%) - Diset Admin' : 'Kendala operasional dilaporkan Admin'),
-    };
-
-    const details = `Pembaruan Database SLA OLA [${selectedMonthSlaOla} ${selectedYearSlaOla}] pada alat "${editingSlaDevice.name}" (${editingSlaDevice.id}): SLA ${sla}%, OLA ${ola}% (Status ${newStatus})`;
-
-    onUpdateDevice(updatedDev, details, adminActor);
-    setIsSlaOlaEditModalOpen(false);
-    setEditingSlaDevice(null);
   };
 
   const filteredSlaDevices = devices.filter((dev) => {
@@ -1299,7 +1285,7 @@ const filteredPetugas = petugasList.filter(p => {
 
             {/* Metric Overview Cards for Selected Month & Year */}
             {(() => {
-              const devScores = filteredSlaDevices.map(d => getSlaOlaForDevice(d, selectedMonthSlaOla, selectedYearSlaOla));
+              const devScores = filteredSlaDevices.map(d => getSlaOlaForDevice(d));
               
               // Hitung rata-rata riil langsung dari devScores per alat
               const avgSla = filteredSlaDevices.length > 0
@@ -1381,7 +1367,7 @@ const filteredPetugas = petugasList.filter(p => {
                     </tr>
                   ) : (
                     filteredSlaDevices.map((dev) => {
-                      const { sla: slaVal, ola: olaVal } = getSlaOlaForDevice(dev, selectedMonthSlaOla, selectedYearSlaOla);
+                      const { sla: slaVal, ola: olaVal } = getSlaOlaForDevice(dev);
                       const isZero = slaVal === 0 && olaVal === 0;
 
                       return (

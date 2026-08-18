@@ -251,6 +251,7 @@ function AppContent() {
                 onUpdateDevice={handleUpdateDevice}
                 onDeleteDevice={handleDeleteDevice}
                 onClearLogs={handleClearLogs}
+                onSyncDevicesFromServer={setDevicesData}
               />
             )}
 

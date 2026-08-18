@@ -281,6 +281,50 @@ export const apiClient = {
       };
     },
 
+    // Ambil nilai SLA/OLA per alat untuk 1 bulan & tahun tertentu (dipakai
+    // AdminMasterView, dibaca dari database, bukan memori browser).
+    getMonthlySlaOla: async (bulan: number, tahun: number): Promise<Record<string, { sla: number; ola: number }>> => {
+      try {
+        const res = await authFetch(`/api/sla-ola/monthly?bulan=${bulan}&tahun=${tahun}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success) return json.data || {};
+        }
+      } catch (e) {
+        console.warn("apiClient.devices.getMonthlySlaOla failed:", e);
+      }
+      return {};
+    },
+
+    // Simpan nilai SLA/OLA 1 alat untuk 1 bulan & tahun tertentu.
+    saveMonthlySlaOla: async (data: {
+      deviceId: string;
+      uptStation: string;
+      category: string;
+      kondisiSla: boolean;
+      ola: number;
+      bulan: number;
+      tahun: number;
+      actor?: string;
+    }): Promise<{ devices: AloptamaDevice[] }> => {
+      const res = await authFetch("/api/sla-ola/monthly", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        let message = "Gagal menyimpan SLA/OLA bulanan ke server.";
+        try {
+          const errData = await res.json();
+          if (errData?.message) message = errData.message;
+        } catch { /* ignore */ }
+        throw new Error(message);
+      }
+      const json = await res.json();
+      if (json?.devices) memoryCache.devices = json.devices;
+      return { devices: json.devices || memoryCache.devices };
+    },
+
     add: async (device: AloptamaDevice, actor = "Admin INSKAL"): Promise<AloptamaDevice> => {
       // PENTING: tunggu konfirmasi server DULU sebelum update tampilan.
       const response = await authFetch("/api/devices", {
