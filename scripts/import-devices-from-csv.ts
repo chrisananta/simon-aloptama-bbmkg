@@ -53,13 +53,43 @@ interface CsvRow {
   LONGITUDE: string;
 }
 
+// Pemisah baris CSV yang paham tanda kutip: koma DI DALAM tanda kutip ganda
+// (mis. "MTJPI (MuaraTami, Jayapura)") tidak akan ikut dianggap sebagai
+// pemisah kolom. Tanpa ini, baris seperti itu bakal pecah ke kolom yang salah.
+function splitCsvLine(line: string): string[] {
+  const cols: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        // tanda kutip ganda literal ("") di dalam field yang dikutip
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      cols.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  cols.push(current);
+  return cols;
+}
+
 function parseCsv(content: string): CsvRow[] {
   const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  const header = lines[0].split(',').map((h) => h.trim());
+  const header = splitCsvLine(lines[0]).map((h) => h.trim());
   const rows: CsvRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',');
+    const cols = splitCsvLine(lines[i]);
     const row: any = {};
     header.forEach((h, idx) => {
       row[h] = (cols[idx] ?? '').trim();

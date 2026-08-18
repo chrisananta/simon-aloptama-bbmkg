@@ -2,11 +2,18 @@ import { Request, Response } from 'express';
 import { prisma } from '../db/prisma.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { JWT_SECRET } from '../config/env.js';
 
 // Angka "cost factor" bcrypt - makin tinggi makin aman tapi makin lambat.
 // 10-12 adalah standar umum yang seimbang antara aman & cepat.
 const SALT_ROUNDS = 10;
+
+// Password acak & aman, dipakai kalau admin tidak mengisi password saat
+// membuat akun baru (menggantikan default lama "bmkg123" yang gampang ditebak).
+function generateRandomPassword(): string {
+  return crypto.randomBytes(9).toString('base64url'); // ~12 karakter acak
+}
 
 // Bcrypt hash SELALU diawali "$2a$", "$2b$", atau "$2y$".
 // Dipakai untuk membedakan: ini sudah hash bcrypt, atau masih teks polos peninggalan lama?
@@ -149,7 +156,8 @@ export const userController = {
   createUser: async (req: Request, res: Response) => {
     try {
       const body = req.body;
-      const rawPassword = body.password || body.passwordHash || 'bmkg123';
+      const generatedPassword = body.password || body.passwordHash ? null : generateRandomPassword();
+      const rawPassword = body.password || body.passwordHash || generatedPassword!;
       const hashedPassword = await bcrypt.hash(rawPassword, SALT_ROUNDS);
 
       const user = await prisma.user.create({
@@ -178,7 +186,13 @@ export const userController = {
       });
 
       const { passwordHash: _omit, ...userWithoutPassword } = user;
-      return res.status(201).json({ success: true, data: userWithoutPassword });
+      return res.status(201).json({
+        success: true,
+        data: userWithoutPassword,
+        // Hanya diisi kalau admin tidak mengisi password sendiri - dikirim
+        // SEKALI di response ini supaya admin bisa sampaikan ke user terkait.
+        generatedPassword: generatedPassword ?? undefined,
+      });
     } catch (error) {
       console.error('Error createUser:', error);
       return res.status(500).json({ success: false, message: 'Gagal membuat akun pengguna baru.' });

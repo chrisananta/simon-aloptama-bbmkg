@@ -268,7 +268,9 @@ const filteredPetugas = petugasList.filter(p => {
       const newUser: AuthUser = {
         id: userForm.id || `USR-${Date.now()}`,
         username: cleanUsername,
-        password: userForm.password?.trim() || 'bmkg123',
+        // Kosongkan kalau admin tidak isi - backend akan generate password
+        // acak & aman (menggantikan default lama "bmkg123" yang gampang ditebak).
+        password: userForm.password?.trim() || undefined,
         name: userForm.name.trim(),
         role: (userForm.role as UserRole) || 'UPT_PIMPINAN',
         title: userForm.title?.trim() || 'Operator UPT BMKG',
@@ -278,8 +280,14 @@ const filteredPetugas = petugasList.filter(p => {
         avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80',
       };
 
-      await apiClient.users.add(newUser, adminActor);
+      const created = await apiClient.users.add(newUser, adminActor);
       await refreshUsers();
+
+      if (!newUser.password && created?.password) {
+        alert(
+          `Akun "@${cleanUsername}" berhasil dibuat.\n\nPassword yang di-generate otomatis:\n${created.password}\n\nCatat sekarang - password ini tidak ditampilkan lagi setelah ini.`
+        );
+      }
     }
 
     setIsUserModalOpen(false);
@@ -2354,7 +2362,7 @@ const filteredPetugas = petugasList.filter(p => {
                   </label>
                   <input
                     type="password"
-                    placeholder={editingUser ? 'Kosongkan jika tidak diubah' : 'contoh: bmkg123'}
+                    placeholder={editingUser ? 'Kosongkan jika tidak diubah' : 'Kosongkan untuk generate password otomatis'}
                     value={userForm.password || ''}
                     onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-semibold text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"

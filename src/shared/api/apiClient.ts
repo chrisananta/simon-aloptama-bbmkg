@@ -741,7 +741,9 @@ export const apiClient = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             username: user.username,
-            password: user.password || "bmkg123",
+            // Jangan isi default lemah di sini - kalau kosong, biarkan
+            // backend yang generate password acak & aman.
+            password: user.password || undefined,
             name: user.name,
             role: user.role,
             title: user.title,
@@ -766,7 +768,9 @@ export const apiClient = {
               email: json.data.email || user.email,
               uptStation: json.data.uptStation || user.uptStation,
               avatarUrl: json.data.avatarUrl || user.avatarUrl,
-              password: user.password,
+              // Kalau admin tidak isi password, backend generate satu secara
+              // acak dan kirim balik di sini (cuma sekali) - tampilkan ke admin.
+              password: user.password || json.generatedPassword,
             };
           }
         }

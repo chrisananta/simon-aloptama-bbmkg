@@ -74,12 +74,40 @@ interface CsvRow {
   KOTA: string;
 }
 
+// Pemisah baris CSV yang paham tanda kutip: koma DI DALAM tanda kutip ganda
+// tidak akan ikut dianggap sebagai pemisah kolom (mis. "Kota, Provinsi").
+function splitCsvLine(line: string): string[] {
+  const cols: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      cols.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  cols.push(current);
+  return cols;
+}
+
 function parseCsv(content: string): CsvRow[] {
   const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  const header = lines[0].split(',').map((h) => h.trim());
+  const header = splitCsvLine(lines[0]).map((h) => h.trim());
   const rows: CsvRow[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',');
+    const cols = splitCsvLine(lines[i]);
     const row: any = {};
     header.forEach((h, idx) => {
       row[h] = (cols[idx] ?? '').trim();

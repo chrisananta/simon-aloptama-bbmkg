@@ -13,7 +13,6 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
     "@hookform/resolvers": "^5.5.7",
     "@prisma/adapter-pg": "6.4.0",
     "@prisma/client": "6.4.0",
@@ -56,6 +55,6 @@
     "vite": "^6.2.3"
   },
   "overrides": {
-  "tar": "^6.2.1"
+    "tar": "^7.5.22"
   }
 }

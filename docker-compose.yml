@@ -27,7 +27,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://postgres:010820@db:5432/simon_bmkg?schema=public
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@db:5432/simon_bmkg?schema=public
       JWT_SECRET: ${JWT_SECRET}
     ports:
       - "3000:3000"
@@ -38,12 +38,9 @@ services:
     command:
       - "http"
       - "app:3000"
-      - "--domain=fit-tipper-outfit.ngrok-free.dev"
+      - "--url=https://fit-tipper-outfit.ngrok-free.dev"
     environment:
-      # JANGAN LUPA GANTI TULISAN DI BAWAH DENGAN TOKEN NGROK ASLI KAMU
-      NGROK_AUTHTOKEN: "3HypOQMqXBhl4wEYaKdWdGWd3UU_2gBUNMUhMTUJX4eESx8e5"
-    depends_on:
-      - app
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
 
 volumes:
   simon_db_data:
