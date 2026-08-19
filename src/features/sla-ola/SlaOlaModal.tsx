@@ -14,6 +14,7 @@ import {
   Info,
   CheckSquare,
   Square,
+  AlertTriangle,
 } from "lucide-react";
 
 const EQUIPMENT_CATEGORIES: string[] = [
@@ -44,12 +45,17 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     "KALKULATOR",
   );
 
+  // Status Tambahan: Pesan Kesalahan & Proses Penyimpanan
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
   const [stationsList, setStationsList] = useState<any[]>(() =>
     apiClient.stations.getAll(),
   );
 
   useEffect(() => {
     if (isOpen) {
+      setErrorMessage(null);
       apiClient.stations.fetch().then((fresh) => {
         if (fresh && fresh.length > 0) {
           setStationsList(fresh);
@@ -81,7 +87,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const watchKondisiOla = watch("kondisiOla");
   const watchKondisiSla = watch("kondisiSla");
 
-  // Calculator Sub-States for all aspects
+  // Sub-Status Kalkulator
   const [calcLogger, setCalcLogger] = useState<number>(100);
   const [calcPower, setCalcPower] = useState<number>(100);
   const [calcComm, setCalcComm] = useState<number>(100);
@@ -94,7 +100,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const [calcLdSensor, setCalcLdSensor] = useState<number>(100);
   const [calcSound, setCalcSound] = useState<number>(100);
 
-  // Active sensor checkboxes state for AWS & AWOS categories
+  // Status Sensor Aktif
   const [activeSensors, setActiveSensors] = useState<Record<string, boolean>>({
     tekanan: true,
     arahAngin: true,
@@ -123,12 +129,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     if (d.uptStation !== watchUptStation) return false;
     if (watchCategory === "ALL") return true;
     if (watchCategory.startsWith("AWOS")) {
-      // Cara baru: kategori Kat. I/II/III langsung tersimpan di field
-      // device.category (mis. "AWOS Kat. I"), jadi tinggal dicocokkan langsung.
       if (d.category === watchCategory) return true;
 
-      // Fallback untuk device LAMA yang mungkin masih pakai category "AWOS"
-      // generik + kategori disisipkan di nama (format sebelum dipisah).
       if (d.category === "AWOS") {
         if (watchCategory === "AWOS Kat. I")
           return d.name.includes("Kat I") && !d.name.includes("Kat III");
@@ -149,6 +151,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   });
 
   useEffect(() => {
+    setErrorMessage(null);
     if (matchingDevices.length > 0) {
       const dev = matchingDevices[0];
       setValue("deviceId", dev.id);
@@ -160,7 +163,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     }
   }, [watchUptStation, watchCategory, devices, setValue]);
 
-  // Main OLA Matrix Calculator logic based on CSV specification
+  // Logika Kalkulator Matriks OLA
   useEffect(() => {
     if (!watchKondisiSla) {
       setValue("kondisiOla", 0);
@@ -217,7 +220,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         if (activeSensors.celo) sensorContrib += 3.0;
         if (activeSensors.visibility) sensorContrib += 3.0;
       } else {
-        // AWOS I
         if (activeSensors.tekanan) sensorContrib += 5.0;
         if (activeSensors.arahAngin) sensorContrib += 5.0;
         if (activeSensors.kecAngin) sensorContrib += 5.0;
@@ -284,36 +286,38 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     setActiveSensors((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const setAllSensors = (val: boolean) => {
-    setActiveSensors((prev) => {
-      const updated = { ...prev };
-      Object.keys(updated).forEach((k) => {
-        updated[k] = val;
-      });
-      return updated;
-    });
-  };
-
   if (!isOpen) return null;
 
-  const onSubmit = (data: any) => {
-    onSaveSlaOla({
-      uptStation: data.uptStation,
-      category: data.category.startsWith("AWOS") ? "AWOS" : data.category,
-      deviceId: data.deviceId,
-      kondisiSla: data.kondisiSla,
-      kondisiOla: data.kondisiOla,
-      kendala: (data.kendala || "").trim(),
-    });
+  // Fungsi Pengiriman Form
+  const onSubmit = async (data: any) => {
+    setErrorMessage(null);
+    setIsSubmitting(true);
 
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      onClose();
-    }, 1200);
+    try {
+      await onSaveSlaOla({
+        uptStation: data.uptStation,
+        category: data.category.startsWith("AWOS") ? "AWOS" : data.category,
+        deviceId: data.deviceId,
+        kondisiSla: data.kondisiSla,
+        kondisiOla: data.kondisiOla,
+        kendala: (data.kendala || "").trim(),
+      });
+
+      setIsSubmitted(true);
+      setTimeout(() => {
+        setIsSubmitted(false);
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      console.error("Gagal menyimpan SLA/OLA:", err);
+      setErrorMessage(
+        err?.message || "Gagal menyimpan data SLA & OLA ke server."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Sensor definitions based on Category
   const getSensorList = () => {
     if (watchCategory === "AWS") {
       return [
@@ -321,22 +325,10 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "arahAngin", label: "Sensor Arah Angin", weight: "3.75%" },
         { key: "kecAngin", label: "Sensor Kecepatan Angin", weight: "3.75%" },
         { key: "suhu", label: "Sensor Suhu Udara", weight: "3.75%" },
-        {
-          key: "kelembapan",
-          label: "Sensor Kelembapan Udara",
-          weight: "3.75%",
-        },
-        {
-          key: "radiasiMatahari",
-          label: "Sensor Radiasi Matahari",
-          weight: "3.75%",
-        },
+        { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "3.75%" },
+        { key: "radiasiMatahari", label: "Sensor Radiasi Matahari", weight: "3.75%" },
         { key: "curahHujan", label: "Sensor Curah Hujan", weight: "3.75%" },
-        {
-          key: "waterLevel",
-          label: "Sensor Water Level / Suhu Tanah",
-          weight: "3.75%",
-        },
+        { key: "waterLevel", label: "Sensor Water Level / Suhu Tanah", weight: "3.75%" },
       ];
     }
     if (watchCategory === "AWOS Kat. III") {
@@ -345,23 +337,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },
         { key: "kecAngin", label: "Sensor Kecepatan Angin", weight: "5.00%" },
         { key: "suhu", label: "Sensor Suhu Udara", weight: "2.14%" },
-        {
-          key: "kelembapan",
-          label: "Sensor Kelembapan Udara",
-          weight: "2.14%",
-        },
-        {
-          key: "radiasiMatahari",
-          label: "Sensor Radiasi Matahari",
-          weight: "2.14%",
-        },
+        { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "2.14%" },
+        { key: "radiasiMatahari", label: "Sensor Radiasi Matahari", weight: "2.14%" },
         { key: "curahHujan", label: "Sensor Curah Hujan", weight: "2.14%" },
         { key: "celo", label: "Sensor Ceilometer (Celo)", weight: "2.14%" },
-        {
-          key: "visibility",
-          label: "Sensor Visibility (RVR)",
-          weight: "2.14%",
-        },
+        { key: "visibility", label: "Sensor Visibility (RVR)", weight: "2.14%" },
         { key: "ld", label: "Sensor Lightning Detector (LD)", weight: "2.14%" },
       ];
     }
@@ -371,11 +351,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },
         { key: "kecAngin", label: "Sensor Kecepatan Angin", weight: "5.00%" },
         { key: "suhu", label: "Sensor Suhu Udara", weight: "3.00%" },
-        {
-          key: "kelembapan",
-          label: "Sensor Kelembapan Udara",
-          weight: "3.00%",
-        },
+        { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "3.00%" },
         { key: "curahHujan", label: "Sensor Curah Hujan", weight: "3.00%" },
         { key: "celo", label: "Sensor Ceilometer (Celo)", weight: "3.00%" },
         { key: "visibility", label: "Sensor Visibility", weight: "3.00%" },
@@ -387,17 +363,9 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },
         { key: "kecAngin", label: "Sensor Kecepatan Angin", weight: "5.00%" },
         { key: "suhu", label: "Sensor Suhu Udara", weight: "3.75%" },
-        {
-          key: "kelembapan",
-          label: "Sensor Kelembapan Udara",
-          weight: "3.75%",
-        },
+        { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "3.75%" },
         { key: "curahHujan", label: "Sensor Curah Hujan", weight: "3.75%" },
-        {
-          key: "radiasiMatahari",
-          label: "Sensor Solar Radiasi",
-          weight: "3.75%",
-        },
+        { key: "radiasiMatahari", label: "Sensor Solar Radiasi", weight: "3.75%" },
       ];
     }
     return [];
@@ -425,7 +393,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
           <button
             onClick={onClose}
             type="button"
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+            disabled={isSubmitting}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
           >
             <XIcon size={20} />
           </button>
@@ -449,6 +418,17 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
             onSubmit={handleSubmit(onSubmit)}
             className="p-5 space-y-4 overflow-y-auto"
           >
+            {/* Peringatan Kesalahan Server */}
+            {errorMessage && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs font-semibold animate-fade-in">
+                <AlertTriangle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold block text-rose-900">Akses Ditolak / Gagal Menyimpan:</span>
+                  <span>{errorMessage}</span>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -457,7 +437,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 </label>
                 <select
                   {...register("uptStation")}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white"
+                  disabled={isSubmitting}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
                 >
                   {stationsList.map((st) => (
                     <option key={st.id || st.code || st.name} value={st.name}>
@@ -479,7 +460,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 </label>
                 <select
                   {...register("category")}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white"
+                  disabled={isSubmitting}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
                 >
                   {EQUIPMENT_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
@@ -502,7 +484,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 </label>
                 <select
                   {...register("deviceId")}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800"
+                  disabled={isSubmitting}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 disabled:opacity-50"
                 >
                   {matchingDevices.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -557,7 +540,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </span>
                 </div>
 
-                {/* 1. AWS & AWOS (Category I, II, III) */}
+                {/* AWS & AWOS */}
                 {(watchCategory === "AWS" ||
                   watchCategory.startsWith("AWOS")) && (
                   <div className="space-y-3">
@@ -579,8 +562,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                           ON, ada sedikit delay/data gap kecil (80%)
                         </option>
                         <option value={60}>
-                          ON, data sering hilang sebagian / anomali &gt;30%
-                          (60%)
+                          ON, data sering hilang sebagian / anomali &gt;30% (60%)
                         </option>
                         <option value={50}>
                           ON, data sering error/tidak stabil (50%)
@@ -643,7 +625,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                       </select>
                     </div>
 
-                    {/* Sensor Checklist */}
                     {sensorList.length > 0 && (
                       <div className="space-y-2 pt-2 border-t border-slate-200">
                         <div className="flex items-center justify-between">
@@ -689,7 +670,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </div>
                 )}
 
-                {/* 2. WRS NG */}
+                {/* WRS NG */}
                 {(watchCategory === "WRS NG" || watchCategory === "WRS") && (
                   <div className="space-y-3">
                     <div className="space-y-1">
@@ -744,8 +725,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Tegangan &amp; UPS stabil (alat tidak pernah mati)
-                          (100%)
+                          Tegangan &amp; UPS stabil (100%)
                         </option>
                         <option value={0}>
                           UPS tidak berfungsi, alat mati total (0%)
@@ -755,7 +735,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </div>
                 )}
 
-                {/* 3. SIRINE TSUNAMI */}
+                {/* SIRINE TSUNAMI */}
                 {(watchCategory === "Sirine Tsunami" ||
                   watchCategory === "Sirine") && (
                   <div className="space-y-3">
@@ -774,7 +754,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                           Sirine berbunyi normal sesuai trigger (100%)
                         </option>
                         <option value={0}>
-                          Sirine mati total / tidak dapat berbunyi (0%)
+                          Sirine mati total / tidak berbunyi (0%)
                         </option>
                       </select>
                     </div>
@@ -791,7 +771,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Sinyal/trigger masuk normal, tanpa delay (100%)
+                          Sinyal/trigger masuk normal (100%)
                         </option>
                         <option value={0}>
                           Tidak ada komunikasi / sinyal gagal (0%)
@@ -811,17 +791,17 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Tegangan stabil, UPS/genset berfungsi baik (100%)
+                          Tegangan stabil, UPS/genset baik (100%)
                         </option>
                         <option value={0}>
-                          Tidak ada suplai daya, sirine mati total (0%)
+                          Tidak ada suplai daya (0%)
                         </option>
                       </select>
                     </div>
                   </div>
                 )}
 
-                {/* 4. ACCELERO & SEISMO */}
+                {/* ACCELERO & SEISMO */}
                 {(watchCategory === "Accelerograph" ||
                   watchCategory === "Seismometer") && (
                   <div className="space-y-3">
@@ -861,8 +841,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                           Data komponen hilang sebagian (50%)
                         </option>
                         <option value={0}>
-                          Tidak ada data / terkirim namun tidak dapat digunakan
-                          (0%)
+                          Tidak ada data (0%)
                         </option>
                       </select>
                     </div>
@@ -882,14 +861,14 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                           Sinkron penuh dengan UTC / GNSS (100%)
                         </option>
                         <option value={0}>
-                          Tidak sinkron sama sekali (0%)
+                          Tidak sinkron (0%)
                         </option>
                       </select>
                     </div>
                   </div>
                 )}
 
-                {/* 5. LIGHTNING DETECTOR */}
+                {/* LIGHTNING DETECTOR */}
                 {watchCategory === "Lightning Detector" && (
                   <div className="space-y-3">
                     <div className="space-y-1">
@@ -904,21 +883,19 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Logger ON penuh, data masuk normal &amp; sesuai, PC
-                          Server (100%)
+                          Logger ON penuh, PC Server normal (100%)
                         </option>
                         <option value={80}>
-                          ON, ada sedikit delay / data gap kecil (80%)
+                          ON, ada sedikit delay (80%)
                         </option>
                         <option value={60}>
-                          ON, data sering hilang sebagian (anomali &gt;30%)
-                          (60%)
+                          ON, data sering hilang (60%)
                         </option>
                         <option value={50}>
-                          ON, data sering error / tidak stabil (50%)
+                          ON, data tidak stabil (50%)
                         </option>
                         <option value={0}>
-                          Logger OFF, tidak ada data sama sekali (0%)
+                          Logger OFF (0%)
                         </option>
                       </select>
                     </div>
@@ -938,13 +915,13 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                           Tegangan listrik stabil, UPS Normal (100%)
                         </option>
                         <option value={70}>
-                          Suplai Listrik Sering Mati dan UPS Mulai Lemah (70%)
+                          Listrik Sering Mati, UPS Lemah (70%)
                         </option>
                         <option value={50}>
-                          Suplai Listrik Sering Mati (50%)
+                          Listrik Sering Mati (50%)
                         </option>
                         <option value={0}>
-                          Tidak ada suplai daya, alat mati total (0%)
+                          Alat mati total (0%)
                         </option>
                       </select>
                     </div>
@@ -961,30 +938,26 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Sensor &amp; Antena Normal, Sinyal Tangkap Baik,
-                          Mendeteksi semua kejadian (100%)
+                          Sensor &amp; Antena Normal (100%)
                         </option>
                         <option value={80}>
-                          Sensor &amp; Antena Normal, Namun sedikit mengalami
-                          Penurunan (80%)
+                          Sensor &amp; Antena Penurunan Ringan (80%)
                         </option>
                         <option value={60}>
-                          Sensor Error Sebagian, Hanya Mendeteksi Sebagian
-                          Kejadian Petir (60%)
+                          Sensor Error Sebagian (60%)
                         </option>
                         <option value={50}>
-                          Sensor &amp; Antena Sering Gagal Mendeteksi, Sinyal
-                          sangat Lemah (50%)
+                          Sinyal Lemah (50%)
                         </option>
                         <option value={0}>
-                          Sensor &amp; Antena Mati Total tidak ada deteksi (0%)
+                          Mati Total (0%)
                         </option>
                       </select>
                     </div>
                   </div>
                 )}
 
-                {/* 6. RADAR CUACA */}
+                {/* RADAR CUACA */}
                 {(watchCategory === "Radar Cuaca" ||
                   watchCategory === "Radar Weather") && (
                   <div className="space-y-3">
@@ -1000,19 +973,18 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Radar aktif penuh, data masuk sesuai interval, tanpa
-                          anomali (100%)
+                          Radar aktif penuh, tanpa anomali (100%)
                         </option>
                         <option value={80}>
-                          Radar ON, data masuk &gt;70% (80%)
+                          Radar ON, data &gt;70% (80%)
                         </option>
                         <option value={60}>
-                          Radar ON, data masuk 50–70% (60%)
+                          Radar ON, data 50–70% (60%)
                         </option>
                         <option value={50}>
-                          Radar ON OFF, data masuk &lt;50% (50%)
+                          Radar ON/OFF, data &lt;50% (50%)
                         </option>
-                        <option value={0}>Radar OFF, No Data (0%)</option>
+                        <option value={0}>Radar OFF (0%)</option>
                       </select>
                     </div>
 
@@ -1028,13 +1000,13 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Data masuk ke client dan pusat (100%)
+                          Data masuk ke client &amp; pusat (100%)
                         </option>
                         <option value={70}>
-                          Data masuk ke client tapi ke pusat terkendala (70%)
+                          Data ke pusat terkendala (70%)
                         </option>
                         <option value={50}>
-                          Komunikasi terganggu ke client dan pusat (50%)
+                          Komunikasi terganggu (50%)
                         </option>
                         <option value={0}>Komunikasi OFF (0%)</option>
                       </select>
@@ -1052,26 +1024,26 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Tegangan stabil, UPS/genset berfungsi baik (100%)
+                          Tegangan stabil, UPS/genset baik (100%)
                         </option>
                         <option value={80}>
-                          Sesekali tegangan drop, masih aman (80%)
+                          Sesekali tegangan drop (80%)
                         </option>
                         <option value={60}>
-                          UPS/genset bekerja tapi baterai melemah (60%)
+                          Baterai UPS melemah (60%)
                         </option>
                         <option value={50}>
-                          Sering mati listrik, alat restart berulang (50%)
+                          Sering mati listrik (50%)
                         </option>
                         <option value={0}>
-                          Tidak ada suplai daya, radar mati total (0%)
+                          Radar mati total (0%)
                         </option>
                       </select>
                     </div>
                   </div>
                 )}
 
-                {/* 7. ARG (Automatic Rain Gauge) */}
+                {/* ARG */}
                 {watchCategory === "ARG" && (
                   <div className="space-y-3">
                     <div className="space-y-1">
@@ -1086,19 +1058,19 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Data konsisten, sesuai referensi (100%)
+                          Data konsisten (100%)
                         </option>
                         <option value={80}>
-                          Tip kadang hilang/delay, masih wajar (80%)
+                          Tip kadang delay (80%)
                         </option>
                         <option value={60}>
-                          Banyak anomali (hujan tercatat saat cerah) (60%)
+                          Banyak anomali (60%)
                         </option>
                         <option value={50}>
-                          Tidak stabil (sering tidak tercatat saat hujan) (50%)
+                          Sering tidak tercatat (50%)
                         </option>
                         <option value={0}>
-                          Tidak ada data (macet total) (0%)
+                          Macet total (0%)
                         </option>
                       </select>
                     </div>
@@ -1115,16 +1087,16 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Rutin kirim data, waktu sinkron (100%)
+                          Rutin kirim data (100%)
                         </option>
                         <option value={80}>
-                          Timestamp terlambat sesekali, data lengkap (80%)
+                          Timestamp terlambat sesekali (80%)
                         </option>
                         <option value={60}>
-                          Gap data 1–2 jam per hari (60%)
+                          Gap data 1–2 jam/hari (60%)
                         </option>
                         <option value={50}>
-                          Sering restart, data harian tidak utuh (50%)
+                          Data harian tidak utuh (50%)
                         </option>
                         <option value={0}>Logger mati total (0%)</option>
                       </select>
@@ -1142,18 +1114,18 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Data terkirim sesuai interval (100%)
+                          Terkirim sesuai interval (100%)
                         </option>
                         <option value={80}>
-                          Delay &lt;1 jam, data penuh (80%)
+                          Delay &lt;1 jam (80%)
                         </option>
                         <option value={70}>
-                          Sinyal lemah, delay &gt;1 jam (70%)
+                          Delay &gt;1 jam (70%)
                         </option>
                         <option value={50}>
-                          Data hilang sebagian (50–70% paket sampai) (50%)
+                          Data hilang sebagian (50%)
                         </option>
-                        <option value={0}>Tidak ada data masuk (0%)</option>
+                        <option value={0}>Tidak ada data (0%)</option>
                       </select>
                     </div>
 
@@ -1169,19 +1141,19 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
                         <option value={100}>
-                          Tegangan stabil (12–13V), baterai normal (100%)
+                          Tegangan stabil (100%)
                         </option>
                         <option value={80}>
-                          Tegangan turun sesekali (&lt;11.5V) (80%)
+                          Tegangan turun sesekali (80%)
                         </option>
                         <option value={60}>
-                          Baterai drop malam hari, logger kadang restart (60%)
+                          Baterai drop malam hari (60%)
                         </option>
                         <option value={50}>
-                          Solar panel lemah, hanya bertahan setengah hari (50%)
+                          Solar panel lemah (50%)
                         </option>
                         <option value={0}>
-                          Tidak ada suplai daya, alat mati total (0%)
+                          Alat mati total (0%)
                         </option>
                       </select>
                     </div>
@@ -1274,7 +1246,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            {/* Total Persentase OLA Indicator */}
+            {/* Indikator Persentase OLA */}
             <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 text-slate-800 flex items-center justify-between shadow-xs">
               <div className="flex items-center gap-2.5">
                 <div
@@ -1332,13 +1304,14 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </label>
               <textarea
                 {...register("kendala")}
+                disabled={isSubmitting}
                 rows={2}
                 placeholder={
                   !watchKondisiSla || watchKondisiOla < 100
                     ? "Wajib diisi: jelaskan penyebab alat OFF atau OLA < 100%..."
                     : "Tuliskan jika ada kendala sensor, jaringan, atau suplai daya..."
                 }
-                className={`w-full bg-slate-50 border rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white ${
+                className={`w-full bg-slate-50 border rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50 ${
                   errors.kendala
                     ? "border-rose-400 bg-rose-50/30"
                     : "border-slate-300"
@@ -1355,16 +1328,18 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                disabled={isSubmitting}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#0052CC] hover:bg-blue-700 text-white shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                disabled={isSubmitting}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#0052CC] hover:bg-blue-700 text-white shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Check size={16} />
-                Simpan &amp; Perbarui Data
+                {isSubmitting ? "Menyimpan..." : "Simpan & Perbarui Data"}
               </button>
             </div>
           </form>

@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 import express from "express";
+import cors from "cors";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { prisma } from "./simon-backend/src/db/prisma.js";
@@ -13,15 +14,16 @@ import {
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 
-// Bikin password acak yang aman & gampang dibaca manusia (dipakai cuma sekali,
-// waktu database masih kosong sama sekali - lihat autoSeedDatabase di bawah)
+// Bikin password acak yang aman & gampang dibaca manusia
 function generateRandomPassword(): string {
-  return crypto.randomBytes(9).toString("base64url"); // ~12 karakter acak
+  return crypto.randomBytes(9).toString("base64url");
 }
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// 1. Tambahkan CORS untuk mengizinkan komunikasi Cross-Origin
+app.use(cors());
 app.use(express.json());
 
 // Auto-seed database when empty
@@ -33,9 +35,6 @@ async function autoSeedDatabase() {
         "🌱 Database PostgreSQL kosong. Melakukan auto-seeding data awal SIMON Aloptama...",
       );
 
-      // Generate password ACAK & UNIK untuk tiap akun default - dicetak SEKALI ke
-      // terminal ini. Ini menggantikan password lama (inskal123/bmkg123) yang
-      // sudah tidak aman dipakai karena pernah tertulis di dokumentasi/chat.
       const adminPassword = generateRandomPassword();
       const uptPassword = generateRandomPassword();
       const pimpinanPassword = generateRandomPassword();
@@ -171,9 +170,25 @@ async function autoSeedDatabase() {
   }
 }
 
-// Mount Centralized API Router (Supports both /api/* and /api/v1/* seamlessly)
+// Mount Centralized API Router
 app.use("/api", apiRouter);
 app.use("/api/v1", apiRouter);
+
+// 2. Penanganan Error Global Express (Global Error Handler)
+app.use(
+  (
+    err: any,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction
+  ) => {
+    console.error("❌ Unhandled Server Error:", err);
+    return res.status(err.status || 500).json({
+      success: false,
+      message: err.message || "Terjadi kesalahan internal pada server.",
+    });
+  }
+);
 
 async function startServer() {
   // Vite dev middleware setup
@@ -186,7 +201,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }

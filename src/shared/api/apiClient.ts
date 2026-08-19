@@ -10,8 +10,6 @@ import {
 import { AuthUser } from "../../features/auth/authTypes";
 import {
   fetchServerData,
-  saveSlaOlaToServer,
-  saveCalibrationToServer,
   ServerFetchResult,
 } from "./serverDataService";
 
