@@ -1,6 +1,41 @@
 import { Request, Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
+
+// Nilai-nilai ini harus sinkron dengan enum LogTable & LogAction di schema.prisma.
+// Divalidasi di sini supaya request dengan nilai di luar enum langsung ditolak 400
+// dengan pesan jelas, bukan gagal diam-diam di Prisma lalu direspons "sukses" ke client.
+const createAuditLogInput = z.object({
+  table: z.enum([
+    'master_stasiun',
+    'master_alat',
+    'master_sla_ola',
+    'master_akun',
+    'master_petugas',
+    'kalibrasi',
+    'sistem',
+    'pengaturan',
+    'autentikasi',
+  ]),
+  action: z.enum([
+    'TAMBAH',
+    'EDIT',
+    'HAPUS',
+    'SIMPAN_SLA_OLA',
+    'SIMPAN_KALIBRASI',
+    'SYNC_SERVER',
+    'RESET_DATA',
+    'EXPORT_DATA',
+    'LOGIN',
+    'LOGOUT',
+    'REFRESH_TOKEN',
+  ]),
+  recordId: z.string().trim().min(1).max(200),
+  recordName: z.string().trim().min(1).max(300),
+  details: z.string().trim().min(1).max(3000),
+  status: z.string().trim().max(50).optional(),
+});
 
 export const auditLogController = {
   // Get all audit logs
@@ -19,8 +54,12 @@ export const auditLogController = {
 
   // Create manual audit log entry
   createAuditLog: async (req: AuthRequest, res: Response) => {
+    const parsed = createAuditLogInput.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, message: 'Data audit log tidak valid.', errors: z.flattenError(parsed.error).fieldErrors });
+    }
     try {
-      const { table, action, recordId, recordName, details, status } = req.body;
+      const { table, action, recordId, recordName, details, status } = parsed.data;
 
       const newLog = await prisma.auditLog.create({
         data: {
@@ -37,8 +76,10 @@ export const auditLogController = {
 
       return res.status(201).json({ success: true, data: newLog });
     } catch (error) {
-      console.warn('createAuditLog PostgreSQL note:', (error as any)?.message || error);
-      return res.status(200).json({ success: true, message: 'Audit log tersimpan di memori.' });
+      // Ini benar-benar error database (mis. koneksi terputus), bukan lagi error validasi
+      // input - jadi jujur kirim 503, bukan pura-pura "berhasil" seperti sebelumnya.
+      console.error('createAuditLog PostgreSQL error:', (error as any)?.message || error);
+      return res.status(503).json({ success: false, message: 'Gagal menyimpan audit log ke database.' });
     }
   },
 

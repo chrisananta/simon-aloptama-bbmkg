@@ -3,10 +3,12 @@ import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { prisma } from "./simon-backend/src/db/prisma.js";
 import apiRouter from "./simon-backend/src/routes/index.js";
+import { CORS_ORIGINS } from "./simon-backend/src/config/env.js";
 import {
   SEED_DEVICES,
   SEED_UPT_STATIONS,
@@ -22,8 +24,27 @@ function generateRandomPassword(): string {
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// 1. Tambahkan CORS untuk mengizinkan komunikasi Cross-Origin
-app.use(cors());
+// 1. Header keamanan standar (CSP, X-Frame-Options, dll).
+//    contentSecurityPolicy dimatikan di sini karena app ini menyajikan HTML
+//    dari Vite/dist sendiri (bukan API murni) - CSP default helmet gampang
+//    memblokir script/style inline yang dipakai Vite dev & build. Header
+//    keamanan lain (X-Content-Type-Options, X-Frame-Options, HSTS, dst) tetap aktif.
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// 2. CORS - hanya izinkan origin yang eksplisit terdaftar di CORS_ORIGIN (lihat env.ts).
+//    Kalau daftar origin kosong (belum di-set di production), semua request
+//    lintas-origin browser ditolak - bukan diam-diam mengizinkan semua origin (*).
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Request tanpa header Origin (mis. curl, server-to-server, health check) selalu diizinkan.
+      if (!origin) return callback(null, true);
+      if (CORS_ORIGINS.includes(origin)) return callback(null, true);
+      return callback(new Error(`Origin "${origin}" tidak diizinkan oleh kebijakan CORS.`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Auto-seed database when empty

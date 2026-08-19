@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -30,16 +31,50 @@ function isUniqueConstraint(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 }
 
+// Catatan: client HANYA boleh mengirim password mentah (plaintext), tidak pernah
+// hash siap pakai. Sebelumnya endpoint ini juga menerima field "passwordHash" dari
+// body lalu tetap di-bcrypt.hash() ulang - artinya nilai itu di-hash dua kali dan jadi
+// tidak pernah bisa dipakai untuk login. Sekarang field itu dihapus total dari kontrak API.
+const loginInput = z.object({
+  username: z.string().trim().min(1, 'Username wajib diisi').max(100),
+  password: z.string().min(1, 'Kata sandi wajib diisi').max(200),
+});
+
+const createUserInput = z.object({
+  username: z
+    .string()
+    .trim()
+    .min(3, 'Username minimal 3 karakter')
+    .max(50)
+    .regex(/^[a-zA-Z0-9._-]+$/, 'Username hanya boleh huruf, angka, titik, garis bawah, atau strip'),
+  name: z.string().trim().min(3, 'Nama minimal 3 karakter').max(150),
+  password: z.string().min(8, 'Kata sandi minimal 8 karakter').max(200).optional(),
+  role: z.enum(['ADMIN', 'UPT_PIMPINAN']).optional(),
+  title: z.string().trim().max(150).optional(),
+  nip: z.string().trim().max(50).nullable().optional(),
+  email: z.string().trim().email('Format email tidak valid').max(150).nullable().optional().or(z.literal('')),
+  uptStation: z.string().trim().max(200).optional(),
+  avatarUrl: z.string().trim().url('URL avatar tidak valid').max(500).nullable().optional().or(z.literal('')),
+});
+
+const updateUserInput = createUserInput.partial().extend({
+  details: z.string().trim().max(500).optional(),
+});
+
+function invalidUser(res: Response, error: z.ZodError) {
+  return res.status(400).json({ success: false, message: 'Data akun tidak valid.', errors: z.flattenError(error).fieldErrors });
+}
+
 export const userController = {
   // Login endpoint
   login: async (req: Request, res: Response) => {
     try {
-      const username = typeof req.body.username === 'string' ? req.body.username.trim().toLowerCase() : '';
-      const password = req.body.password;
-
-      if (!username || typeof password !== 'string' || password.length === 0) {
+      const parsed = loginInput.safeParse(req.body);
+      if (!parsed.success) {
         return res.status(400).json({ success: false, message: 'Username dan kata sandi wajib diisi.' });
       }
+      const username = parsed.data.username.toLowerCase();
+      const password = parsed.data.password;
 
       let user = null;
       try {
@@ -158,22 +193,22 @@ export const userController = {
   },     
   // Create user
   createUser: async (req: AuthRequest, res: Response) => {
+    const parsed = createUserInput.safeParse(req.body);
+    if (!parsed.success) return invalidUser(res, parsed.error);
     try {
-      const body = req.body;
-      const generatedPassword = body.password || body.passwordHash ? null : generateRandomPassword();
-      const rawPassword = body.password || body.passwordHash || generatedPassword!;
+      const body = parsed.data;
+      // Client hanya boleh kirim password mentah (plaintext). Kalau kosong,
+      // sistem yang generate password acak - bukan client yang kirim hash siap pakai.
+      const generatedPassword = body.password ? null : generateRandomPassword();
+      const rawPassword = body.password || generatedPassword!;
       const hashedPassword = await bcrypt.hash(rawPassword, SALT_ROUNDS);
-
-      if (typeof body.username !== 'string' || !body.username.trim() || typeof body.name !== 'string' || !body.name.trim()) {
-        return res.status(400).json({ success: false, message: 'Username dan nama wajib diisi.' });
-      }
 
       const user = await prisma.$transaction(async (tx) => {
         const created = await tx.user.create({
           data: {
-            username: body.username.trim().toLowerCase(),
+            username: body.username.toLowerCase(),
             passwordHash: hashedPassword,
-            name: body.name.trim(),
+            name: body.name,
             role: body.role || 'UPT_PIMPINAN',
             title: body.title || 'Operator UPT',
             nip: body.nip || null,
@@ -203,19 +238,22 @@ export const userController = {
 
   // Update user
   updateUser: async (req: AuthRequest, res: Response) => {
+    const parsed = updateUserInput.safeParse(req.body);
+    if (!parsed.success) return invalidUser(res, parsed.error);
     try {
       const { id } = req.params;
-      const body = req.body;
+      const body = parsed.data;
 
       const updateData: any = {};
-      for (const key of ['username', 'name', 'role', 'title', 'nip', 'email', 'uptStation', 'avatarUrl']) {
-        if (body[key] !== undefined) updateData[key] = key === 'username' && typeof body[key] === 'string' ? body[key].trim().toLowerCase() : body[key];
+      for (const key of ['username', 'name', 'role', 'title', 'nip', 'email', 'uptStation', 'avatarUrl'] as const) {
+        if (body[key] !== undefined) updateData[key] = key === 'username' ? body[key]!.toLowerCase() : body[key];
       }
-      if (Object.keys(updateData).length === 0 && !body.password && !body.passwordHash) return res.status(400).json({ success: false, message: 'Tidak ada data yang dapat diperbarui.' });
+      if (Object.keys(updateData).length === 0 && !body.password) return res.status(400).json({ success: false, message: 'Tidak ada data yang dapat diperbarui.' });
 
-      if (body.password || body.passwordHash) {
-        const rawPassword = body.password || body.passwordHash;
-        updateData.passwordHash = await bcrypt.hash(rawPassword, SALT_ROUNDS);
+      // Client hanya boleh kirim password mentah (plaintext) - tidak ada lagi
+      // jalur "passwordHash" langsung dari client (lihat catatan di createUser).
+      if (body.password) {
+        updateData.passwordHash = await bcrypt.hash(body.password, SALT_ROUNDS);
       }
 
       const user = await prisma.$transaction(async (tx) => {

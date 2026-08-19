@@ -1,9 +1,21 @@
 import { Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 
 // Fungsi bantuan untuk mengambil nama aktor dari token JWT
 const actorName = (req: AuthRequest): string => req.user?.name || 'System';
+
+const petugasInput = z.object({
+  name: z.string().trim().min(1, 'Nama petugas wajib diisi').max(150),
+  nip: z.string().trim().max(50).nullable().optional(),
+  jabatan: z.string().trim().max(150).nullable().optional(),
+});
+const petugasUpdate = petugasInput.partial();
+
+function invalidPetugas(res: Response, error: z.ZodError) {
+  return res.status(400).json({ success: false, message: 'Data petugas tidak valid.', errors: z.flattenError(error).fieldErrors });
+}
 
 export const petugasController = {
   /**
@@ -35,19 +47,14 @@ export const petugasController = {
    * Menambah data petugas baru (Khusus Admin) + Pencatatan Audit Log.
    */
   create: async (req: AuthRequest, res: Response) => {
+    const parsed = petugasInput.safeParse(req.body);
+    if (!parsed.success) return invalidPetugas(res, parsed.error);
     try {
-      const { name, nip, jabatan } = req.body;
+      const { name, nip, jabatan } = parsed.data;
 
-      if (typeof name !== 'string' || !name.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nama petugas wajib diisi.',
-        });
-      }
-
-      const cleanName = name.trim();
-      const cleanNip = typeof nip === 'string' && nip.trim() ? nip.trim() : null;
-      const cleanJabatan = typeof jabatan === 'string' && jabatan.trim() ? jabatan.trim() : null;
+      const cleanName = name;
+      const cleanNip = nip || null;
+      const cleanJabatan = jabatan || null;
 
       // TRANSAKSI ATOMIK: Buat Petugas + Catat Audit Log
       const newItem = await prisma.$transaction(async (tx) => {
@@ -94,9 +101,11 @@ export const petugasController = {
    * Memperbarui data petugas (Khusus Admin) + Pencatatan Audit Log.
    */
   update: async (req: AuthRequest, res: Response) => {
+    const parsed = petugasUpdate.safeParse(req.body);
+    if (!parsed.success) return invalidPetugas(res, parsed.error);
     try {
       const { id } = req.params;
-      const { name, nip, jabatan } = req.body;
+      const { name, nip, jabatan } = parsed.data;
 
       const existing = await prisma.petugas.findUnique({ where: { id } });
       if (!existing) {
@@ -107,9 +116,9 @@ export const petugasController = {
       }
 
       const updateData: { name?: string; nip?: string | null; jabatan?: string | null } = {};
-      if (name !== undefined) updateData.name = typeof name === 'string' ? name.trim() : existing.name;
-      if (nip !== undefined) updateData.nip = typeof nip === 'string' && nip.trim() ? nip.trim() : null;
-      if (jabatan !== undefined) updateData.jabatan = typeof jabatan === 'string' && jabatan.trim() ? jabatan.trim() : null;
+      if (name !== undefined) updateData.name = name;
+      if (nip !== undefined) updateData.nip = nip || null;
+      if (jabatan !== undefined) updateData.jabatan = jabatan || null;
 
       // TRANSAKSI ATOMIK: Update Petugas + Catat Audit Log
       const updated = await prisma.$transaction(async (tx) => {

@@ -25,3 +25,29 @@ if (rawSecret.length < 32) {
 }
 
 export const JWT_SECRET: string = rawSecret;
+
+/**
+ * Daftar origin frontend yang diizinkan mengakses API ini (CORS whitelist).
+ * Diisi lewat env var CORS_ORIGIN, dipisah koma kalau lebih dari satu, mis:
+ *   CORS_ORIGIN="https://simon.bbmkg5.go.id,https://simon-staging.bbmkg5.go.id"
+ *
+ * Kalau belum di-set:
+ * - development: fallback ke localhost supaya tidak menghalangi `npm run dev`.
+ * - production: TIDAK ada fallback diam-diam ke "izinkan semua origin" (itu yang
+ *   mau kita hindari) - server tetap nyala tapi CORS menolak semua origin browser
+ *   sampai env var ini diisi eksplisit.
+ */
+const rawCorsOrigin = process.env.CORS_ORIGIN;
+const isProduction = process.env.NODE_ENV === 'production';
+
+export const CORS_ORIGINS: string[] = rawCorsOrigin
+  ? rawCorsOrigin.split(',').map((o) => o.trim()).filter(Boolean)
+  : isProduction
+    ? []
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+if (isProduction && CORS_ORIGINS.length === 0) {
+  console.warn('\n⚠️  PERINGATAN: CORS_ORIGIN belum di-set di production.');
+  console.warn('   Semua request lintas-origin dari browser akan DITOLAK sampai env var ini diisi.');
+  console.warn('   Tambahkan: CORS_ORIGIN="https://domain-frontend-anda"\n');
+}

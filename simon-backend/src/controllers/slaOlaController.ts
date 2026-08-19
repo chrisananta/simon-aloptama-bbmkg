@@ -1,25 +1,47 @@
 import { Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
+
+const saveSlaOlaInput = z.object({
+  uptStation: z.string().trim().min(1, 'Stasiun UPT wajib diisi').max(200),
+  category: z.string().trim().min(1, 'Kategori peralatan wajib diisi').max(100),
+  deviceId: z.string().trim().min(1).max(64).optional().nullable(),
+  kondisiSla: z.union([z.boolean(), z.enum(['true', 'false']), z.literal(1), z.literal(0), z.literal('1'), z.literal('0')]),
+  kondisiOla: z.coerce.number().finite().min(0, 'Nilai OLA harus antara 0 sampai 100.').max(100, 'Nilai OLA harus antara 0 sampai 100.'),
+  kendala: z.string().trim().max(2000).optional(),
+});
+
+const saveMonthlySlaOlaInput = z.object({
+  deviceId: z.string().trim().min(1, 'deviceId wajib diisi').max(64),
+  uptStation: z.string().trim().max(200).optional(),
+  category: z.string().trim().max(100).optional(),
+  kondisiSla: z.union([z.boolean(), z.enum(['true', 'false']), z.literal(1), z.literal(0)]).optional(),
+  ola: z.coerce.number().finite().min(0).max(100).optional(),
+  bulan: z.coerce.number().int().min(1, 'bulan wajib diisi').max(12, 'bulan tidak valid'),
+  tahun: z.coerce.number().int().min(2000, 'tahun wajib diisi').max(2100, 'tahun tidak valid'),
+});
+
+function invalidSlaOla(res: Response, error: z.ZodError) {
+  return res.status(400).json({ success: false, message: 'Data SLA/OLA tidak valid.', errors: z.flattenError(error).fieldErrors });
+}
 
 export const slaOlaController = {
   /**
    * Menyimpan entri SLA/OLA dan memperbarui status perangkat secara atomik.
    */
   saveSlaOla: async (req: AuthRequest, res: Response) => {
+    const parsed = saveSlaOlaInput.safeParse(req.body);
+    if (!parsed.success) return invalidSlaOla(res, parsed.error);
     try {
-      const { uptStation, category, deviceId, kondisiSla, kondisiOla, kendala } = req.body;
+      const { uptStation, category, deviceId, kondisiSla, kondisiOla, kendala } = parsed.data;
 
-      if (!uptStation || !category || !req.user) {
-        return res.status(400).json({ success: false, message: 'Stasiun dan kategori wajib diisi.' });
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: 'Sesi tidak valid.' });
       }
 
       const slaOn = kondisiSla === true || kondisiSla === 'true' || kondisiSla === 1 || kondisiSla === '1';
-      const ola = Number(kondisiOla);
-
-      if (!Number.isFinite(ola) || ola < 0 || ola > 100) {
-        return res.status(400).json({ success: false, message: 'Nilai OLA harus antara 0 sampai 100.' });
-      }
+      const ola = kondisiOla;
 
       // Pemeriksaan Hak Akses (Otorisasi)
       if (req.user.role !== 'ADMIN' && req.user.uptStation !== uptStation) {
@@ -139,17 +161,15 @@ export const slaOlaController = {
    * Menyimpan Data SLA/OLA Bulanan Secara Eksplisit (Tampilan Admin Master).
    */
   saveMonthlySlaOla: async (req: AuthRequest, res: Response) => {
+    const parsed = saveMonthlySlaOlaInput.safeParse(req.body);
+    if (!parsed.success) return invalidSlaOla(res, parsed.error);
     try {
-      const { deviceId, uptStation, category, kondisiSla, ola, bulan, tahun } = req.body;
-
-      if (!deviceId || !bulan || !tahun) {
-        return res.status(400).json({ success: false, message: 'deviceId, bulan, dan tahun wajib diisi.' });
-      }
+      const { deviceId, uptStation, category, kondisiSla, ola, bulan, tahun } = parsed.data;
 
       const slaOn = Boolean(kondisiSla);
-      const olaNum = Math.min(100, Math.max(0, Number(ola) || 0));
-      const bulanNum = Number(bulan);
-      const tahunNum = Number(tahun);
+      const olaNum = Math.min(100, Math.max(0, ola ?? 0));
+      const bulanNum = bulan;
+      const tahunNum = tahun;
 
       let newStatus: 'NORMAL' | 'GANGGUAN' | 'MATI' = 'NORMAL';
       if (!slaOn || olaNum === 0) {
@@ -230,13 +250,18 @@ export const slaOlaController = {
    * Mengambil Data SLA/OLA Terakhir Per Perangkat Berdasarkan Bulan & Tahun.
    */
   getMonthlySlaOla: async (req: AuthRequest, res: Response) => {
+    const parsedQuery = z
+      .object({
+        bulan: z.coerce.number().int().min(1).max(12),
+        tahun: z.coerce.number().int().min(2000).max(2100),
+      })
+      .safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({ success: false, message: 'Query bulan dan tahun wajib diisi dengan benar.' });
+    }
     try {
-      const bulanNum = Number(req.query.bulan);
-      const tahunNum = Number(req.query.tahun);
-
-      if (!bulanNum || !tahunNum) {
-        return res.status(400).json({ success: false, message: 'Query bulan dan tahun wajib diisi.' });
-      }
+      const bulanNum = parsedQuery.data.bulan;
+      const tahunNum = parsedQuery.data.tahun;
 
       const start = new Date(tahunNum, bulanNum - 1, 1, 0, 0, 0);
       const end = new Date(tahunNum, bulanNum, 1, 0, 0, 0);
