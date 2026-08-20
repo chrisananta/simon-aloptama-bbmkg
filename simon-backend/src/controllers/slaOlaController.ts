@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
+import { serializeDeviceDates } from '../utils/dateUtils.js';
 
 const saveSlaOlaInput = z.object({
   uptStation: z.string().trim().min(1, 'Stasiun UPT wajib diisi').max(200),
@@ -101,7 +102,7 @@ export const slaOlaController = {
                 olaScore: ola,
                 issueDescription: kendala || (newStatus === 'NORMAL' ? null : 'Kendala operasional dilaporkan UPT'),
                 downtimeDuration: newStatus === 'NORMAL' ? null : newStatus === 'MATI' ? 'Mati Total (0%)' : 'Dalam Penanganan UPT',
-                lastReportedDate: new Date().toISOString().split('T')[0],
+                lastReportedDate: new Date(),
               },
             });
           }
@@ -120,7 +121,7 @@ export const slaOlaController = {
                 olaScore: ola,
                 issueDescription: kendala || (newStatus === 'NORMAL' ? null : 'Kendala operasional dilaporkan UPT'),
                 downtimeDuration: newStatus === 'NORMAL' ? null : newStatus === 'MATI' ? 'Mati Total (0%)' : 'Dalam Penanganan UPT',
-                lastReportedDate: new Date().toISOString().split('T')[0],
+                lastReportedDate: new Date(),
               },
             });
           }
@@ -148,7 +149,7 @@ export const slaOlaController = {
         success: true,
         message: 'Data SLA/OLA berhasil disimpan ke database.',
         data: log,
-        devices: allDevices,
+        devices: allDevices.map(serializeDeviceDates),
         lastSync: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jayapura' }),
       });
     } catch (error) {
@@ -208,7 +209,7 @@ export const slaOlaController = {
               conditionStatus: newStatus,
               slaScore: slaOn ? 100 : 0,
               olaScore: olaNum,
-              lastReportedDate: new Date().toISOString().split('T')[0],
+              lastReportedDate: new Date(),
             },
           });
           updatedDeviceName = dev.name;
@@ -238,7 +239,7 @@ export const slaOlaController = {
         success: true,
         message: 'Data SLA/OLA bulanan berhasil disimpan ke database.',
         data: log,
-        devices: allDevices,
+        devices: allDevices.map(serializeDeviceDates),
       });
     } catch (error) {
       console.error('Error saveMonthlySlaOla:', error);

@@ -99,10 +99,6 @@ function parseCsv(content: string): CsvRow[] {
   return rows;
 }
 
-function formatDate(d: Date): string {
-  return d.toISOString().split('T')[0];
-}
-
 async function main() {
   if (!fs.existsSync(CSV_PATH)) {
     console.error(`❌ File CSV tidak ditemukan di: ${CSV_PATH}`);
@@ -116,7 +112,12 @@ async function main() {
 
   console.log('🔍 Mengambil daftar stasiun dari database...');
   const stations = await prisma.uptStation.findMany();
-  const stationByCode = new Map(stations.map((s) => [s.code.trim().toUpperCase(), s]));
+  // Tipe UptStation diambil otomatis dari hasil query (bukan diimpor manual),
+  // supaya tidak bergantung pada nama export tertentu dari @prisma/client
+  // yang bisa beda-beda tergantung versi Prisma yang ter-generate.
+  const stationByCode = new Map<string, (typeof stations)[number]>(
+    stations.map((s) => [s.code.trim().toUpperCase(), s])
+  );
   console.log(`✅ Ditemukan ${stations.length} stasiun di database.\n`);
 
   const now = new Date();
@@ -164,8 +165,8 @@ async function main() {
       longitude: isNaN(lng) ? station.longitude : lng,
       conditionStatus: 'NORMAL' as const,
       calibrationStatus: 'VALID' as const,
-      lastCalibrated: formatDate(lastCalibrated),
-      calibrationValidUntil: formatDate(validUntil),
+      lastCalibrated: lastCalibrated,
+      calibrationValidUntil: validUntil,
       calibrationAgency: 'Tim INSKAL BBMKG Wilayah V',
     };
 

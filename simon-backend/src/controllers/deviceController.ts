@@ -3,6 +3,9 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
+import { parseDateOnly, formatDateOnly, serializeDeviceDates } from '../utils/dateUtils.js';
+
+const dateOnlyString = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal wajib "YYYY-MM-DD".');
 
 const deviceInput = z.object({
   id: z.string().trim().min(1).max(64).optional(),
@@ -16,8 +19,8 @@ const deviceInput = z.object({
   longitude: z.coerce.number().finite().min(-180).max(180),
   conditionStatus: z.enum(['NORMAL', 'GANGGUAN', 'MATI']).optional(),
   calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA']).optional(),
-  lastCalibrated: z.string().trim().min(1).max(20).optional(),
-  calibrationValidUntil: z.string().trim().min(1).max(20).optional(),
+  lastCalibrated: dateOnlyString.optional(),
+  calibrationValidUntil: dateOnlyString.optional(),
   calibrationAgency: z.string().trim().min(1).max(200).optional(),
   issueDescription: z.string().trim().max(2000).nullable().optional(),
   downtimeDuration: z.string().trim().max(200).nullable().optional(),
@@ -39,11 +42,17 @@ function databaseError(res: Response, error: unknown, fallback: string) {
   return res.status(500).json({ success: false, message: fallback });
 }
 
+// Kolom lastCalibrated/calibrationValidUntil/lastReportedDate disimpan sebagai
+// DATE asli di Postgres (lihat schema.prisma), tapi kontrak API tetap kirim
+// string "YYYY-MM-DD" seperti sebelumnya - supaya frontend tidak perlu berubah.
+const serializeDevice = serializeDeviceDates;
+
 export const deviceController = {
   getAllDevices: async (_req: AuthRequest, res: Response) => {
     try {
       const devices = await prisma.device.findMany({ orderBy: { name: 'asc' } });
-      return res.json({ success: true, count: devices.length, data: devices, devices, totalDevices: devices.length, source: 'POSTGRESQL_PRISMA_STORAGE', lastUpdate: new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jayapura' }) + ' WIT' });
+      const serialized = devices.map(serializeDevice);
+      return res.json({ success: true, count: serialized.length, data: serialized, devices: serialized, totalDevices: serialized.length, source: 'POSTGRESQL_PRISMA_STORAGE', lastUpdate: new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jayapura' }) + ' WIT' });
     } catch (error) {
       console.error('getAllDevices PostgreSQL error:', error);
       return res.status(503).json({ success: false, message: 'Database tidak tersedia. Data perangkat tidak dapat dimuat.' });
@@ -54,7 +63,12 @@ export const deviceController = {
     try {
       const device = await prisma.device.findUnique({ where: { id: req.params.id }, include: { slaOlaLogs: true, calibrationRecords: true } });
       if (!device) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
-      return res.json({ success: true, data: device });
+      const serializedRecords = device.calibrationRecords.map((r) => ({
+        ...r,
+        lastCalibrated: formatDateOnly(r.lastCalibrated),
+        calibrationValidUntil: formatDateOnly(r.calibrationValidUntil),
+      }));
+      return res.json({ success: true, data: { ...serializeDevice(device), calibrationRecords: serializedRecords } });
     } catch (error) {
       console.error('Error getDeviceById:', error);
       return res.status(500).json({ success: false, message: 'Gagal mengambil detail perangkat.' });
@@ -70,11 +84,11 @@ export const deviceController = {
       if (!station) return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan. Buat atau pilih stasiun yang terdaftar.' });
       const today = new Date().toISOString().slice(0, 10);
       const newDevice = await prisma.$transaction(async (tx) => {
-        const created = await tx.device.create({ data: { ...body, id: body.id || `ALT-${randomUUID()}`, subCategory: body.subCategory || null, picKalibrasi: body.picKalibrasi || 'Balai', locationName: body.locationName || body.uptStation, conditionStatus: body.conditionStatus || 'NORMAL', calibrationStatus: body.calibrationStatus || 'VALID', lastCalibrated: body.lastCalibrated || today, calibrationValidUntil: body.calibrationValidUntil || today, calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG V', issueDescription: body.issueDescription || null, downtimeDuration: body.downtimeDuration || null, stationId: station.id } });
+        const created = await tx.device.create({ data: { ...body, id: body.id || `ALT-${randomUUID()}`, subCategory: body.subCategory || null, picKalibrasi: body.picKalibrasi || 'Balai', locationName: body.locationName || body.uptStation, conditionStatus: body.conditionStatus || 'NORMAL', calibrationStatus: body.calibrationStatus || 'VALID', lastCalibrated: parseDateOnly(body.lastCalibrated || today), calibrationValidUntil: parseDateOnly(body.calibrationValidUntil || today), calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG V', issueDescription: body.issueDescription || null, downtimeDuration: body.downtimeDuration || null, stationId: station.id } });
         await tx.auditLog.create({ data: { table: 'master_alat', action: 'TAMBAH', recordId: created.id, recordName: `${created.name} (${created.category})`, actor: actorName(req), details: `Penambahan unit aloptama baru di Stasiun ${created.uptStation}.` } });
         return created;
       });
-      return res.status(201).json({ success: true, data: newDevice });
+      return res.status(201).json({ success: true, data: serializeDevice(newDevice) });
     } catch (error) {
       console.error('Error createDevice:', error);
       return databaseError(res, error, 'Gagal menambahkan perangkat baru.');
@@ -90,11 +104,19 @@ export const deviceController = {
       const station = body.uptStation ? await prisma.uptStation.findFirst({ where: { name: body.uptStation } }) : null;
       if (body.uptStation && !station) return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan.' });
       const updated = await prisma.$transaction(async (tx) => {
-        const device = await tx.device.update({ where: { id: req.params.id }, data: { ...body, stationId: station?.id } });
+        const device = await tx.device.update({
+          where: { id: req.params.id },
+          data: {
+            ...body,
+            lastCalibrated: body.lastCalibrated ? parseDateOnly(body.lastCalibrated) : undefined,
+            calibrationValidUntil: body.calibrationValidUntil ? parseDateOnly(body.calibrationValidUntil) : undefined,
+            stationId: station?.id,
+          },
+        });
         await tx.auditLog.create({ data: { table: 'master_alat', action: 'EDIT', recordId: device.id, recordName: `${device.name} (${device.category})`, actor: actorName(req), details: `Pembaruan data master aloptama ${device.name}.` } });
         return device;
       });
-      return res.json({ success: true, data: updated });
+      return res.json({ success: true, data: serializeDevice(updated) });
     } catch (error) {
       console.error('Error updateDevice:', error);
       return databaseError(res, error, 'Gagal memperbarui data perangkat.');

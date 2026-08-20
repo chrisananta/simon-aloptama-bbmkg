@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db/prisma.js';
+import { formatDateOnly } from '../utils/dateUtils.js';
 
 export const historyController = {
   getHistoryLogs: async (req: Request, res: Response) => {
@@ -32,7 +33,10 @@ export const historyController = {
       });
 
       const formattedCal = calRecords.map((rec) => {
-        const yearStr = rec.lastCalibrated ? rec.lastCalibrated.split('-')[0] : '2026';
+        // lastCalibrated sekarang objek Date (kolom DATE di Postgres), bukan
+        // string lagi - ambil tahun langsung dari Date, dan format ulang jadi
+        // "YYYY-MM-DD" untuk kontrak API yang tetap sama seperti sebelumnya.
+        const yearStr = rec.lastCalibrated ? rec.lastCalibrated.getFullYear().toString() : '2026';
         return {
           id: rec.id,
           type: 'KALIBRASI' as const,
@@ -43,8 +47,8 @@ export const historyController = {
           deviceName: rec.deviceName,
           category: rec.category,
           details: {
-            lastCalibrated: rec.lastCalibrated,
-            calibrationValidUntil: rec.calibrationValidUntil,
+            lastCalibrated: formatDateOnly(rec.lastCalibrated),
+            calibrationValidUntil: formatDateOnly(rec.calibrationValidUntil),
             calibrationAgency: rec.calibrationAgency,
             status: rec.calibrationStatus,
             certificateNumber: rec.certificateNumber,

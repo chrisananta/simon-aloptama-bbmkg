@@ -51,10 +51,14 @@ model Device {
   picKalibrasi          String?             @default("Balai")
   conditionStatus       EquipmentStatus     @default(NORMAL)
   calibrationStatus     CalibrationStatus   @default(VALID)
-  lastCalibrated        String
-  calibrationValidUntil String
+  // Disimpan sebagai DATE asli (bukan String) supaya bisa di-sort/filter/index
+  // dengan benar oleh Postgres. Kontrak API tetap kirim/terima string
+  // "YYYY-MM-DD" - konversi Date<->string terjadi di controller, frontend
+  // tidak perlu berubah sama sekali.
+  lastCalibrated        DateTime            @db.Date
+  calibrationValidUntil DateTime            @db.Date
   calibrationAgency     String
-  lastReportedDate      String?
+  lastReportedDate      DateTime?           @db.Date
   downtimeDuration      String?
   issueDescription      String?
   slaScore              Float?
@@ -67,6 +71,9 @@ model Device {
   slaOlaLogs            SlaOlaLog[]
   monthlyScores         DeviceMonthlyScore[]
 
+  @@index([uptStation])
+  @@index([category])
+  @@index([stationId])
   @@map("devices")
 }
 
@@ -83,6 +90,9 @@ model SlaOlaLog {
   timestamp  DateTime @default(now())
   device     Device?  @relation(fields: [deviceId], references: [id])
 
+  @@index([timestamp])
+  @@index([deviceId])
+  @@index([uptStation])
   @@map("sla_ola_logs")
 }
 
@@ -113,8 +123,8 @@ model CalibrationRecord {
   deviceName            String
   uptStation            String
   category              String
-  lastCalibrated        String
-  calibrationValidUntil String
+  lastCalibrated        DateTime          @db.Date
+  calibrationValidUntil DateTime          @db.Date
   calibrationAgency     String
   certificateNumber     String?
   calibrationStatus     CalibrationStatus @default(VALID)
@@ -122,6 +132,8 @@ model CalibrationRecord {
   createdAt             DateTime          @default(now())
   device                Device            @relation(fields: [deviceId], references: [id])
 
+  @@index([deviceId])
+  @@index([createdAt])
   @@map("calibration_records")
 }
 
@@ -148,6 +160,9 @@ model AuditLog {
   status     String    @default("SUCCESS")
   ipOrSource String?   @default("SIMON API")
 
+  @@index([timestamp])
+  @@index([table])
+  @@index([actor])
   @@map("audit_logs")
 }
 
