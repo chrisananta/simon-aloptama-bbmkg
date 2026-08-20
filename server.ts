@@ -24,27 +24,34 @@ function generateRandomPassword(): string {
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// 1. Header keamanan standar (CSP, X-Frame-Options, dll).
-//    contentSecurityPolicy dimatikan di sini karena app ini menyajikan HTML
-//    dari Vite/dist sendiri (bukan API murni) - CSP default helmet gampang
-//    memblokir script/style inline yang dipakai Vite dev & build. Header
-//    keamanan lain (X-Content-Type-Options, X-Frame-Options, HSTS, dst) tetap aktif.
+// 1. Header keamanan standar (CSP dimatikan agar aset inline Vite/dist tidak terblokir)
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// 2. CORS - hanya izinkan origin yang eksplisit terdaftar di CORS_ORIGIN (lihat env.ts).
-//    Kalau daftar origin kosong (belum di-set di production), semua request
-//    lintas-origin browser ditolak - bukan diam-diam mengizinkan semua origin (*).
+// 2. Perbaikan CORS: Izinkan ngrok & localhost secara fleksibel tanpa melempar Error 500
 app.use(
   cors({
     origin(origin, callback) {
-      // Request tanpa header Origin (mis. curl, server-to-server, health check) selalu diizinkan.
+      // Request tanpa header Origin (misal curl, server-to-server, health check, atau same-origin asset)
       if (!origin) return callback(null, true);
-      if (CORS_ORIGINS.includes(origin)) return callback(null, true);
-      return callback(new Error(`Origin "${origin}" tidak diizinkan oleh kebijakan CORS.`));
+
+      // Izinkan jika ada di list env var, domain ngrok, atau localhost
+      if (
+        CORS_ORIGINS.includes(origin) ||
+        origin.includes("ngrok-free.dev") ||
+        origin.includes("ngrok.io") ||
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1")
+      ) {
+        return callback(null, true);
+      }
+
+      // Jangan lempar Error() agar tidak menjadi JSON 500 pada file CSS/JS
+      return callback(null, false);
     },
     credentials: true,
   })
 );
+
 app.use(express.json());
 
 // Auto-seed database when empty
@@ -53,7 +60,7 @@ async function autoSeedDatabase() {
     const userCount = await prisma.user.count();
     if (userCount === 0) {
       console.log(
-        "🌱 Database PostgreSQL kosong. Melakukan auto-seeding data awal SIMON Aloptama...",
+        "🌱 Database PostgreSQL kosong. Melakukan auto-seeding data awal SIMON Aloptama..."
       );
 
       const adminPassword = generateRandomPassword();
@@ -120,23 +127,23 @@ async function autoSeedDatabase() {
       });
 
       console.log(
-        "\n════════════════════════════════════════════════════════════",
+        "\n════════════════════════════════════════════════════════════"
       );
       console.log(
-        "🔑  AKUN AWAL BERHASIL DIBUAT - CATAT PASSWORD INI SEKARANG!",
+        "🔑  AKUN AWAL BERHASIL DIBUAT - CATAT PASSWORD INI SEKARANG!"
       );
       console.log(
-        "    Password ini HANYA ditampilkan sekali dan TIDAK disimpan",
+        "    Password ini HANYA ditampilkan sekali dan TIDAK disimpan"
       );
       console.log("    dalam bentuk terbaca di mana pun setelah ini.");
       console.log(
-        "────────────────────────────────────────────────────────────",
+        "────────────────────────────────────────────────────────────"
       );
       console.log(`    admin.inskal    : ${adminPassword}`);
       console.log(`    upt.jayapura    : ${uptPassword}`);
       console.log(`    pimpinan.balai  : ${pimpinanPassword}`);
       console.log(
-        "════════════════════════════════════════════════════════════\n",
+        "════════════════════════════════════════════════════════════\n"
       );
 
       // 2. Stations
@@ -183,7 +190,7 @@ async function autoSeedDatabase() {
       }
 
       console.log(
-        "✅ Auto-seeding PostgreSQL SIMON Aloptama berhasil selesai!",
+        "✅ Auto-seeding PostgreSQL SIMON Aloptama berhasil selesai!"
       );
     }
   } catch (err) {
@@ -195,24 +202,8 @@ async function autoSeedDatabase() {
 app.use("/api", apiRouter);
 app.use("/api/v1", apiRouter);
 
-// 2. Penanganan Error Global Express (Global Error Handler)
-app.use(
-  (
-    err: any,
-    _req: express.Request,
-    res: express.Response,
-    _next: express.NextFunction
-  ) => {
-    console.error("❌ Unhandled Server Error:", err);
-    return res.status(err.status || 500).json({
-      success: false,
-      message: err.message || "Terjadi kesalahan internal pada server.",
-    });
-  }
-);
-
 async function startServer() {
-  // Vite dev middleware setup
+  // Setup Frontend: Mode Dev (Vite Middleware) vs Production (Static Dist)
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -227,12 +218,28 @@ async function startServer() {
     });
   }
 
+  // Global Error Handler ditaruh setelah rute static/API
+  app.use(
+    (
+      err: any,
+      _req: express.Request,
+      res: express.Response,
+      _next: express.NextFunction
+    ) => {
+      console.error("❌ Unhandled Server Error:", err);
+      return res.status(err.status || 500).json({
+        success: false,
+        message: err.message || "Terjadi kesalahan internal pada server.",
+      });
+    }
+  );
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(
-      `Server BMKG Aloptama (PostgreSQL DB Enabled) running on http://0.0.0.0:${PORT}`,
+      `Server BMKG Aloptama (PostgreSQL DB Enabled) running on http://0.0.0.0:${PORT}`
     );
     autoSeedDatabase().catch((err) =>
-      console.warn("Auto-seed check notification:", err),
+      console.warn("Auto-seed check notification:", err)
     );
   });
 }

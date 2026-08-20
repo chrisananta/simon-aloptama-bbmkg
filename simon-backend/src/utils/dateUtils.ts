@@ -31,7 +31,7 @@ export function parseDateOnlyOptional(value: string | null | undefined): Date | 
 
 /** Date dari Prisma -> string "YYYY-MM-DD" untuk response API. */
 export function formatDateOnly(value: Date | null | undefined): string | null {
-  if (!value) return null;
+  if (!value || isNaN(value.getTime())) return null;
   return value.toISOString().slice(0, 10);
 }
 
