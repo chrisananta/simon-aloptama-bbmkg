@@ -104,7 +104,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
     devices.forEach((device) => {
       const style = getStatusStyle(device.conditionStatus);
-      const isSelected = selectedDeviceId === device.id;
+      const isSelected = selectedDeviceId === device.devicesId;
       const categoryIconSvg = getCategorySvg(device.category);
 
       const customHtml = `
@@ -116,7 +116,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           }
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-md transition-transform hover:scale-125 border-2 ${
             isSelected ? 'border-amber-300 ring-4 ring-blue-500/50 scale-125 z-20' : 'border-white'
-          }" style="background-color: ${style.color}" title="${device.category} - ${device.name}">
+          }" style="background-color: ${style.color}" title="${device.category} - ${device.site}">
             ${categoryIconSvg}
           </div>
         </div>
@@ -133,7 +133,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       const popupHtml = `
         <div class="p-3.5 min-w-[220px] max-w-[260px] font-['Inter',sans-serif]">
           <div class="border-b border-slate-200 pb-2 mb-2.5">
-            <h3 class="font-bold text-sm text-slate-900 leading-tight">${device.name}</h3>
+            <h3 class="font-bold text-sm text-slate-900 leading-tight">${device.site}</h3>
             <p class="text-xs text-slate-600 mt-1 flex items-start gap-1">
               <span>📍</span>
               <span class="font-medium">${device.locationName}</span>
@@ -182,11 +182,11 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         }
       });
 
-      markersRef.current[device.id] = marker;
+      markersRef.current[device.devicesId] = marker;
     });
 
     if (selectedDeviceId && markersRef.current[selectedDeviceId]) {
-      const selectedDev = devices.find((d) => d.id === selectedDeviceId);
+      const selectedDev = devices.find((d) => d.devicesId === selectedDeviceId);
       if (selectedDev) {
         map.setView([selectedDev.latitude, selectedDev.longitude], 8, {
           animate: true,

@@ -35,16 +35,16 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
 
   const allRecords = [
     ...devices.map((dev) => ({
-      id: `latest-${dev.id}`,
-      deviceId: dev.id,
-      deviceName: dev.name,
+      id: `latest-${dev.devicesId}`,
+      deviceId: dev.devicesId,
+      deviceName: dev.site,
       category: dev.category,
       uptStation: dev.uptStation,
       lastCalibrated: dev.lastCalibrated,
       calibrationValidUntil: dev.calibrationValidUntil,
       calibrationStatus: dev.calibrationStatus,
-      calibrationAgency: dev.calibrationAgency,
-      picKalibrasi: dev.picKalibrasi || ((dev.calibrationAgency || '').toLowerCase().includes('pusat') ? 'Pusat' : 'Balai'),
+      calibrationAgency: dev.timkalibrasi,
+      picKalibrasi: dev.picKalibrasi || ((dev.timkalibrasi || '').toLowerCase().includes('pusat') ? 'Pusat' : 'Balai'),
       notes: dev.calibrationStatus === 'VALID' ? 'Kalibrasi Berkala Operasional' : 'Perlu Re-Kalibrasi INSKAL',
       yearCreated: dev.lastCalibrated ? dev.lastCalibrated.split('-')[0] : '2026',
       createdAt: dev.lastCalibrated,

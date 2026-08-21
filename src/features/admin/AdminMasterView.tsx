@@ -58,7 +58,6 @@ interface AdminMasterViewProps {
   onUpdateDevice: (device: AloptamaDevice, changesDetail: string, actor: string) => void | Promise<void>;
   onDeleteDevice: (deviceId: string, deviceName: string, actor: string) => void | Promise<void>;
   onClearLogs?: () => void;
-  // Dipakai buat sinkronkan daftar device global setelah simpan SLA/OLA bulanan
   onSyncDevicesFromServer?: (devices: AloptamaDevice[]) => void;
 }
 
@@ -83,103 +82,101 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('master_stasiun');
   const [adminActor, setAdminActor] = useState<string>('Admin INSKAL BBMKG V');
 
- // --- MASTER PETUGAS MONITORING STATES ---
-const [petugasList, setPetugasList] = useState<PetugasItem[]>(() => petugasService.getAll());
-const [petugasSearch, setPetugasSearch] = useState<string>('');
-const [isPetugasModalOpen, setIsPetugasModalOpen] = useState<boolean>(false);
-const [editingPetugas, setEditingPetugas] = useState<PetugasItem | null>(null);
-const [petugasForm, setPetugasForm] = useState<Partial<PetugasItem>>({});
-const [deleteConfirmPetugas, setDeleteConfirmPetugas] = useState<PetugasItem | null>(null);
+  // --- MASTER PETUGAS MONITORING STATES ---
+  const [petugasList, setPetugasList] = useState<PetugasItem[]>(() => petugasService.getAll());
+  const [petugasSearch, setPetugasSearch] = useState<string>('');
+  const [isPetugasModalOpen, setIsPetugasModalOpen] = useState<boolean>(false);
+  const [editingPetugas, setEditingPetugas] = useState<PetugasItem | null>(null);
+  const [petugasForm, setPetugasForm] = useState<Partial<PetugasItem>>({});
+  const [deleteConfirmPetugas, setDeleteConfirmPetugas] = useState<PetugasItem | null>(null);
 
-const refreshPetugas = () => {
-  setPetugasList(petugasService.getAll());
-};
+  const refreshPetugas = () => {
+    setPetugasList(petugasService.getAll());
+  };
 
-useEffect(() => {
-  // 1. Ambil data secara eksplisit saat komponen dipasang
-  petugasService.fetch().then(() => {
-    refreshPetugas();
-  });
+  useEffect(() => {
+    petugasService.fetch().then(() => {
+      refreshPetugas();
+    });
 
-  // 2. Pasang listener untuk update otomatis (misal setelah Tambah/Edit/Hapus)
-  window.addEventListener('petugas_list_updated', refreshPetugas);
-  return () => window.removeEventListener('petugas_list_updated', refreshPetugas);
-}, []);
+    window.addEventListener('petugas_list_updated', refreshPetugas);
+    return () => window.removeEventListener('petugas_list_updated', refreshPetugas);
+  }, []);
 
-const handleOpenAddPetugas = () => {
-  setEditingPetugas(null);
-  setPetugasForm({
-    name: '',
-    nip: '',
-    jabatan: 'Staf Instrumentasi & Kalibrasi',
-  });
-  setIsPetugasModalOpen(true);
-};
+  const handleOpenAddPetugas = () => {
+    setEditingPetugas(null);
+    setPetugasForm({
+      name: '',
+      nip: '',
+      jabatan: 'Staf Instrumentasi & Kalibrasi',
+    });
+    setIsPetugasModalOpen(true);
+  };
 
-const handleOpenEditPetugas = (p: PetugasItem) => {
-  setEditingPetugas(p);
-  setPetugasForm({ ...p });
-  setIsPetugasModalOpen(true);
-};
+  const handleOpenEditPetugas = (p: PetugasItem) => {
+    setEditingPetugas(p);
+    setPetugasForm({ ...p });
+    setIsPetugasModalOpen(true);
+  };
 
-const handleSavePetugas = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!petugasForm.name || !petugasForm.name.trim()) {
-    alert('Nama Personil Petugas Wajib Diisi.');
-    return;
-  }
-
-  try {
-    if (editingPetugas) {
-      await petugasService.update(
-        editingPetugas.id,
-        {
-          name: petugasForm.name.trim(),
-          nip: petugasForm.nip?.trim() || '',
-          jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
-        },
-        adminActor
-      );
-    } else {
-      await petugasService.add(
-        {
-          name: petugasForm.name.trim(),
-          nip: petugasForm.nip?.trim() || '',
-          jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
-        },
-        adminActor
-      );
+  const handleSavePetugas = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!petugasForm.name || !petugasForm.name.trim()) {
+      alert('Nama Personil Petugas Wajib Diisi.');
+      return;
     }
 
-    refreshPetugas();
-    setIsPetugasModalOpen(false);
-  } catch (err) {
-    alert(err instanceof Error ? err.message : 'Gagal menyimpan data petugas ke server.');
-  }
-};
+    try {
+      if (editingPetugas) {
+        await petugasService.update(
+          editingPetugas.id,
+          {
+            name: petugasForm.name.trim(),
+            nip: petugasForm.nip?.trim() || '',
+            jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
+          },
+          adminActor
+        );
+      } else {
+        await petugasService.add(
+          {
+            name: petugasForm.name.trim(),
+            nip: petugasForm.nip?.trim() || '',
+            jabatan: petugasForm.jabatan?.trim() || 'Staf Operasional',
+          },
+          adminActor
+        );
+      }
 
-const handleConfirmDeletePetugas = async () => {
-  if (!deleteConfirmPetugas) return;
-  try {
-    await petugasService.delete(deleteConfirmPetugas.id, adminActor);
-    refreshPetugas();
-    setDeleteConfirmPetugas(null);
-  } catch (err) {
-    alert(err instanceof Error ? err.message : 'Gagal menghapus data petugas di server.');
-  }
-};
+      refreshPetugas();
+      setIsPetugasModalOpen(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan data petugas ke server.');
+    }
+  };
 
-const filteredPetugas = petugasList.filter(p => {
-  const q = petugasSearch.toLowerCase();
-  return (
-    p.name.toLowerCase().includes(q) ||
-    (p.nip || '').toLowerCase().includes(q) ||
-    (p.jabatan || '').toLowerCase().includes(q) ||
-    p.id.toLowerCase().includes(q)
-  );
-});
+  const handleConfirmDeletePetugas = async () => {
+    if (!deleteConfirmPetugas) return;
+    try {
+      await petugasService.delete(deleteConfirmPetugas.id, adminActor);
+      refreshPetugas();
+      setDeleteConfirmPetugas(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus data petugas di server.');
+    }
+  };
 
-  // --- MASTER AKUN / USER MANAGEMENT STATES ---
+  const filteredPetugas = petugasList.filter(p => {
+    const q = petugasSearch.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      (p.nip || '').toLowerCase().includes(q) ||
+      (p.jabatan || '').toLowerCase().includes(q) ||
+      p.id.toLowerCase().includes(q)
+    );
+  });
+
+  // --- MASTER AKUN STATES ---
   const [users, setUsers] = useState<AuthUser[]>(() => apiClient.users.getAll());
   const [userSearch, setUserSearch] = useState<string>('');
   const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | UserRole>('ALL');
@@ -229,7 +226,6 @@ const filteredPetugas = petugasList.filter(p => {
     const cleanUsername = userForm.username.trim().toLowerCase();
 
     if (editingUser) {
-      // Check duplicate username
       const existing = users.find((u) => u.id !== editingUser.id && (u.username || '').toLowerCase() === cleanUsername);
       if (existing) {
         alert(`Username "@${cleanUsername}" sudah digunakan oleh akun lain.`);
@@ -260,7 +256,6 @@ const filteredPetugas = petugasList.filter(p => {
       await apiClient.users.update(updated, detailStr, adminActor);
       await refreshUsers();
     } else {
-      // Check duplicate username
       const existing = users.find((u) => (u.username || '').toLowerCase() === cleanUsername);
       if (existing) {
         alert(`Username "@${cleanUsername}" sudah terdaftar.`);
@@ -270,8 +265,6 @@ const filteredPetugas = petugasList.filter(p => {
       const newUser: AuthUser = {
         id: userForm.id || `USR-${Date.now()}`,
         username: cleanUsername,
-        // Kosongkan kalau admin tidak isi - backend akan generate password
-        // acak & aman (menggantikan default lama "bmkg123" yang gampang ditebak).
         password: userForm.password?.trim() || undefined,
         name: userForm.name.trim(),
         role: (userForm.role as UserRole) || 'UPT_PIMPINAN',
@@ -302,7 +295,6 @@ const filteredPetugas = petugasList.filter(p => {
     setDeleteConfirmUser(null);
   };
 
-  // Filtered Users List
   const filteredUsers = users.filter((u) => {
     const query = userSearch.toLowerCase();
     const matchSearch =
@@ -324,6 +316,7 @@ const filteredPetugas = petugasList.filter(p => {
   const [alatSearch, setAlatSearch] = useState('');
   const [alatUptFilter, setAlatUptFilter] = useState('ALL');
   const [alatCategoryFilter, setAlatCategoryFilter] = useState('ALL');
+  const [alatSortOrder, setAlatSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // --- LOG SEARCH & FILTERS ---
   const [logSearch, setLogSearch] = useState('');
@@ -337,8 +330,6 @@ const filteredPetugas = petugasList.filter(p => {
   const [slaOlaUptFilter, setSlaOlaUptFilter] = useState<string>('ALL');
   const [slaOlaCategoryFilter, setSlaOlaCategoryFilter] = useState<string>('ALL');
 
-  // Overrides map for custom edits per device per month/year - diisi dari
-  // database (bukan lagi cuma memori browser yang hilang saat refresh)
   const [monthlySlaOlaData, setMonthlySlaOlaData] = useState<Record<string, { sla: number; ola: number }>>({});
   const [isLoadingMonthlySlaOla, setIsLoadingMonthlySlaOla] = useState<boolean>(false);
 
@@ -347,7 +338,6 @@ const filteredPetugas = petugasList.filter(p => {
     'Juli': 7, 'Agustus': 8, 'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12,
   };
 
-  // Setiap kali filter bulan/tahun berubah, ambil ulang data dari database
   useEffect(() => {
     const bulanNum = MONTH_NAME_TO_NUMBER[selectedMonthSlaOla];
     const tahunNum = Number(selectedYearSlaOla);
@@ -366,13 +356,11 @@ const filteredPetugas = petugasList.filter(p => {
     return () => { cancelled = true; };
   }, [selectedMonthSlaOla, selectedYearSlaOla]);
 
-  // Edit SLA OLA Modal State
   const [isSlaOlaEditModalOpen, setIsSlaOlaEditModalOpen] = useState<boolean>(false);
   const [editingSlaDevice, setEditingSlaDevice] = useState<AloptamaDevice | null>(null);
   const [editSlaVal, setEditSlaVal] = useState<number>(0);
   const [editOlaVal, setEditOlaVal] = useState<number>(0);
 
-  // Dynamic Year Generator starting from 2024 to future years automatically
   const currentYearNum = new Date().getFullYear();
   const maxYearNum = Math.max(2028, currentYearNum + 2);
   const dynamicYears: string[] = [];
@@ -380,11 +368,8 @@ const filteredPetugas = petugasList.filter(p => {
     dynamicYears.push(y.toString());
   }
 
-  // Helper untuk mengambil SLA & OLA riil sesuai data yang tersimpan di
-  // database untuk bulan & tahun yang dipilih. Alat yang belum pernah
-  // diinput akan tampil 0% apa adanya (bukan angka karangan).
   const getSlaOlaForDevice = (dev: AloptamaDevice) => {
-    return monthlySlaOlaData[dev.id] ?? { sla: 0, ola: 0 };
+    return monthlySlaOlaData[dev.devicesId] ?? { sla: 0, ola: 0 };
   };
 
   const handleOpenEditSlaOla = (dev: AloptamaDevice) => {
@@ -406,23 +391,21 @@ const filteredPetugas = petugasList.filter(p => {
 
     try {
       const { devices: updatedDevices } = await apiClient.devices.saveMonthlySlaOla({
-        deviceId: editingSlaDevice.id,
+        deviceId: editingSlaDevice.devicesId,
         uptStation: editingSlaDevice.uptStation,
         category: editingSlaDevice.category,
-        kondisiSla: sla >= 100, // SLA tetap ON/OFF, bukan persentase bebas
+        kondisiSla: sla >= 100,
         ola,
         bulan: bulanNum,
         tahun: tahunNum,
         actor: adminActor,
       });
 
-      // Update tampilan bulan yang sedang aktif dilihat
       setMonthlySlaOlaData((prev) => ({
         ...prev,
-        [editingSlaDevice.id]: { sla: sla >= 100 ? 100 : 0, ola },
+        [editingSlaDevice.devicesId]: { sla: sla >= 100 ? 100 : 0, ola },
       }));
 
-      // Sinkronkan juga daftar device utama (kalau bulan yang diedit = bulan berjalan)
       if (updatedDevices?.length) {
         onSyncDevicesFromServer?.(updatedDevices);
       }
@@ -436,8 +419,8 @@ const filteredPetugas = petugasList.filter(p => {
 
   const filteredSlaDevices = devices.filter((dev) => {
     const matchesSearch =
-      (dev.name || '').toLowerCase().includes(slaOlaSearchQuery.toLowerCase()) ||
-      (dev.id || '').toLowerCase().includes(slaOlaSearchQuery.toLowerCase()) ||
+      (dev.site || '').toLowerCase().includes(slaOlaSearchQuery.toLowerCase()) ||
+      (dev.devicesId || '').toLowerCase().includes(slaOlaSearchQuery.toLowerCase()) ||
       (dev.uptStation || '').toLowerCase().includes(slaOlaSearchQuery.toLowerCase());
 
     const matchesUpt = slaOlaUptFilter === 'ALL' || dev.uptStation === slaOlaUptFilter;
@@ -461,7 +444,7 @@ const filteredPetugas = petugasList.filter(p => {
 
   // --- FORM STATES FOR STASIUN ---
   const [stationForm, setStationForm] = useState<Partial<UPTStation>>({
-    code: '',
+    stationid: '',
     name: '',
     regionGroup: 'Papua Barat Daya',
     location: '',
@@ -471,10 +454,10 @@ const filteredPetugas = petugasList.filter(p => {
 
   // --- FORM STATES FOR ALAT ---
   const [deviceForm, setDeviceForm] = useState<Partial<AloptamaDevice>>({
-    id: '',
-    name: '',
+    devicesId: '',
+    site: '',
     category: 'AWS',
-    subCategory: '',
+    merk: '',
     uptStation: stations[0]?.name || 'Stasiun Meteorologi DEO Sorong',
     locationName: '',
     latitude: 0,
@@ -483,37 +466,35 @@ const filteredPetugas = petugasList.filter(p => {
     calibrationStatus: 'VALID',
     lastCalibrated: '2026-07-08',
     calibrationValidUntil: '2027-07-07',
-    calibrationAgency: 'Balai Besar MKG Wilayah V',
+    timkalibrasi: 'Balai Besar MKG Wilayah V',
   });
 
-  // Unique region list for stations
   const regions = Array.from(new Set(stations.map((s) => s.regionGroup).filter(Boolean)));
-  
-  // Unique categories list for devices
   const categories: EquipmentCategory[] = ['AWOS Kat. I', 'AWOS Kat. II', 'AWOS Kat. III', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG'];
 
-  // Filtered stations
   const filteredStations = stations.filter((s) => {
     const matchesSearch = 
-      (s.code || '').toLowerCase().includes(stasiunSearch.toLowerCase()) ||
+      (s.stationid || '').toLowerCase().includes(stasiunSearch.toLowerCase()) ||
       (s.name || '').toLowerCase().includes(stasiunSearch.toLowerCase()) ||
       (s.location || '').toLowerCase().includes(stasiunSearch.toLowerCase());
     const matchesRegion = stasiunRegionFilter === 'ALL' || s.regionGroup === stasiunRegionFilter;
     return matchesSearch && matchesRegion;
   });
 
-  // Filtered devices
   const filteredDevices = devices.filter((d) => {
     const matchesSearch = 
-      (d.id || '').toLowerCase().includes(alatSearch.toLowerCase()) ||
-      (d.name || '').toLowerCase().includes(alatSearch.toLowerCase()) ||
+      (d.devicesId || '').toLowerCase().includes(alatSearch.toLowerCase()) ||
+      (d.site || '').toLowerCase().includes(alatSearch.toLowerCase()) ||
       (d.locationName || '').toLowerCase().includes(alatSearch.toLowerCase());
     const matchesUpt = alatUptFilter === 'ALL' || d.uptStation === alatUptFilter;
     const matchesCat = alatCategoryFilter === 'ALL' || d.category === alatCategoryFilter;
     return matchesSearch && matchesUpt && matchesCat;
+  })
+  .sort((a, b) => {
+    const result = (a.devicesId || '').localeCompare(b.devicesId || '', undefined, { numeric: true, sensitivity: 'base' });
+    return alatSortOrder === 'asc' ? result : -result;
   });
 
-  // Filtered logs
   const filteredLogs = changeLogs.filter((log) => {
     const matchesSearch = 
       (log.recordName || '').toLowerCase().includes(logSearch.toLowerCase()) ||
@@ -525,11 +506,10 @@ const filteredPetugas = petugasList.filter(p => {
     return matchesSearch && matchesTable && matchesAction;
   });
 
-  // Open Modal for adding station
   const handleOpenAddStation = () => {
     setEditingStation(null);
     setStationForm({
-      code: `MET0${stations.length + 1}`,
+      stationid: `MET0${stations.length + 1}`,
       name: '',
       regionGroup: 'Papua Barat Daya',
       location: '',
@@ -539,26 +519,23 @@ const filteredPetugas = petugasList.filter(p => {
     setIsStationModalOpen(true);
   };
 
-  // Open Modal for editing station
   const handleOpenEditStation = (st: UPTStation) => {
     setEditingStation(st);
     setStationForm({ ...st });
     setIsStationModalOpen(true);
   };
 
-  // Submit Station Form
   const handleSaveStation = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stationForm.code || !stationForm.name) {
+    if (!stationForm.stationid || !stationForm.name) {
       alert('Kode dan Nama Stasiun UPT wajib diisi.');
       return;
     }
 
     if (editingStation) {
-      // Update
       const updated: UPTStation = {
         ...editingStation,
-        code: stationForm.code,
+        stationid: stationForm.stationid,
         name: stationForm.name,
         regionGroup: stationForm.regionGroup || 'Papua',
         location: stationForm.location || '',
@@ -577,10 +554,9 @@ const filteredPetugas = petugasList.filter(p => {
       const detailStr = changes.length > 0 ? changes.join('; ') : 'Pembaruan atribut Stasiun UPT.';
       onUpdateStation(updated, detailStr, adminActor);
     } else {
-      // Add
       const newSt: UPTStation = {
-        id: stationForm.code || `MET${Date.now()}`,
-        code: stationForm.code || `MET${Date.now()}`,
+        id: stationForm.stationid || `MET${Date.now()}`,
+        stationid: stationForm.stationid || `MET${Date.now()}`,
         name: stationForm.name || '',
         regionGroup: stationForm.regionGroup || 'Papua',
         location: stationForm.location || '',
@@ -593,15 +569,14 @@ const filteredPetugas = petugasList.filter(p => {
     setIsStationModalOpen(false);
   };
 
-  // Open Modal for adding device
   const handleOpenAddDevice = () => {
     setEditingDevice(null);
     const newId = `ALT0${(devices.length + 1).toString().padStart(3, '0')}`;
     setDeviceForm({
-      id: newId,
-      name: '',
+      devicesId: newId,
+      site: '',
       category: 'AWS',
-      subCategory: '',
+      merk: '',
       uptStation: stations[0]?.name || 'Stasiun Meteorologi DEO Sorong',
       locationName: '',
       latitude: -0.89,
@@ -610,18 +585,17 @@ const filteredPetugas = petugasList.filter(p => {
       calibrationStatus: 'VALID',
       lastCalibrated: '2026-07-08',
       calibrationValidUntil: '2027-07-07',
-      calibrationAgency: 'Balai Besar MKG Wilayah V',
+      timkalibrasi: 'Balai Besar MKG Wilayah V',
       slaScore: 100,
       olaScore: 100,
     });
     setIsDeviceModalOpen(true);
   };
 
-  // Open Modal for editing device
   const handleOpenEditDevice = (dev: AloptamaDevice) => {
     setEditingDevice(dev);
     const existingPic = dev.picKalibrasi 
-      || (dev.calibrationAgency?.toLowerCase().includes('pusat') ? 'Pusat' : 'Balai');
+      || (dev.timkalibrasi?.toLowerCase().includes('pusat') ? 'Pusat' : 'Balai');
 
     setDeviceForm({
       ...dev,
@@ -632,9 +606,8 @@ const filteredPetugas = petugasList.filter(p => {
     setIsDeviceModalOpen(true);
   };
 
-  // Submit Device Form
   const handleSaveDevice = () => {
-    if (!deviceForm.id || !deviceForm.name) {
+    if (!deviceForm.devicesId || !deviceForm.site) {
       alert('ID Alat dan Nama Alat wajib diisi.');
       return;
     }
@@ -642,7 +615,6 @@ const filteredPetugas = petugasList.filter(p => {
     const sla = Math.min(100, Math.max(0, Math.round(Number(deviceForm.slaScore ?? 100))));
     const ola = Math.min(100, Math.max(0, Math.round(Number(deviceForm.olaScore ?? 100))));
 
-    // Auto calculate condition status based on SLA & OLA rules
     let autoStatus: EquipmentStatus = deviceForm.conditionStatus as EquipmentStatus || 'NORMAL';
     if (sla === 0 || ola === 0) {
       autoStatus = 'MATI';
@@ -652,16 +624,16 @@ const filteredPetugas = petugasList.filter(p => {
       autoStatus = 'NORMAL';
     }
 
-  const pic = deviceForm.picKalibrasi || 'Balai';
-  const defaultAgency = pic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V';
+    const pic = deviceForm.picKalibrasi || 'Balai';
+    const defaultAgency = pic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V';
 
     if (editingDevice) {
       const updated: AloptamaDevice = {
         ...editingDevice,
-        id: deviceForm.id,
-        name: deviceForm.name,
+        devicesId: deviceForm.devicesId,
+        site: deviceForm.site,
         category: (deviceForm.category as EquipmentCategory) || 'AWS',
-        subCategory: deviceForm.subCategory || '',
+        merk: deviceForm.merk || '',
         uptStation: deviceForm.uptStation || stations[0]?.name || '',
         picKalibrasi: deviceForm.picKalibrasi || 'Balai',
         locationName: deviceForm.locationName || '',
@@ -671,13 +643,13 @@ const filteredPetugas = petugasList.filter(p => {
         calibrationStatus: (deviceForm.calibrationStatus as CalibrationStatus) || 'VALID',
         lastCalibrated: deviceForm.lastCalibrated || '2026-07-08',
         calibrationValidUntil: deviceForm.calibrationValidUntil || '2027-07-07',
-        calibrationAgency: deviceForm.calibrationAgency || (deviceForm.picKalibrasi === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'),
+        timkalibrasi: deviceForm.timkalibrasi || (deviceForm.picKalibrasi === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'),
         slaScore: sla,
         olaScore: ola,
       };
 
       const changes: string[] = [];
-      if (editingDevice.name !== updated.name) changes.push(`Nama: "${editingDevice.name}" -> "${updated.name}"`);
+      if (editingDevice.site !== updated.site) changes.push(`Nama: "${editingDevice.site}" -> "${updated.site}"`);
       if (editingDevice.category !== updated.category) changes.push(`Kategori: "${editingDevice.category}" -> "${updated.category}"`);
       if (editingDevice.uptStation !== updated.uptStation) changes.push(`UPT: "${editingDevice.uptStation}" -> "${updated.uptStation}"`);
       if (editingDevice.conditionStatus !== updated.conditionStatus) changes.push(`Status: "${editingDevice.conditionStatus}" -> "${updated.conditionStatus}"`);
@@ -691,10 +663,10 @@ const filteredPetugas = petugasList.filter(p => {
       onUpdateDevice(updated, detailStr, adminActor);
     } else {
       const newDev: AloptamaDevice = {
-        id: deviceForm.id || `ALT${Date.now()}`,
-        name: deviceForm.name || '',
+        devicesId: deviceForm.devicesId || `ALT${Date.now()}`,
+        site: deviceForm.site || '',
         category: (deviceForm.category as EquipmentCategory) || 'AWS',
-        subCategory: deviceForm.subCategory || '',
+        merk: deviceForm.merk || '',
         uptStation: deviceForm.uptStation || stations[0]?.name || '',
         picKalibrasi: pic,
         locationName: deviceForm.locationName || '',
@@ -704,7 +676,7 @@ const filteredPetugas = petugasList.filter(p => {
         calibrationStatus: (deviceForm.calibrationStatus as CalibrationStatus) || 'VALID',
         lastCalibrated: deviceForm.lastCalibrated || '2026-07-08',
         calibrationValidUntil: deviceForm.calibrationValidUntil || '2027-07-07',
-        calibrationAgency: deviceForm.calibrationAgency || defaultAgency,
+        timkalibrasi: deviceForm.timkalibrasi || defaultAgency,
         slaScore: sla,
         olaScore: ola,
       };
@@ -715,7 +687,6 @@ const filteredPetugas = petugasList.filter(p => {
     setIsDeviceModalOpen(false);
   };
 
-  // Confirm deletion action
   const handleConfirmDelete = () => {
     if (!deleteConfirmTarget) return;
 
@@ -728,7 +699,6 @@ const filteredPetugas = petugasList.filter(p => {
     setDeleteConfirmTarget(null);
   };
 
-  // Export Log_Perubahan to CSV
   const handleExportLogsCSV = () => {
     if (changeLogs.length === 0) {
       alert('Tidak ada log perubahan untuk diekspor.');
@@ -782,7 +752,6 @@ const filteredPetugas = petugasList.filter(p => {
           </div>
         </div>
 
-        {/* Admin identity */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-slate-200">
             <ShieldCheck size={16} className="text-emerald-600 shrink-0 sm:w-4.5 sm:h-4.5" />
@@ -905,12 +874,9 @@ const filteredPetugas = petugasList.filter(p => {
         </button>
       </div>
 
-      {/* 3. TAB CONTENT */}
-
       {/* ================= TAB 1: MASTER STASIUN ================= */}
       {activeTab === 'master_stasiun' && (
         <div className="space-y-4">
-          {/* Controls & Search bar */}
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col md:flex-row gap-3 justify-between items-center shadow-2xs">
             <div className="flex flex-1 flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="relative flex-1 min-w-[220px]">
@@ -948,7 +914,6 @@ const filteredPetugas = petugasList.filter(p => {
             </button>
           </div>
 
-          {/* Table Stasiun */}
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -976,7 +941,7 @@ const filteredPetugas = petugasList.filter(p => {
                         if (!d.uptStation) return false;
                         const upt = (d.uptStation || '').trim().toLowerCase();
                         const stName = (st.name || '').trim().toLowerCase();
-                        const stCode = st.code ? st.code.trim().toLowerCase() : '';
+                        const stCode = st.stationid ? st.stationid.trim().toLowerCase() : '';
                         const stId = st.id ? st.id.trim().toLowerCase() : '';
                         return (stName && upt === stName) || (stCode && upt === stCode) || (stId && upt === stId);
                       }).length;
@@ -984,7 +949,7 @@ const filteredPetugas = petugasList.filter(p => {
                       return (
                         <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="p-3.5 pl-4 font-bold text-[#0052CC] whitespace-nowrap">
-                            {st.code}
+                            {st.stationid}
                           </td>
                           <td className="p-3.5 font-bold text-slate-900">
                             {st.name}
@@ -1035,7 +1000,6 @@ const filteredPetugas = petugasList.filter(p => {
       {/* ================= TAB 2: MASTER ALAT ================= */}
       {activeTab === 'master_alat' && (
         <div className="space-y-4">
-          {/* Controls & Search bar */}
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col md:flex-row gap-3 justify-between items-center shadow-2xs">
             <div className="flex flex-1 flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="relative flex-1 min-w-[200px]">
@@ -1049,7 +1013,6 @@ const filteredPetugas = petugasList.filter(p => {
                 />
               </div>
 
-              {/* Filter UPT */}
               <div className="flex items-center gap-1.5">
                 <select
                   value={alatUptFilter}
@@ -1063,7 +1026,6 @@ const filteredPetugas = petugasList.filter(p => {
                 </select>
               </div>
 
-              {/* Filter Category */}
               <div className="flex items-center gap-1.5">
                 <select
                   value={alatCategoryFilter}
@@ -1087,7 +1049,6 @@ const filteredPetugas = petugasList.filter(p => {
             </button>
           </div>
 
-          {/* Table Master Alat */}
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -1112,12 +1073,12 @@ const filteredPetugas = petugasList.filter(p => {
                     </tr>
                   ) : (
                     filteredDevices.slice(0, 100).map((dev) => (
-                      <tr key={dev.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={dev.devicesId} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-3.5 pl-4 font-mono font-bold text-[#0052CC] whitespace-nowrap">
-                          {dev.id}
+                          {dev.devicesId}
                         </td>
                         <td className="p-3.5 font-bold text-slate-900">
-                          <div>{dev.name}</div>
+                          <div>{dev.site}</div>
                           <span className="text-[10px] text-slate-400 font-normal">{dev.locationName}</span>
                         </td>
                         <td className="p-3.5 whitespace-nowrap">
@@ -1169,7 +1130,7 @@ const filteredPetugas = petugasList.filter(p => {
                               <Edit2 size={15} />
                             </button>
                             <button
-                              onClick={() => setDeleteConfirmTarget({ type: 'alat', id: dev.id, name: dev.name })}
+                              onClick={() => setDeleteConfirmTarget({ type: 'alat', id: dev.devicesId, name: dev.site })}
                               className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                               title="Hapus Data Master Alat"
                             >
@@ -1195,7 +1156,6 @@ const filteredPetugas = petugasList.filter(p => {
       {/* ================= TAB 3: MASTER SLA & OLA BULANAN ================= */}
       {activeTab === 'master_sla_ola' && (
         <div className="space-y-4">
-          {/* Header Banner & Filters */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <div>
@@ -1208,7 +1168,6 @@ const filteredPetugas = petugasList.filter(p => {
                 </p>
               </div>
 
-              {/* Month and Year Selector */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-xl px-3 py-1.5 text-xs font-bold text-blue-900">
                   <span>Bulan Acuan:</span>
@@ -1241,7 +1200,6 @@ const filteredPetugas = petugasList.filter(p => {
               </div>
             </div>
 
-            {/* Filter Bar */}
             <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -1283,23 +1241,21 @@ const filteredPetugas = petugasList.filter(p => {
             </div>
           </div>
 
-            {/* Metric Overview Cards for Selected Month & Year */}
-            {(() => {
-              const devScores = filteredSlaDevices.map(d => getSlaOlaForDevice(d));
-              
-              // Hitung rata-rata riil langsung dari devScores per alat
-              const avgSla = filteredSlaDevices.length > 0
-                ? Math.round(devScores.reduce((sum, s) => sum + s.sla, 0) / filteredSlaDevices.length)
-                : 0;
+          {(() => {
+            const devScores = filteredSlaDevices.map(d => getSlaOlaForDevice(d));
+            
+            const avgSla = filteredSlaDevices.length > 0
+              ? Math.round(devScores.reduce((sum, s) => sum + s.sla, 0) / filteredSlaDevices.length)
+              : 0;
 
-              const avgOla = filteredSlaDevices.length > 0
-                ? Math.round(devScores.reduce((sum, s) => sum + s.ola, 0) / filteredSlaDevices.length)
-                : 0;
-              
-              const normalCount = devScores.filter(s => s.sla > 0 && s.ola >= 97).length;
-              const gangguanCount = devScores.filter(s => (s.sla > 0 || s.ola > 0) && s.ola < 97).length;
-              const matiCount = devScores.filter(s => s.sla === 0 && s.ola === 0).length;
-              
+            const avgOla = filteredSlaDevices.length > 0
+              ? Math.round(devScores.reduce((sum, s) => sum + s.ola, 0) / filteredSlaDevices.length)
+              : 0;
+            
+            const normalCount = devScores.filter(s => s.sla > 0 && s.ola >= 97).length;
+            const gangguanCount = devScores.filter(s => (s.sla > 0 || s.ola > 0) && s.ola < 97).length;
+            const matiCount = devScores.filter(s => s.sla === 0 && s.ola === 0).length;
+            
             return (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 text-slate-800">
@@ -1342,7 +1298,6 @@ const filteredPetugas = petugasList.filter(p => {
             );
           })()}
 
-          {/* SLA OLA Table */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -1371,10 +1326,10 @@ const filteredPetugas = petugasList.filter(p => {
                       const isZero = slaVal === 0 && olaVal === 0;
 
                       return (
-                        <tr key={dev.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={dev.devicesId} className="hover:bg-slate-50/80 transition-colors">
                           <td className="p-3.5 pl-4 font-bold text-slate-900">
-                            <div>{dev.name}</div>
-                            <span className="font-mono text-[10px] text-[#0052CC] font-bold">{dev.id}</span>
+                            <div>{dev.site}</div>
+                            <span className="font-mono text-[10px] text-[#0052CC] font-bold">{dev.devicesId}</span>
                           </td>
                           <td className="p-3.5 whitespace-nowrap">
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold text-[11px] rounded-md border border-slate-200">
@@ -1441,7 +1396,6 @@ const filteredPetugas = petugasList.filter(p => {
       {/* ================= TAB 4: MASTER PETUGAS MONITORING ================= */}
       {activeTab === 'master_petugas' && (
         <div className="space-y-4">
-          {/* Header Controls */}
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col md:flex-row gap-3 justify-between items-center shadow-2xs">
             <div className="flex flex-1 flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="relative flex-1 min-w-[240px]">
@@ -1468,7 +1422,6 @@ const filteredPetugas = petugasList.filter(p => {
             </div>
           </div>
 
-          {/* Table */}
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2">
@@ -1554,10 +1507,8 @@ const filteredPetugas = petugasList.filter(p => {
       {/* ================= TAB: MASTER AKUN PENGGUNA ================= */}
       {activeTab === 'master_akun' && (
         <div className="space-y-4">
-          {/* Header Stats & Controls */}
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col md:flex-row gap-3 justify-between items-center shadow-2xs">
             <div className="flex flex-1 flex-wrap items-center gap-3 w-full md:w-auto">
-              {/* Search */}
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
@@ -1569,7 +1520,6 @@ const filteredPetugas = petugasList.filter(p => {
                 />
               </div>
 
-              {/* Filter Role */}
               <div className="flex items-center gap-1.5">
                 <Filter size={15} className="text-slate-400" />
                 <select
@@ -1596,7 +1546,6 @@ const filteredPetugas = petugasList.filter(p => {
             </div>
           </div>
 
-          {/* User Table */}
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2">
@@ -1703,7 +1652,6 @@ const filteredPetugas = petugasList.filter(p => {
       {/* ================= TAB 4: LOG PERUBAHAN ================= */}
       {activeTab === 'Log_Perubahan' && (
         <div className="space-y-4">
-          {/* Controls & Action Buttons */}
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col md:flex-row gap-3 justify-between items-center shadow-2xs">
             <div className="flex flex-1 flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="relative flex-1 min-w-[200px]">
@@ -1717,7 +1665,6 @@ const filteredPetugas = petugasList.filter(p => {
                 />
               </div>
 
-              {/* Filter Tabel Target */}
               <div className="flex items-center gap-1.5">
                 <select
                   value={logTableFilter}
@@ -1732,7 +1679,6 @@ const filteredPetugas = petugasList.filter(p => {
                 </select>
               </div>
 
-              {/* Filter Jenis Aksi */}
               <div className="flex items-center gap-1.5">
                 <select
                   value={logActionFilter}
@@ -1772,7 +1718,6 @@ const filteredPetugas = petugasList.filter(p => {
             </div>
           </div>
 
-          {/* Table Log_Perubahan */}
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -1866,12 +1811,12 @@ const filteredPetugas = petugasList.filter(p => {
 
             <form onSubmit={handleSaveStation} className="space-y-4 text-xs text-slate-700">
               <div>
-                <label className="block font-bold text-slate-800 mb-1">Kode Stasiun UPT</label>
+                <label className="block font-bold text-slate-800 mb-1">Kode Stasiun UPT (stationid)</label>
                 <input
                   type="text"
                   required
-                  value={stationForm.code || ''}
-                  onChange={(e) => setStationForm({ ...stationForm, code: e.target.value })}
+                  value={stationForm.stationid || ''}
+                  onChange={(e) => setStationForm({ ...stationForm, stationid: e.target.value })}
                   placeholder="Contoh: MET015"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-mono font-bold"
                 />
@@ -1988,12 +1933,12 @@ const filteredPetugas = petugasList.filter(p => {
             <form onSubmit={handleSaveDevice} className="space-y-4 text-xs text-slate-700">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-800 mb-1">ID Alat (Kode Master)</label>
+                  <label className="block font-bold text-slate-800 mb-1">ID Alat (devicesId)</label>
                   <input
                     type="text"
                     required
-                    value={deviceForm.id || ''}
-                    onChange={(e) => setDeviceForm({ ...deviceForm, id: e.target.value })}
+                    value={deviceForm.devicesId || ''}
+                    onChange={(e) => setDeviceForm({ ...deviceForm, devicesId: e.target.value })}
                     placeholder="Contoh: ALT0191"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-mono font-bold"
                   />
@@ -2013,16 +1958,29 @@ const filteredPetugas = petugasList.filter(p => {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">Nama Lengkap Peralatan</label>
-                <input
-                  type="text"
-                  required
-                  value={deviceForm.name || ''}
-                  onChange={(e) => setDeviceForm({ ...deviceForm, name: e.target.value })}
-                  placeholder="Contoh: AWOS KAT III Bandara Sentani"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-medium"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Nama Site Peralatan</label>
+                  <input
+                    type="text"
+                    required
+                    value={deviceForm.site || ''}
+                    onChange={(e) => setDeviceForm({ ...deviceForm, site: e.target.value })}
+                    placeholder="Contoh: AWOS KAT III Bandara Sentani"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Merk Peralatan</label>
+                  <input
+                    type="text"
+                    value={deviceForm.merk || ''}
+                    onChange={(e) => setDeviceForm({ ...deviceForm, merk: e.target.value })}
+                    placeholder="Contoh: Vaisala, AWI, dll."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-medium"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2061,7 +2019,7 @@ const filteredPetugas = petugasList.filter(p => {
                       setDeviceForm({
                         ...deviceForm,
                         picKalibrasi: selectedPic,
-                        calibrationAgency: selectedPic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'
+                        timkalibrasi: selectedPic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'
                       });
                     }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-bold"
@@ -2189,7 +2147,6 @@ const filteredPetugas = petugasList.filter(p => {
         </div>
       )}
 
-
       {/* MODAL EDIT SLA OLA KHUSUS TAB DATABASE SLA OLA */}
       {isSlaOlaEditModalOpen && editingSlaDevice && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
@@ -2209,8 +2166,8 @@ const filteredPetugas = petugasList.filter(p => {
 
             <form onSubmit={handleSaveSlaOla} className="p-5 space-y-4">
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
-                <p className="font-bold text-slate-900">{editingSlaDevice.name}</p>
-                <p className="text-slate-500">ID: <span className="font-mono text-blue-700 font-bold">{editingSlaDevice.id}</span> | UPT: {editingSlaDevice.uptStation}</p>
+                <p className="font-bold text-slate-900">{editingSlaDevice.site}</p>
+                <p className="text-slate-500">ID: <span className="font-mono text-blue-700 font-bold">{editingSlaDevice.devicesId}</span> | UPT: {editingSlaDevice.uptStation}</p>
                 <p className="text-[#0052CC] font-bold">Periode Acuan: {selectedMonthSlaOla} {selectedYearSlaOla}</p>
               </div>
 
@@ -2266,7 +2223,6 @@ const filteredPetugas = petugasList.filter(p => {
                 <p className="text-[10px] text-slate-500 mt-1">Acuan Status: 100% = Normal, 1-99% = Gangguan, 0% = Mati</p>
               </div>
 
-              {/* Automatic Status Preview */}
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs space-y-1">
                 <span className="text-slate-600 text-[11px] font-medium block">Prinjauan Hasil Status Alat:</span>
                 {editSlaVal === 0 || editOlaVal === 0 ? (

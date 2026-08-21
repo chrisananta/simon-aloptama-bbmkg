@@ -116,7 +116,7 @@ async function main() {
   // supaya tidak bergantung pada nama export tertentu dari @prisma/client
   // yang bisa beda-beda tergantung versi Prisma yang ter-generate.
   const stationByCode = new Map<string, (typeof stations)[number]>(
-    stations.map((s) => [s.code.trim().toUpperCase(), s])
+    stations.map((s) => [s.stationid.trim().toUpperCase(), s])
   );
   console.log(`✅ Ditemukan ${stations.length} stasiun di database.\n`);
 
@@ -153,12 +153,12 @@ async function main() {
     const deviceId = row.ID_ALAT.trim();
     const deviceName = row.NAMA_PERALATAN.trim() || `${finalCategory} ${station.name}`;
 
-    const existing = await prisma.device.findUnique({ where: { id: deviceId } });
+    const existing = await prisma.device.findUnique({ where: { devicesId: deviceId } });
 
     const data = {
-      name: deviceName,
+      site: deviceName,
       category: finalCategory,
-      subCategory: row.MERK && row.MERK !== '-' ? row.MERK : '',
+      merk: row.MERK && row.MERK !== '-' ? row.MERK : '',
       uptStation: station.name,
       locationName: station.location || station.name,
       latitude: isNaN(lat) ? station.latitude : lat,
@@ -167,15 +167,15 @@ async function main() {
       calibrationStatus: 'VALID' as const,
       lastCalibrated: lastCalibrated,
       calibrationValidUntil: validUntil,
-      calibrationAgency: 'Tim INSKAL BBMKG Wilayah V',
+      timkalibrasi: 'Tim INSKAL BBMKG Wilayah V',
     };
 
     if (existing) {
-      await prisma.device.update({ where: { id: deviceId }, data });
+      await prisma.device.update({ where: { devicesId: deviceId }, data });
       updated++;
       console.log(`  ↻ [${station.name}] ${deviceName} (${deviceId}) - diperbarui`);
     } else {
-      await prisma.device.create({ data: { id: deviceId, ...data } });
+      await prisma.device.create({ data: { devicesId: deviceId, ...data } });
       created++;
       console.log(`  ✓ [${station.name}] ${deviceName} (${deviceId}) - baru`);
     }
@@ -216,3 +216,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+  

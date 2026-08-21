@@ -63,7 +63,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
   const [reportedTodayIds, setReportedTodayIds] = useState<string[]>([]);
 
   const isReportedToday = (dev: AloptamaDevice) => {
-    if (reportedTodayIds.includes(dev.id)) return true;
+    if (reportedTodayIds.includes(dev.devicesId)) return true;
     const todayIso = new Date().toISOString().split('T')[0];
     if (
       dev.lastReportedDate === todayIso ||
@@ -98,14 +98,12 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     Juli: 6, Agustus: 7, September: 8, Oktober: 9, November: 10, Desember: 11
   };
 
-  // SlaOlaView
   const slaTrendData = useMemo(() => {
     return MONTHS_LIST.map((mObj, idx) => {
       const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
       const targetMonthNum = idx + 1;
       const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
-      // Filter peralatan yang memiliki laporan riil di bulan & tahun tersebut
       const reportedInThisMonthAndYear = targetDevs.filter((d) => {
         if (d.slaScore === undefined && d.olaScore === undefined) return false;
         if (!d.lastReportedDate) return false;
@@ -117,7 +115,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         return { month: mObj.short, sla: 0, ola: 0 };
       }
 
-      // Hitung rata-rata riil dari database PostgreSQL
       const avgSla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.slaScore ?? 0), 0) / reportedInThisMonthAndYear.length;
       const avgOla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedInThisMonthAndYear.length;
 
@@ -129,57 +126,57 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     });
   }, [selectedYear, selectedUpt, uptFilteredDevices, devices]);
 
-      const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
-      const currentMonthData = slaTrendData[monthIdx] || { month: 'Ags', sla: 0, ola: 0 };
-      
-      const monthlySlaValue = currentMonthData.sla;
-      const monthlyOlaValue = currentMonthData.ola;
+  const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
+  const currentMonthData = slaTrendData[monthIdx] || { month: 'Ags', sla: 0, ola: 0 };
+  
+  const monthlySlaValue = currentMonthData.sla;
+  const monthlyOlaValue = currentMonthData.ola;
 
-      const olaByCategoryData = useMemo(() => {
-          const CATEGORIES = [
-            { key: 'AWOS', name: 'AWOS' },
-            { key: 'AWS', name: 'AWS' },
-            { key: 'ARG', name: 'ARG' },
-            { key: 'Radar Cuaca', name: 'Radar Cuaca' },
-            { key: 'Lightning Detector', name: 'Lightning Detector' },
-            { key: 'Seismometer', name: 'Seismometer' },
-            { key: 'Accelerograph', name: 'Accelerograph' },
-            { key: 'WRS NG', name: 'WRS NG' },
-            { key: 'Sirene', name: 'Sirene' },
-          ];
+  const olaByCategoryData = useMemo(() => {
+    const CATEGORIES = [
+      { key: 'AWOS', name: 'AWOS' },
+      { key: 'AWS', name: 'AWS' },
+      { key: 'ARG', name: 'ARG' },
+      { key: 'Radar Cuaca', name: 'Radar Cuaca' },
+      { key: 'Lightning Detector', name: 'Lightning Detector' },
+      { key: 'Seismometer', name: 'Seismometer' },
+      { key: 'Accelerograph', name: 'Accelerograph' },
+      { key: 'WRS NG', name: 'WRS NG' },
+      { key: 'Sirene', name: 'Sirene' },
+    ];
 
-          const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
-          const targetMonthNum = monthIdx + 1;
-          const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
+    const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
+    const targetMonthNum = monthIdx + 1;
+    const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
-          return CATEGORIES.map((catObj) => {
-            const catDevs = targetDevs.filter((d) =>
-              (d.category || '').toLowerCase().includes(catObj.key.toLowerCase()) ||
-              (catObj.key === 'Radar Cuaca' && (d.category || '').toLowerCase().includes('radar')) ||
-              (catObj.key === 'WRS NG' && (d.category || '').toLowerCase().includes('wrs')) ||
-              (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
-            );
+    return CATEGORIES.map((catObj) => {
+      const catDevs = targetDevs.filter((d) =>
+        (d.category || '').toLowerCase().includes(catObj.key.toLowerCase()) ||
+        (catObj.key === 'Radar Cuaca' && (d.category || '').toLowerCase().includes('radar')) ||
+        (catObj.key === 'WRS NG' && (d.category || '').toLowerCase().includes('wrs')) ||
+        (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
+      );
 
-            const reportedInSelectedMonthAndYearCatDevs = catDevs.filter((d) => {
-              if (d.olaScore === undefined) return false;
-              if (!d.lastReportedDate) return false;
-              const parts = d.lastReportedDate.split('-');
-              return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
-            });
+      const reportedInSelectedMonthAndYearCatDevs = catDevs.filter((d) => {
+        if (d.olaScore === undefined) return false;
+        if (!d.lastReportedDate) return false;
+        const parts = d.lastReportedDate.split('-');
+        return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
+      });
 
-            let score = 0;
-            if (reportedInSelectedMonthAndYearCatDevs.length > 0) {
-              const avgOla = reportedInSelectedMonthAndYearCatDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedInSelectedMonthAndYearCatDevs.length;
-              score = Math.round(avgOla);
-            }
+      let score = 0;
+      if (reportedInSelectedMonthAndYearCatDevs.length > 0) {
+        const avgOla = reportedInSelectedMonthAndYearCatDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedInSelectedMonthAndYearCatDevs.length;
+        score = Math.round(avgOla);
+      }
 
-            return {
-              category: catObj.name,
-              score,
-              count: catDevs.length,
-            };
-          });
-        }, [selectedYear, selectedUpt, selectedMonth, monthIdx, devices, uptFilteredDevices]);
+      return {
+        category: catObj.name,
+        score,
+        count: catDevs.length,
+      };
+    });
+  }, [selectedYear, selectedUpt, selectedMonth, monthIdx, devices, uptFilteredDevices]);
 
   const totalDevs = uptFilteredDevices.length || 1;
   const tidakTerlambatCount = uptFilteredDevices.filter(
@@ -205,7 +202,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'AWOS KAT. I',
         name: 'AWOS KAT. I',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return (
             c.includes('awos') &&
             !c.includes('kat ii') &&
@@ -226,7 +223,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'AWOS KAT II & III',
         name: 'AWOS KAT II & III',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return (
             c.includes('awos') &&
             (c.includes('kat ii') ||
@@ -247,7 +244,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'RADAR CUACA',
         name: 'RADAR CUACA',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('radar');
         },
       },
@@ -256,7 +253,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'AWS',
         name: 'AWS',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return (c.includes('aws') || c.includes('automatic weather')) && !c.includes('awos');
         },
       },
@@ -265,7 +262,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'ARG',
         name: 'ARG',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('arg') || c.includes('automatic rain');
         },
       },
@@ -274,7 +271,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'SEISMOMETER',
         name: 'SEISMOMETER',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('seismo');
         },
       },
@@ -283,7 +280,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'LIGHTNING DETECTOR',
         name: 'LIGHTNING DETECTOR',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('lightning') || c.includes('petir');
         },
       },
@@ -292,7 +289,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'ACCELEROGRAPH NC',
         name: 'ACCELEROGRAPH NC',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('accelerograph') || c.includes('akselero') || c.includes('strong motion');
         },
       },
@@ -301,7 +298,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'WRS NEW GENERATION',
         name: 'WRS NEW GENERATION',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('wrs') || c.includes('warning receiver');
         },
       },
@@ -310,7 +307,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         key: 'SIRENE',
         name: 'SIRENE',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('sirene') || c.includes('siren');
         },
       },
@@ -392,40 +389,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     [rekapTableData]
   );
 
-  const parseDate = (dateStr?: string): Date | null => {
-    if (!dateStr) return null;
-    const isoDate = new Date(dateStr);
-    if (!isNaN(isoDate.getTime())) return isoDate;
-
-    const monthMap: Record<string, number> = {
-      januari: 0, februari: 1, maret: 2, april: 3, mei: 4, juni: 5,
-      juli: 6, agustus: 7, september: 8, oktober: 9, november: 10, desember: 11,
-      jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, ags: 7, sep: 8, okt: 9, nov: 10, des: 11
-    };
-    const parts = dateStr.trim().split(/\s+/);
-    if (parts.length >= 3) {
-      const day = parseInt(parts[0], 10);
-      const monthName = parts[1].toLowerCase();
-      const year = parseInt(parts[2], 10);
-      if (!isNaN(day) && monthMap[monthName] !== undefined && !isNaN(year)) {
-        return new Date(year, monthMap[monthName], day);
-      }
-    }
-    return null;
-  };
-
-  const isWithin31Days = (dateStr?: string): boolean => {
-    if (!dateStr) return true;
-    const date = parseDate(dateStr);
-    if (!date) return true;
-    const now = new Date().getTime();
-    const diffMs = now - date.getTime();
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    return diffDays <= 31;
-  };
-
   const filteredDevices = devices.filter((dev) => {
-
     if (isReportedToday(dev)) {
       return false;
     }
@@ -434,8 +398,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
 
     const matchesSearch =
       searchQuery === '' ||
-      (dev.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (dev.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (dev.site || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (dev.devicesId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.uptStation || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.category || '').toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -492,8 +456,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     displayGangguan = baseDevs
       .filter((d) => d.conditionStatus === 'GANGGUAN' && (d.slaScore === undefined || d.slaScore < 100))
       .map((d) => ({
-        id: d.id,
-        name: d.name,
+        id: d.devicesId,
+        name: d.site,
         category: d.category,
         uptStation: d.uptStation,
         status: 'GANGGUAN',
@@ -504,8 +468,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     displayMati = baseDevs
       .filter((d) => d.conditionStatus === 'MATI' && (d.slaScore === undefined || d.slaScore < 100))
       .map((d) => ({
-        id: d.id,
-        name: d.name,
+        id: d.devicesId,
+        name: d.site,
         category: d.category,
         uptStation: d.uptStation,
         status: 'MATI',
@@ -545,7 +509,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
       }));
   }
 
-    const hasDataForSelectedFilter = useMemo(() => {
+  const hasDataForSelectedFilter = useMemo(() => {
     const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
     const targetMonthNum = monthIdx + 1;
     const monthPaddedStr = String(targetMonthNum).padStart(2, '0');
@@ -554,7 +518,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
       if (d.slaScore === undefined && d.olaScore === undefined) return false;
       if (!d.lastReportedDate) return false;
 
-      // Parsing Date aman untuk format apapun (ISO / YYYY-MM-DD / DD-MM-YYYY)
       const dateObj = new Date(d.lastReportedDate);
       if (!isNaN(dateObj.getTime())) {
         const year = dateObj.getFullYear().toString();
@@ -562,13 +525,12 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         return year === selectedYear && month === monthPaddedStr;
       }
 
-      // Fallback manual string split
       const parts = d.lastReportedDate.split('-');
       if (parts.length >= 3) {
-        if (parts[0].length === 4) { // YYYY-MM-DD
+        if (parts[0].length === 4) {
           return parts[0] === selectedYear && parts[1] === monthPaddedStr;
         }
-        if (parts[2].length === 4) { // DD-MM-YYYY
+        if (parts[2].length === 4) {
           return parts[2] === selectedYear && parts[1] === monthPaddedStr;
         }
       }
@@ -739,7 +701,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         </div>
       </div>
 
-      {/* Rekap SLA & OLA per peralatan, Kondisi Aloptama, & Analisa Perubahan Kondisi Peralatan */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 pb-4 border-b border-slate-100">
           <div>
@@ -1195,11 +1156,11 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
                 </tr>
               ) : (
                 sortedDevices.map((dev) => (
-                  <tr key={dev.id} className="hover:bg-blue-50/40 transition-colors">
+                  <tr key={dev.devicesId} className="hover:bg-blue-50/40 transition-colors">
                     <td className="p-3">
-                      <div className="font-bold text-slate-900 text-xs">{dev.name}</div>
+                      <div className="font-bold text-slate-900 text-xs">{dev.site}</div>
                       <div className="text-[11px] text-[#0052CC] font-semibold mt-0.5">
-                        {dev.category} • <span className="font-mono">{dev.id}</span>
+                        {dev.category} • <span className="font-mono">{dev.devicesId}</span>
                       </div>
                     </td>
                     <td className="p-3 text-slate-800">

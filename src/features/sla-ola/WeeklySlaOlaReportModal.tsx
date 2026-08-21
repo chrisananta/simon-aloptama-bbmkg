@@ -47,16 +47,13 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   onClose,
   devices
 }) => {
-  // Modal active tab: 'config' (Form Input) or 'preview' (Dokumen Pratinjau)
   const [activeTab, setActiveTab] = useState<'config' | 'preview'>('config');
 
-  // 1. Rentang Tanggal Monitoring & Formats
   const [startDateIso, setStartDateIso] = useState<string>('2026-06-15');
   const [endDateIso, setEndDateIso] = useState<string>('2026-06-19');
   const [startDate, setStartDate] = useState<string>('15 Juni 2026');
   const [endDate, setEndDate] = useState<string>('19 Juni 2026');
 
-  // Helper date formatter to Indonesian
   const formatDateToIndonesian = (dateIsoStr: string) => {
     if (!dateIsoStr) return '';
     const d = new Date(dateIsoStr);
@@ -85,7 +82,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     }
   };
 
-  // Quick Preset Handlers
   const handleSelectPreset = (preset: 'WEEK3_JUN' | 'WEEK4_JUN' | 'MONTH_JUN' | 'MONTH_JUL' | 'MONTH_AUG') => {
     if (preset === 'WEEK3_JUN') {
       handleStartDateIsoChange('2026-06-15');
@@ -105,7 +101,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     }
   };
 
-  // Calculated period length in operational days
   const calculatedPeriodDays = useMemo(() => {
     if (!startDateIso || !endDateIso) return 5;
     const s = new Date(startDateIso);
@@ -116,76 +111,66 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     return Math.max(1, days);
   }, [startDateIso, endDateIso]);
 
-  // --- 2. LOGIKA PETUGAS MONITORING ---
+  const [masterPetugas, setMasterPetugas] = useState<PetugasItem[]>(() => petugasService.getAll());
+  const [petugasList, setPetugasList] = useState<PetugasItem[]>([]);
+  const [inputPersonel, setInputPersonel] = useState<string>('');
 
-    // 1. State Master Petugas & List Laporan (di-load dinamis dari PostgreSQL)
-    const [masterPetugas, setMasterPetugas] = useState<PetugasItem[]>(() => petugasService.getAll());
-    const [petugasList, setPetugasList] = useState<PetugasItem[]>([]);
-    const [inputPersonel, setInputPersonel] = useState<string>('');
-
-    // 2. Sync Async Data dari Database PostgreSQL
-    useEffect(() => {
-      petugasService.fetch().then((data) => {
-        if (data && data.length > 0) {
-          setMasterPetugas(data);
-          // Ambil 3 data pertama dari database jika petugasList masih kosong
-          setPetugasList((prev) => (prev.length === 0 ? data.slice(0, 3) : prev));
-        }
-      });
-
-      const handlePetugasUpdate = () => {
-        setMasterPetugas(petugasService.getAll());
-      };
-
-      window.addEventListener('petugas_list_updated', handlePetugasUpdate);
-      return () => window.removeEventListener('petugas_list_updated', handlePetugasUpdate);
-    }, []);
-
-    // 3. Filter Master Petugas yang BELUM ada di laporan (Aman dari null & di-memoize)
-    const unselectedMasterPetugas = useMemo(() => {
-      return masterPetugas.filter(
-        (master) =>
-          master?.name &&
-          !petugasList.some(
-            (p) => p.id === master.id || (p?.name || '').toLowerCase() === (master?.name || '').toLowerCase()
-          )
-      );
-    }, [masterPetugas, petugasList]);
-
-    // 4. Fungsi Tambah Personel dari Saran Master / Input Manual
-    const handleAddPersonelFromMaster = () => {
-      const trimmed = inputPersonel.trim();
-      if (!trimmed) return;
-
-      // Cari apakah nama cocok dengan salah satu di Master Petugas (Aman dari null)
-      const matchedMaster = masterPetugas.find(
-        (p) =>
-          (p?.name || '').toLowerCase() === trimmed.toLowerCase() ||
-          p.id === trimmed
-      );
-
-      if (matchedMaster) {
-        if (!petugasList.some((p) => p.id === matchedMaster.id)) {
-          setPetugasList((prev) => [...prev, matchedMaster]);
-        }
-      } else {
-        // Jika mengetik nama baru yang belum ada di Master
-        const newCustomPetugas: PetugasItem = {
-          id: `CUSTOM-${Date.now()}`,
-          name: trimmed,
-          jabatan: 'Staf Operasional',
-        };
-        setPetugasList((prev) => [...prev, newCustomPetugas]);
+  useEffect(() => {
+    petugasService.fetch().then((data) => {
+      if (data && data.length > 0) {
+        setMasterPetugas(data);
+        setPetugasList((prev) => (prev.length === 0 ? data.slice(0, 3) : prev));
       }
+    });
 
-      setInputPersonel(''); // Reset input setelah berhasil
+    const handlePetugasUpdate = () => {
+      setMasterPetugas(petugasService.getAll());
     };
 
-    // 5. Fungsi Hapus Personel dari Laporan
-    const handleRemovePersonel = (id: string) => {
-      setPetugasList((prev) => prev.filter((p) => p.id !== id));
-    };
-  // 3. Pejabat Mengetahui / Penanggung Jawab
+    window.addEventListener('petugas_list_updated', handlePetugasUpdate);
+    return () => window.removeEventListener('petugas_list_updated', handlePetugasUpdate);
+  }, []);
+
+  const unselectedMasterPetugas = useMemo(() => {
+    return masterPetugas.filter(
+      (master) =>
+        master?.name &&
+        !petugasList.some(
+          (p) => p.id === master.id || (p?.name || '').toLowerCase() === (master?.name || '').toLowerCase()
+        )
+    );
+  }, [masterPetugas, petugasList]);
+
+  const handleAddPersonelFromMaster = () => {
+    const trimmed = inputPersonel.trim();
+    if (!trimmed) return;
+
+    const matchedMaster = masterPetugas.find(
+      (p) =>
+        (p?.name || '').toLowerCase() === trimmed.toLowerCase() ||
+        p.id === trimmed
+    );
+
+    if (matchedMaster) {
+      if (!petugasList.some((p) => p.id === matchedMaster.id)) {
+        setPetugasList((prev) => [...prev, matchedMaster]);
+      }
+    } else {
+      const newCustomPetugas: PetugasItem = {
+        id: `CUSTOM-${Date.now()}`,
+        name: trimmed,
+        jabatan: 'Staf Operasional',
+      };
+      setPetugasList((prev) => [...prev, newCustomPetugas]);
+    }
+
+    setInputPersonel('');
+  };
+
+  const handleRemovePersonel = (id: string) => {
+    setPetugasList((prev) => prev.filter((p) => p.id !== id));
+  };
+
   const [jabatanMengetahui, setJabatanMengetahui] = useState<string>(
     'Ketua Tim Kerja Instrumentasi dan Kalibrasi'
   );
@@ -193,21 +178,16 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     'Yessi Veronika Marpaung, S.Tr'
   );
 
-  // 4. Catatan Laporan
   const [catatanText, setCatatanText] = useState<string>('-');
 
-  // 5. Lampiran Gambar State (Base64 Data URLs)
   const [imgAwsCenter, setImgAwsCenter] = useState<string | null>(null);
   const [imgSlaOla, setImgSlaOla] = useState<string | null>(null);
   const [imgDiseminasi, setImgDiseminasi] = useState<string | null>(null);
 
-  // 6. Dynamic Extra Image Attachments
   const [extraAttachments, setExtraAttachments] = useState<ExtraAttachmentItem[]>([]);
 
-  // 7. Sertakan Dokumentasi Monitoring (Page 3 & 4)
   const [includeDocumentation, setIncludeDocumentation] = useState<boolean>(true);
 
-  // Helper file uploader
   const handleSingleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     setter: (val: string | null) => void
@@ -259,41 +239,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     setExtraAttachments(prev => prev.filter(item => item.id !== id));
   };
 
-  // Handle Personel Count change
-  const handlePersonelCountChange = (count: number) => {
-    const validCount = Math.max(1, Math.min(10, count));
-    if (validCount > petugasList.length) {
-      const diff = validCount - petugasList.length;
-      const newItems: PetugasItem[] = Array.from({ length: diff }, (_, i) => ({
-        id: `petugas-${Date.now()}-${i}`,
-        name: `Petugas Monitoring ${petugasList.length + i + 1}`
-      }));
-      setPetugasList([...petugasList, ...newItems]);
-    } else if (validCount < petugasList.length) {
-      setPetugasList(petugasList.slice(0, validCount));
-    }
-  };
-
-  const handleUpdatePetugasName = (id: string, newName: string) => {
-    setPetugasList(petugasList.map(p => p.id === id ? { ...p, name: newName } : p));
-  };
-
-  const handleAddPetugas = () => {
-    setPetugasList([
-      ...petugasList,
-      { id: `petugas-${Date.now()}`, name: '' }
-    ]);
-  };
-
-  const handleRemovePetugas = (id: string) => {
-    if (petugasList.length <= 1) return;
-    setPetugasList(petugasList.filter(p => p.id !== id));
-  };
-
-  // Calculate Equipment Category Data dynamically from real device data only.
-  // Kategori tanpa data asli akan tampil 0% / 0 lokasi apa adanya (tidak ada lagi
-  // angka dummy/fallback yang dikarang, dan tidak ada lagi faktor musiman palsu
-  // yang dulu ikut mengubah angka real).
   const rekapData = useMemo(() => {
     const CATEGORIES = [
       {
@@ -301,7 +246,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'AWOS KAT. I',
         name: 'AWOS KAT. I',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('awos') && !c.includes('kat ii') && !c.includes('kat. ii') && !c.includes('kat iii') && !c.includes('kat. iii') && !c.includes('kat 2') && !c.includes('kat 3');
         },
       },
@@ -310,7 +255,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'AWOS KAT II & III',
         name: 'AWOS KAT II & III',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('awos') && (c.includes('kat ii') || c.includes('kat. ii') || c.includes('kat iii') || c.includes('kat. iii') || c.includes('kat 2') || c.includes('kat 3'));
         },
       },
@@ -319,7 +264,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'RADAR CUACA',
         name: 'RADAR CUACA',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('radar');
         },
       },
@@ -328,7 +273,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'AWS',
         name: 'AWS',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return (c.includes('aws') || c.includes('automatic weather')) && !c.includes('awos');
         },
       },
@@ -337,7 +282,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'ARG',
         name: 'ARG',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('arg') || c.includes('automatic rain');
         },
       },
@@ -346,7 +291,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'SEISMOMETER',
         name: 'SEISMOMETER',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('seismo');
         },
       },
@@ -355,7 +300,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'LIGHTNING DETECTOR',
         name: 'LIGHTNING DETECTOR',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('lightning') || c.includes('petir');
         },
       },
@@ -364,7 +309,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'ACCELEROGRAPH NC',
         name: 'ACCELEROGRAPH NC',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('accelerograph') || c.includes('akselero') || c.includes('strong motion');
         },
       },
@@ -373,7 +318,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'WRS NEW GENERATION',
         name: 'WRS NEW GENERATION',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('wrs') || c.includes('warning receiver');
         },
       },
@@ -382,7 +327,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         key: 'SIRENE',
         name: 'SIRENE',
         matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.subCategory || ''} ${d.name || ''}`.toLowerCase();
+          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
           return c.includes('sirene') || c.includes('siren');
         },
       }
@@ -399,8 +344,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
       let mati = 0;
 
       if (catDevs.length > 0) {
-        // Belum pernah diinput (slaScore/olaScore null) dihitung sebagai 0%,
-        // BUKAN diisi angka karangan seperti sebelumnya.
         const avgSla = catDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0) / catDevs.length;
         const avgOla = catDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / catDevs.length;
         sla = Number(avgSla.toFixed(1));
@@ -426,7 +369,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     });
   }, [devices]);
 
-  // Overall totals
   const totalLokasiSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.jumlahLokasi, 0), [rekapData]);
   const avgSlaTotal = useMemo(() => {
     if (totalLokasiSum === 0) return 0;
@@ -450,7 +392,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
-  // Direct PDF Download Handler using html2pdf.js
   const handleDownloadPdf = async () => {
     const element = document.getElementById('printable-report-area');
     if (!element) {
@@ -478,21 +419,18 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
       await html2pdf().set(opt).from(element).save();
     } catch (error) {
       console.error('Download PDF Error:', error);
-      // Fallback if client-side rendering encounters issue
       handleOpenPrintWindow();
     } finally {
       setIsExportingPdf(false);
     }
   };
 
-  // Open standalone print window (Breaks out of iframe to enable native browser "Save as PDF")
   const handleOpenPrintWindow = () => {
     const element = document.getElementById('printable-report-area');
     if (!element) return;
 
     const printWindow = window.open('', '_blank', 'width=950,height=1000');
     if (!printWindow) {
-      // Fallback if popup blocked
       window.print();
       return;
     }
@@ -554,16 +492,10 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     printWindow.document.close();
   };
 
-  // Trigger print logic
-  const handlePrint = () => {
-    handleOpenPrintWindow();
-  };
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
-      {/* Print CSS Injection */}
       <style>{`
         @media print {
           body * {
@@ -596,7 +528,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
 
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl my-4 overflow-hidden flex flex-col max-h-[95vh] animate-scaleUp">
 
-        {/* MODAL HEADER (NO PRINT) */}
         <div className="no-print bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-600/30 text-blue-400 rounded-xl border border-blue-500/30">
@@ -677,9 +608,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           </div>
         </div>
 
-        {/* MODAL BODY CONTENT */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
-          {/* TAB 1: FORM INPUT & CONFIGURATION */}
           {activeTab === 'config' && (
             <div className="space-y-6 max-w-3xl mx-auto no-print">
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
@@ -737,7 +666,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </div>
                 </div>
 
-                {/* Average SLA & OLA summary card based on date input */}
                 <div className="p-3.5 bg-blue-50/90 border border-blue-200 rounded-xl space-y-2">
                   <div className="flex items-center justify-between text-xs font-extrabold text-[#0052CC]">
                     <span className="flex items-center gap-1.5">
@@ -764,9 +692,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </p>
               </div>
 
-              {/* PETUGAS MONITORING SECTION */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                {/* 1. HEADER (Judul & Jumlah Personil) */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                     <Users size={18} className="text-[#0052CC]" />
@@ -781,7 +707,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </div>
                 </div>
 
-                {/* 2. ELEMEN DATALIST (Wadah Saran Nama dari Master Data PostgreSQL) */}
                 <datalist id="master-petugas-suggestions">
                   {unselectedMasterPetugas.map((master) => (
                     <option key={master.id} value={master.name}>
@@ -790,7 +715,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   ))}
                 </datalist>
 
-                {/* 3. DAFTAR NAMA PETUGAS LAPORAN (Default 3 Nama Pertama) */}
                 {petugasList.length === 0 ? (
                   <div className="py-3 text-center text-xs text-slate-400">
                     Memuat data petugas dari database...
@@ -820,14 +744,12 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </div>
                 )}
 
-                {/* 4. BAGIAN BAWAH: INPUT SARAN + TOMBOL TAMBAH PERSONEL */}
                 <div className="pt-3 border-t border-dashed border-slate-200 space-y-2">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                     Tambah Personel
                   </label>
 
                   <div className="flex items-center gap-2">
-                    {/* Input Teks yang Terhubung ke Datalist Saran */}
                     <input
                       type="text"
                       list="master-petugas-suggestions"
@@ -837,7 +759,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
                     />
 
-                    {/* Tombol Tambah */}
                     <button
                       type="button"
                       onClick={handleAddPersonelFromMaster}
@@ -851,8 +772,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </div>
               </div>
 
-
-              {/* PEJABAT MENGETAHUI & CATATAN */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
                   <UserCheck size={18} className="text-[#0052CC]" />
@@ -899,7 +818,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </div>
               </div>
 
-              {/* 4. LAMPIRAN GAMBAR DOKUMENTASI MONITORING */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
@@ -912,7 +830,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Slot 1: Monitoring AWS Center */}
                   <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -947,7 +864,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     )}
                   </div>
 
-                  {/* Slot 2: Monitoring SLA dan OLA */}
                   <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -982,7 +898,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     )}
                   </div>
 
-                  {/* Slot 3: Diseminasi WA / UPT */}
                   <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -1018,7 +933,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </div>
                 </div>
 
-                {/* Extra dynamic image attachments */}
                 <div className="pt-3 border-t border-slate-100 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -1102,10 +1016,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
             </div>
           )}
 
-          {/* PRINT AREA: OFFICIAL BMKG PRINTABLE REPORT FORMAT */}
           {(activeTab === 'preview' || activeTab === 'config') && (
             <div className={activeTab === 'config' ? 'hidden' : 'block'}>
-              {/* Document Actions Bar (No Print) */}
               <div className="no-print mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-900 font-medium">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={16} className="text-[#0052CC] shrink-0" />
@@ -1140,13 +1052,11 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </div>
               </div>
 
-              {/* PRINTABLE REPORT DOCUMENT CONTAINER */}
               <div 
                 id="printable-report-area"
                 className="bg-white p-8 sm:p-12 shadow-md border border-slate-300 max-w-4xl mx-auto text-slate-900 font-sans leading-normal text-xs"
                 style={{ minHeight: '297mm' }}
               >
-                {/* 1. KOP SURAT RESMI BMKG */}
                 <div className="border-b-4 border-slate-900 pb-3 mb-6 relative">
                   <div className="flex items-center gap-4">
                     <img 
@@ -1169,11 +1079,9 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       </p>
                     </div>
                   </div>
-                  {/* Secondary thin border for kop surat */}
                   <div className="border-b border-slate-900 mt-2" />
                 </div>
 
-                {/* 2. LAPORAN TITLE HEADER */}
                 <div className="text-center my-6">
                   <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
                     LAPORAN MINGGUAN MONITORING 
@@ -1183,7 +1091,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </h3>
                 </div>
 
-                {/* 3. METADATA BOX (TANGGAL & PETUGAS) */}
                 <div className="border border-black p-3 my-5 max-w-xl text-xs font-semibold text-black space-y-1">
                   <div className="flex">
                     <span className="w-36 shrink-0">Periode Pemantauan</span>
@@ -1201,7 +1108,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </div>
                 </div>
 
-                {/* 4. TABEL 1: REKAPITULASI SLA & OLA */}
                 <div className="my-6">
                   <div className="font-extrabold text-xs uppercase mb-2 text-black">
                     <span>Rekapitulasi Kinerja Aloptama:</span>
@@ -1240,7 +1146,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </table>
                 </div>
 
-                {/* 5. TABEL 2: KONDISI ALOPTAMA */}
                 <div className="my-8">
                   <h4 className="font-extrabold text-xs uppercase mb-2 text-black">Kondisi Aloptama</h4>
                   <table className="w-full border-collapse border border-black text-center text-xs">
@@ -1279,21 +1184,17 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </table>
                 </div>
 
-                {/* PAGE BREAK FOR SIGNATURE & DOCUMENTATION ON CLEAN PRINT */}
                 <div className="my-8 pt-4 flex flex-col justify-between min-h-[160px]">
-                  {/* Catatan Section */}
                   <div className="text-xs font-semibold text-black space-y-1">
                     <p className="font-bold">Catatan :</p>
                     <p className="pl-4">{catatanText}</p>
                   </div>
 
-                  {/* Mengetahui & Signature Block */}
                   <div className="flex justify-end mt-8">
                     <div className="text-center min-w-[240px] text-xs font-semibold text-black space-y-1">
                       <p>Mengetahui,</p>
                       <p>{jabatanMengetahui},</p>
                       <div className="h-20 flex items-center justify-center my-1">
-                        {/* Signature Stamp placeholder / graphic */}
                         <div className="border border-slate-300 rounded px-3 py-1.5 bg-slate-50/50 text-[10px] text-slate-400 italic">
                           ( Tanda Tangan Digital )
                         </div>
@@ -1303,7 +1204,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </div>
                 </div>
 
-                {/* 6. HALAMAN LAMPIRAN DOKUMENTASI (PAGE 3 & 4 IN PDF) */}
                 {includeDocumentation && (
                   <div className="page-break pt-8 mt-12 border-t-2 border-dashed border-slate-300">
                     <div className="text-center mb-6">
@@ -1313,7 +1213,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     </div>
 
                     <div className="space-y-8">
-                      {/* Section A: Monitoring AWS Center */}
                       <div className="border border-slate-300 p-4 rounded-lg space-y-2">
                         <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
                           1. Monitoring AWS Center 
@@ -1338,7 +1237,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                         )}
                       </div>
 
-                      {/* Section B: Monitoring SLA dan OLA */}
                       <div className="border border-slate-300 p-4 rounded-lg space-y-2">
                         <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
                           2. Monitoring SLA dan OLA 
@@ -1363,7 +1261,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                         )}
                       </div>
 
-                      {/* Section C: Diseminasi Hasil Monitoring Aloptama */}
                       <div className="border border-slate-300 p-4 rounded-lg space-y-2">
                         <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
                           3. Diseminasi Hasil Monitoring Aloptama (Grup Koordinasi Teknis)
@@ -1388,7 +1285,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                         )}
                       </div>
 
-                      {/* Section D: Lampiran Foto Tambahan (If Any) */}
                       {extraAttachments.length > 0 && (
                         <div className="space-y-6 pt-4 border-t border-slate-200">
                           {extraAttachments.map((att, idx) => (

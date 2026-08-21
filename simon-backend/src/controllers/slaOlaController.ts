@@ -50,7 +50,7 @@ export const slaOlaController = {
       }
 
       if (deviceId) {
-        const targetDevice = await prisma.device.findUnique({ where: { id: deviceId } });
+        const targetDevice = await prisma.device.findUnique({ where: { devicesId: deviceId } });
         if (!targetDevice) {
           return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
         }
@@ -91,11 +91,11 @@ export const slaOlaController = {
 
         // 2. Perbarui Status Perangkat Terkait
         if (deviceId) {
-          const dev = await tx.device.findUnique({ where: { id: deviceId } });
+          const dev = await tx.device.findUnique({ where: { devicesId: deviceId } });
           if (dev) {
-            updatedDeviceName = dev.name;
+            updatedDeviceName = dev.site;
             await tx.device.update({
-              where: { id: deviceId },
+              where: { devicesId: deviceId },
               data: {
                 conditionStatus: newStatus,
                 slaScore: slaOn ? 100 : 0,
@@ -112,9 +112,9 @@ export const slaOlaController = {
           });
 
           for (const dev of matchingDevices) {
-            updatedDeviceName = dev.name;
+            updatedDeviceName = dev.site;
             await tx.device.update({
-              where: { id: dev.id },
+              where: { devicesId: dev.devicesId },
               data: {
                 conditionStatus: newStatus,
                 slaScore: slaOn ? 100 : 0,
@@ -143,7 +143,7 @@ export const slaOlaController = {
       });
 
       // Ambil Daftar Perangkat Terbaru
-      const allDevices = await prisma.device.findMany({ orderBy: { name: 'asc' } });
+      const allDevices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
 
       return res.json({
         success: true,
@@ -204,7 +204,7 @@ export const slaOlaController = {
         let updatedDeviceName = '';
         if (isCurrentMonth) {
           const dev = await tx.device.update({
-            where: { id: deviceId },
+            where: { devicesId: deviceId },
             data: {
               conditionStatus: newStatus,
               slaScore: slaOn ? 100 : 0,
@@ -212,10 +212,10 @@ export const slaOlaController = {
               lastReportedDate: new Date(),
             },
           });
-          updatedDeviceName = dev.name;
+          updatedDeviceName = dev.site;
         } else {
-          const dev = await tx.device.findUnique({ where: { id: deviceId } });
-          updatedDeviceName = dev?.name || deviceId;
+          const dev = await tx.device.findUnique({ where: { devicesId: deviceId } });
+          updatedDeviceName = dev?.site || deviceId;
         }
 
         // 3. Catat Log Aktivitas (Audit Log)
@@ -233,7 +233,7 @@ export const slaOlaController = {
         return { log: createdLog };
       });
 
-      const allDevices = await prisma.device.findMany({ orderBy: { name: 'asc' } });
+      const allDevices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
 
       return res.json({
         success: true,

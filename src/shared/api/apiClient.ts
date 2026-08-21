@@ -230,9 +230,6 @@ export const apiClient = {
           body: JSON.stringify(data),
       });
 
-      // Mutasi data harus selalu dikonfirmasi server. Jangan memperlakukan
-      // 401/403/5xx sebagai "offline", karena itu dapat membuat UI seolah
-      // perubahan berhasil padahal server menolaknya.
       if (!response.ok) {
         let message = "Gagal menyimpan SLA/OLA ke server.";
         try {
@@ -255,8 +252,6 @@ export const apiClient = {
       };
     },
 
-    // Ambil nilai SLA/OLA per alat untuk 1 bulan & tahun tertentu (dipakai
-    // AdminMasterView, dibaca dari database, bukan memori browser).
     getMonthlySlaOla: async (bulan: number, tahun: number): Promise<Record<string, { sla: number; ola: number }>> => {
       try {
         const res = await authFetch(`/api/sla-ola/monthly?bulan=${bulan}&tahun=${tahun}`);
@@ -270,7 +265,6 @@ export const apiClient = {
       return {};
     },
 
-    // Simpan nilai SLA/OLA 1 alat untuk 1 bulan & tahun tertentu.
     saveMonthlySlaOla: async (data: {
       deviceId: string;
       uptStation: string;
@@ -300,7 +294,6 @@ export const apiClient = {
     },
 
     add: async (device: AloptamaDevice, actor = "Admin INSKAL"): Promise<AloptamaDevice> => {
-      // PENTING: tunggu konfirmasi server DULU sebelum update tampilan.
       const response = await authFetch("/api/devices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -316,20 +309,19 @@ export const apiClient = {
             const errData = await response.json();
             if (errData?.message) message = errData.message;
           } catch {
-            // respons bukan JSON, biarkan pesan default
+            // respons bukan JSON
           }
         }
         throw new Error(message);
       }
 
-      // Server konfirmasi berhasil - baru update cache lokal & audit log
       memoryCache.devices = [...memoryCache.devices, device];
 
       apiClient.auditLogs.add({
         table: "master_alat",
         action: "TAMBAH",
-        recordId: device.id,
-        recordName: `${device.name} (${device.category})`,
+        recordId: device.devicesId,
+        recordName: `${device.site} (${device.category})`,
         actor,
         details: `Penambahan unit aloptama baru di Stasiun ${device.uptStation} (${device.locationName}).`,
       });
@@ -344,7 +336,7 @@ export const apiClient = {
       details: string,
       actor = "Admin INSKAL"
     ): Promise<AloptamaDevice> => {
-      const response = await authFetch(`/api/devices/${device.id}`, {
+      const response = await authFetch(`/api/devices/${device.devicesId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...device, details, actor }),
@@ -365,13 +357,13 @@ export const apiClient = {
         throw new Error(message);
       }
 
-      memoryCache.devices = memoryCache.devices.map((d) => (d.id === device.id ? device : d));
+      memoryCache.devices = memoryCache.devices.map((d) => (d.devicesId === device.devicesId ? device : d));
 
       apiClient.auditLogs.add({
         table: "master_alat",
         action: "EDIT",
-        recordId: device.id,
-        recordName: `${device.name} (${device.category})`,
+        recordId: device.devicesId,
+        recordName: `${device.site} (${device.category})`,
         actor,
         details,
       });
@@ -409,7 +401,7 @@ export const apiClient = {
         throw new Error(message);
       }
 
-      memoryCache.devices = memoryCache.devices.filter((d) => d.id !== deviceId);
+      memoryCache.devices = memoryCache.devices.filter((d) => d.devicesId !== deviceId);
 
       apiClient.auditLogs.add({
         table: "master_alat",
@@ -470,15 +462,14 @@ export const apiClient = {
 
       memoryCache.calibration = [newRecord, ...memoryCache.calibration];
 
-      // Update in-memory devices calibration status
       memoryCache.devices = memoryCache.devices.map((dev) => {
-        if (dev.id === record.deviceId) {
+        if (dev.devicesId === record.deviceId) {
           return {
             ...dev,
             lastCalibrated: record.lastCalibrated,
             calibrationValidUntil: record.calibrationValidUntil,
             calibrationStatus: record.calibrationStatus,
-            calibrationAgency: record.calibrationAgency,
+            timkalibrasi: record.calibrationAgency,
           };
         }
         return dev;
@@ -493,7 +484,6 @@ export const apiClient = {
         details: `Kalibrasi INSKAL: Status=${record.calibrationStatus}, Berlaku ${record.lastCalibrated} s/d ${record.calibrationValidUntil}. Catatan: "${record.notes || "-"}"`,
       });
 
-      // Call backend server save endpoint
       try {
         const response = await authFetch("/api/calibration", {
           method: "POST",
@@ -557,7 +547,6 @@ export const apiClient = {
     },
 
     add: async (station: UPTStation, actor = "Admin INSKAL"): Promise<UPTStation> => {
-      // 1. Kirim request ke backend PostgreSQL & tunggu konfirmasi
       const response = await authFetch("/api/stations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -579,13 +568,12 @@ export const apiClient = {
         throw new Error(message);
       }
 
-      // 2. Server sukses -> perbarui cache lokal & catat audit log
       memoryCache.stations = [...memoryCache.stations, station];
 
       apiClient.auditLogs.add({
         table: "master_stasiun",
         action: "TAMBAH",
-        recordId: station.code,
+        recordId: station.stationid,
         recordName: station.name,
         actor,
         details: `Penambahan master stasiun UPT baru di wilayah ${station.regionGroup} (${station.location}).`,
@@ -601,7 +589,6 @@ export const apiClient = {
       details: string,
       actor = "Admin INSKAL"
     ): Promise<UPTStation> => {
-      // 1. Kirim request update ke backend PostgreSQL & tunggu konfirmasi
       const response = await authFetch(`/api/stations/${station.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -623,13 +610,12 @@ export const apiClient = {
         throw new Error(message);
       }
 
-      // 2. Server sukses -> perbarui cache lokal & catat audit log
       memoryCache.stations = memoryCache.stations.map((s) => (s.id === station.id ? station : s));
 
       apiClient.auditLogs.add({
         table: "master_stasiun",
         action: "EDIT",
-        recordId: station.code,
+        recordId: station.stationid,
         recordName: station.name,
         actor,
         details,
@@ -645,7 +631,6 @@ export const apiClient = {
       stationName: string,
       actor = "Admin INSKAL"
     ): Promise<boolean> => {
-      // 1. Kirim request hapus ke backend PostgreSQL & tunggu konfirmasi
       const response = await authFetch(`/api/stations/${stationId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -669,7 +654,6 @@ export const apiClient = {
         throw new Error(message);
       }
 
-      // 2. Server sukses -> hapus dari cache lokal & catat audit log
       memoryCache.stations = memoryCache.stations.filter((s) => s.id !== stationId);
 
       apiClient.auditLogs.add({
@@ -759,8 +743,6 @@ export const apiClient = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             username: user.username,
-            // Jangan isi default lemah di sini - kalau kosong, biarkan
-            // backend yang generate password acak & aman.
             password: user.password || undefined,
             name: user.name,
             role: user.role,
@@ -786,8 +768,6 @@ export const apiClient = {
               email: json.data.email || user.email,
               uptStation: json.data.uptStation || user.uptStation,
               avatarUrl: json.data.avatarUrl || user.avatarUrl,
-              // Kalau admin tidak isi password, backend generate satu secara
-              // acak dan kirim balik di sini (cuma sekali) - tampilkan ke admin.
               password: user.password || json.generatedPassword,
             };
           }
@@ -796,7 +776,6 @@ export const apiClient = {
         console.warn("Backend createUser API error:", e);
       }
 
-      // Update memoryCache after response from backend
       memoryCache.users = [...memoryCache.users.filter((u) => u.id !== createdUser.id), createdUser];
 
       apiClient.auditLogs.add({
@@ -857,7 +836,6 @@ export const apiClient = {
         console.warn("Backend updateUser API error:", e);
       }
 
-      // Update memoryCache after response from backend
       memoryCache.users = memoryCache.users.map((u) => (u.id === updatedUser.id ? updatedUser : u));
 
       apiClient.auditLogs.add({
@@ -887,7 +865,6 @@ export const apiClient = {
         console.warn("Backend deleteUser API error:", e);
       }
 
-      // Update memoryCache after response from backend
       memoryCache.users = memoryCache.users.filter((u) => u.id !== userId);
 
       apiClient.auditLogs.add({

@@ -50,7 +50,7 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
     if (rawUpt) {
       return formatUptName(rawUpt);
     }
-    return formatUptName(dev.name || '');
+    return formatUptName(dev.site || '');
   };
 
   const formatDateIndo = (dateStr?: string) => {
@@ -85,60 +85,60 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
     };
 
     const isAwos = (dev: AloptamaDevice) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('awos');
     };
 
     const awosKat1 = getUptsForCategory((dev) => {
       if (!isAwos(dev)) return false;
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       const isKat23 = cat.includes('kat ii') || cat.includes('kat iii') || cat.includes('kat 2') || cat.includes('kat 3') || cat.includes('kategori 2') || cat.includes('kategori 3') || cat.includes('kategori ii') || cat.includes('kategori iii');
       return !isKat23;
     });
 
     const awosKat23 = getUptsForCategory((dev) => {
       if (!isAwos(dev)) return false;
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('kat ii') || cat.includes('kat iii') || cat.includes('kat 2') || cat.includes('kat 3') || cat.includes('kategori 2') || cat.includes('kategori 3') || cat.includes('kategori ii') || cat.includes('kategori iii');
     });
 
     const radar = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('radar');
     });
 
     const aws = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return (cat.includes('aws') || cat.includes('automatic weather')) && !isAwos(dev);
     });
 
     const arg = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('arg') || cat.includes('automatic rain');
     });
 
     const seismo = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('seismo');
     });
 
     const lightning = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('lightning') || cat.includes('petir');
     });
 
     const accel = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('accelerograph') || cat.includes('akselero') || cat.includes('strong motion');
     });
 
     const wrs = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('wrs') || cat.includes('warning receiver');
     });
 
     const sirene = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.subCategory || ''} ${dev.name || ''}`.toLowerCase();
+      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
       return cat.includes('sirene') || cat.includes('siren');
     });
 

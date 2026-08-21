@@ -19,9 +19,6 @@ const calibrationInput = z.object({
   notes: z.string().trim().max(3000).nullable().optional(),
 });
 
-// Kolom lastCalibrated/calibrationValidUntil disimpan sebagai DATE asli di
-// Postgres, tapi kontrak API tetap kirim/terima string "YYYY-MM-DD" seperti
-// sebelumnya supaya frontend tidak perlu berubah.
 function serializeRecord<T extends { lastCalibrated: Date; calibrationValidUntil: Date }>(record: T) {
   return {
     ...record,
@@ -36,17 +33,53 @@ export const calibrationController = {
     if (!parsed.success) return res.status(400).json({ success: false, message: 'Data kalibrasi tidak valid.', errors: z.flattenError(parsed.error).fieldErrors });
     try {
       const body = parsed.data;
-      const device = await prisma.device.findUnique({ where: { id: body.deviceId } });
+      const device = await prisma.device.findUnique({ where: { devicesId: body.deviceId } });
       if (!device) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+      
       const lastCalibratedDate = parseDateOnly(body.lastCalibrated);
       const calibrationValidUntilDate = parseDateOnly(body.calibrationValidUntil);
+      
       const record = await prisma.$transaction(async (tx) => {
-        const created = await tx.calibrationRecord.create({ data: { deviceId: device.id, deviceName: body.deviceName || device.name, uptStation: body.uptStation || device.uptStation, category: body.category || device.category, lastCalibrated: lastCalibratedDate, calibrationValidUntil: calibrationValidUntilDate, calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura', calibrationStatus: body.calibrationStatus || 'VALID', certificateNumber: body.certificateNumber || null, notes: body.notes || null } });
-        await tx.device.update({ where: { id: device.id }, data: { lastCalibrated: lastCalibratedDate, calibrationValidUntil: calibrationValidUntilDate, calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura', calibrationStatus: body.calibrationStatus || 'VALID' } });
-        await tx.auditLog.create({ data: { table: 'kalibrasi', action: 'SIMPAN_KALIBRASI', recordId: device.id, recordName: device.name, actor: req.user?.name || 'System', details: `Pembaruan Kalibrasi: Status=${body.calibrationStatus || 'VALID'}, Berlaku s/d ${body.calibrationValidUntil}. Sertifikat: "${body.certificateNumber || '-'}"` } });
+        const created = await tx.calibrationRecord.create({
+          data: {
+            deviceId: device.devicesId,
+            deviceName: body.deviceName || device.site,
+            uptStation: body.uptStation || device.uptStation,
+            category: body.category || device.category,
+            lastCalibrated: lastCalibratedDate,
+            calibrationValidUntil: calibrationValidUntilDate,
+            calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura',
+            calibrationStatus: body.calibrationStatus || 'VALID',
+            certificateNumber: body.certificateNumber || null,
+            notes: body.notes || null,
+          },
+        });
+        
+        await tx.device.update({
+          where: { devicesId: device.devicesId },
+          data: {
+            lastCalibrated: lastCalibratedDate,
+            calibrationValidUntil: calibrationValidUntilDate,
+            timkalibrasi: body.calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura',
+            calibrationStatus: body.calibrationStatus || 'VALID',
+          },
+        });
+        
+        await tx.auditLog.create({
+          data: {
+            table: 'kalibrasi',
+            action: 'SIMPAN_KALIBRASI',
+            recordId: device.devicesId,
+            recordName: device.site,
+            actor: req.user?.name || 'System',
+            details: `Pembaruan Kalibrasi: Status=${body.calibrationStatus || 'VALID'}, Berlaku s/d ${body.calibrationValidUntil}. Sertifikat: "${body.certificateNumber || '-'}"`,
+          },
+        });
+        
         return created;
       });
-      const devices = await prisma.device.findMany({ orderBy: { name: 'asc' } });
+
+      const devices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
       const serializedDevices = devices.map(serializeDeviceDates);
       return res.json({ success: true, message: 'Data kalibrasi berhasil disimpan.', data: serializeRecord(record), devices: serializedDevices });
     } catch (error) {

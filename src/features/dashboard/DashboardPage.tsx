@@ -19,7 +19,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ devices }) => {
   const filteredDevices = devices.filter((dev) => {
     const matchesSearch =
       searchQuery === '' ||
-      (dev.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (dev.site || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.uptStation || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.locationName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.category || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -130,7 +130,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ devices }) => {
         <div className="flex-1 w-full relative rounded-xl overflow-hidden">
           <MapContainer
             devices={filteredDevices}
-            onSelectDevice={(device) => setSelectedDeviceId(device.id)}
+            onSelectDevice={(device) => setSelectedDeviceId(device.devicesId)}
             selectedDeviceId={selectedDeviceId}
           />
         </div>

@@ -45,7 +45,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     "KALKULATOR",
   );
 
-  // Status Tambahan: Pesan Kesalahan & Proses Penyimpanan
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -87,7 +86,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const watchKondisiOla = watch("kondisiOla");
   const watchKondisiSla = watch("kondisiSla");
 
-  // Sub-Status Kalkulator
   const [calcLogger, setCalcLogger] = useState<number>(100);
   const [calcPower, setCalcPower] = useState<number>(100);
   const [calcComm, setCalcComm] = useState<number>(100);
@@ -100,7 +98,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const [calcLdSensor, setCalcLdSensor] = useState<number>(100);
   const [calcSound, setCalcSound] = useState<number>(100);
 
-  // Status Sensor Aktif
   const [activeSensors, setActiveSensors] = useState<Record<string, boolean>>({
     tekanan: true,
     arahAngin: true,
@@ -133,13 +130,13 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
       if (d.category === "AWOS") {
         if (watchCategory === "AWOS Kat. I")
-          return d.name.includes("Kat I") && !d.name.includes("Kat III");
+          return d.site.includes("Kat I") && !d.site.includes("Kat III");
         if (watchCategory === "AWOS Kat. II")
-          return d.name.includes("Kat II");
+          return d.site.includes("Kat II");
         if (watchCategory === "AWOS Kat. III")
           return (
-            d.name.includes("Kat III") ||
-            (!d.name.includes("Kat I") && !d.name.includes("Kat II"))
+            d.site.includes("Kat III") ||
+            (!d.site.includes("Kat I") && !d.site.includes("Kat II"))
           );
       }
       return false;
@@ -154,7 +151,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     setErrorMessage(null);
     if (matchingDevices.length > 0) {
       const dev = matchingDevices[0];
-      setValue("deviceId", dev.id);
+      setValue("deviceId", dev.devicesId);
       setValue("kondisiSla", dev.conditionStatus === "NORMAL");
       setValue("kondisiOla", dev.olaScore ?? 100);
       setValue("kendala", dev.issueDescription || "");
@@ -163,7 +160,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     }
   }, [watchUptStation, watchCategory, devices, setValue]);
 
-  // Logika Kalkulator Matriks OLA
   useEffect(() => {
     if (!watchKondisiSla) {
       setValue("kondisiOla", 0);
@@ -288,7 +284,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Fungsi Pengiriman Form
   const onSubmit = async (data: any) => {
     setErrorMessage(null);
     setIsSubmitting(true);
@@ -418,7 +413,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
             onSubmit={handleSubmit(onSubmit)}
             className="p-5 space-y-4 overflow-y-auto"
           >
-            {/* Peringatan Kesalahan Server */}
             {errorMessage && (
               <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs font-semibold animate-fade-in">
                 <AlertTriangle size={18} className="text-rose-600 shrink-0 mt-0.5" />
@@ -441,7 +435,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
                 >
                   {stationsList.map((st) => (
-                    <option key={st.id || st.code || st.name} value={st.name}>
+                    <option key={st.id || st.stationid || st.name} value={st.name}>
                       {st.name} ({st.regionGroup || "Papua"})
                     </option>
                   ))}
@@ -488,8 +482,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 disabled:opacity-50"
                 >
                   {matchingDevices.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} ({d.id})
+                    <option key={d.devicesId} value={d.devicesId}>
+                      {d.site} ({d.devicesId})
                     </option>
                   ))}
                 </select>
@@ -540,7 +534,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </span>
                 </div>
 
-                {/* AWS & AWOS */}
                 {(watchCategory === "AWS" ||
                   watchCategory.startsWith("AWOS")) && (
                   <div className="space-y-3">
@@ -670,7 +663,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </div>
                 )}
 
-                {/* WRS NG */}
                 {(watchCategory === "WRS NG" || watchCategory === "WRS") && (
                   <div className="space-y-3">
                     <div className="space-y-1">
@@ -735,7 +727,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </div>
                 )}
 
-                {/* SIRINE TSUNAMI */}
                 {(watchCategory === "Sirine Tsunami" ||
                   watchCategory === "Sirine") && (
                   <div className="space-y-3">
@@ -801,7 +792,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </div>
                 )}
 
-                {/* ACCELERO & SEISMO */}
                 {(watchCategory === "Accelerograph" ||
                   watchCategory === "Seismometer") && (
                   <div className="space-y-3">
@@ -868,7 +858,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </div>
                 )}
 
-                {/* LIGHTNING DETECTOR */}
                 {watchCategory === "Lightning Detector" && (
                   <div className="space-y-3">
                     <div className="space-y-1">
@@ -957,7 +946,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </div>
                 )}
 
-                {/* RADAR CUACA */}
                 {(watchCategory === "Radar Cuaca" ||
                   watchCategory === "Radar Weather") && (
                   <div className="space-y-3">
@@ -1043,7 +1031,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </div>
                 )}
 
-                {/* ARG */}
                 {watchCategory === "ARG" && (
                   <div className="space-y-3">
                     <div className="space-y-1">
@@ -1246,7 +1233,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            {/* Indikator Persentase OLA */}
             <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 text-slate-800 flex items-center justify-between shadow-xs">
               <div className="flex items-center gap-2.5">
                 <div

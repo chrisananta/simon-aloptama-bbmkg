@@ -149,10 +149,10 @@ async function autoSeedDatabase() {
       // 2. Stations
       for (const st of SEED_UPT_STATIONS) {
         await prisma.uptStation.upsert({
-          where: { code: st.code },
+          where: { stationid: st.code },
           update: {},
           create: {
-            code: st.code,
+            stationid: st.code,
             name: st.name,
             regionGroup: st.regionGroup || "Papua",
             location: st.location || st.name,
@@ -165,13 +165,13 @@ async function autoSeedDatabase() {
       // 3. Initial Devices
       for (const dev of SEED_DEVICES) {
         await prisma.device.upsert({
-          where: { id: dev.id },
+          where: { devicesId: dev.id },
           update: {},
           create: {
-            id: dev.id,
-            name: dev.name,
+            devicesId: dev.id,
+            site: dev.name,
             category: dev.category,
-            subCategory: dev.subCategory || null,
+            merk: dev.subCategory || null,
             uptStation: dev.uptStation,
             locationName: dev.locationName || dev.uptStation,
             latitude: Number(dev.latitude) || -2.54,
@@ -180,7 +180,7 @@ async function autoSeedDatabase() {
             calibrationStatus: (dev.calibrationStatus || "VALID") as any,
             lastCalibrated: new Date(dev.lastCalibrated || "2025-06-15"),
             calibrationValidUntil: new Date(dev.calibrationValidUntil || "2026-06-15"),
-            calibrationAgency: dev.calibrationAgency || "INSKAL BBMKG V",
+            timkalibrasi: dev.calibrationAgency || "INSKAL BBMKG V",
             issueDescription: null,
             downtimeDuration: null,
             slaScore: dev.slaScore || 100,

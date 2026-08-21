@@ -41,8 +41,8 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
   } = useForm({
     resolver: zodResolver(calibrationSchema),
     defaultValues: {
-      deviceId: devices[0]?.id || '',
-      deviceName: devices[0]?.name || '',
+      deviceId: devices[0]?.devicesId || '',
+      deviceName: devices[0]?.site || '',
       category: devices[0]?.category || '',
       uptStation: devices[0]?.uptStation || '',
       lastCalibrated: '',
@@ -58,12 +58,12 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
   const watchLastCalibrated = watch('lastCalibrated');
   const watchStatus = watch('calibrationStatus');
 
-  const selectedDevice = devices.find((d) => d.id === watchDeviceId) || devices[0];
+  const selectedDevice = devices.find((d) => d.devicesId === watchDeviceId) || devices[0];
 
   useEffect(() => {
     if (selectedDevice) {
-      setValue('deviceId', selectedDevice.id);
-      setValue('deviceName', selectedDevice.name);
+      setValue('deviceId', selectedDevice.devicesId);
+      setValue('deviceName', selectedDevice.site);
       setValue('category', selectedDevice.category);
       setValue('uptStation', selectedDevice.uptStation);
     }
@@ -136,7 +136,7 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
             </div>
             <h4 className="font-heading font-bold text-lg text-purple-900">Data Kalibrasi Berhasil Disimpan!</h4>
             <p className="text-xs text-purple-700">
-              Catatan kalibrasi {selectedDevice?.name} telah ditambahkan ke Repository Histori Kalibrasi.
+              Catatan kalibrasi {selectedDevice?.site} telah ditambahkan ke Repository Histori Kalibrasi.
             </p>
           </div>
         ) : (
@@ -152,8 +152,8 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white"
               >
                 {devices.map((dev) => (
-                  <option key={dev.id} value={dev.id}>
-                    {dev.name} ({dev.category}) — {dev.uptStation}
+                  <option key={dev.devicesId} value={dev.devicesId}>
+                    {dev.site} ({dev.category}) — {dev.uptStation}
                   </option>
                 ))}
               </select>
@@ -170,7 +170,7 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
                 </div>
                 <div className="flex justify-between text-slate-700">
                   <span className="font-semibold">ID Peralatan:</span>
-                  <span className="font-mono text-blue-700">{selectedDevice.id}</span>
+                  <span className="font-mono text-blue-700">{selectedDevice.devicesId}</span>
                 </div>
               </div>
             )}

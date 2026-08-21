@@ -13,10 +13,10 @@ export type EquipmentCategory =
   | string;
 
 export interface AloptamaDevice {
-  id: string;
-  name: string;
+  devicesId: string;       // Sebelumnya: id
+  site: string;            // Sebelumnya: name
   category: EquipmentCategory;
-  subCategory?: string;
+  merk?: string;           // Sebelumnya: subCategory
   uptStation: string;
   locationName: string;
   latitude: number;
@@ -27,23 +27,21 @@ export interface AloptamaDevice {
   lastCalibrated: string;
   lastReportedDate?: string;
   calibrationValidUntil: string;
-  calibrationAgency: string;
+  timkalibrasi: string;    // Sebelumnya: calibrationAgency
   downtimeDuration?: string;
   issueDescription?: string;
-  slaScore?: number; // percentage e.g. 98.5
-  olaScore?: number; // percentage e.g. 96.0
+  slaScore?: number;
+  olaScore?: number;
 }
-
 export interface UPTStation {
   id: string;
-  code: string;
+  stationid: string;       // Sebelumnya: code
   name: string;
-  regionGroup: string; // e.g. Papua, Papua Barat, Papua Tengah, Papua Selatan, Papua Pegunungan
+  regionGroup: string;
   location: string;
   latitude: number;
   longitude: number;
 }
-
 export interface FilterState {
   searchQuery: string;
   selectedUpt: string;

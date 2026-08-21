@@ -142,7 +142,7 @@ async function main() {
     }
 
     const data = {
-      code,
+      stationid: code,
       name: row.NAMA_STASIUN.trim(),
       regionGroup,
       location: city,
@@ -150,10 +150,10 @@ async function main() {
       longitude: coords?.lng ?? 138.0,
     };
 
-    const existing = await prisma.uptStation.findUnique({ where: { code } });
+    const existing = await prisma.uptStation.findUnique({ where: { stationid: code } });
 
     if (existing) {
-      await prisma.uptStation.update({ where: { code }, data });
+      await prisma.uptStation.update({ where: { stationid: code }, data });
       updated++;
       console.log(`  ↻ ${code} - ${data.name} (diperbarui)`);
     } else {
@@ -186,3 +186,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+  

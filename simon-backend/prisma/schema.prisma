@@ -26,7 +26,7 @@ model User {
 
 model UptStation {
   id          String   @id @default(uuid())
-  code        String   @unique
+  stationid   String   @unique
   name        String
   regionGroup String
   location    String
@@ -40,10 +40,10 @@ model UptStation {
 }
 
 model Device {
-  id                    String              @id
-  name                  String
+  devicesId             String              @id
+  site                  String
   category              String
-  subCategory           String?
+  merk                  String?
   uptStation            String
   locationName          String
   latitude              Float
@@ -51,13 +51,9 @@ model Device {
   picKalibrasi          String?             @default("Balai")
   conditionStatus       EquipmentStatus     @default(NORMAL)
   calibrationStatus     CalibrationStatus   @default(VALID)
-  // Disimpan sebagai DATE asli (bukan String) supaya bisa di-sort/filter/index
-  // dengan benar oleh Postgres. Kontrak API tetap kirim/terima string
-  // "YYYY-MM-DD" - konversi Date<->string terjadi di controller, frontend
-  // tidak perlu berubah sama sekali.
   lastCalibrated        DateTime            @db.Date
   calibrationValidUntil DateTime            @db.Date
-  calibrationAgency     String
+  timkalibrasi          String
   lastReportedDate      DateTime?           @db.Date
   downtimeDuration      String?
   issueDescription      String?
@@ -88,7 +84,7 @@ model SlaOlaLog {
   status     String   @default("NORMAL")
   actor      String   @default("Operator UPT")
   timestamp  DateTime @default(now())
-  device     Device?  @relation(fields: [deviceId], references: [id])
+  device     Device?  @relation(fields: [deviceId], references: [devicesId])
 
   @@index([timestamp])
   @@index([deviceId])
@@ -96,22 +92,17 @@ model SlaOlaLog {
   @@map("sla_ola_logs")
 }
 
-// Nilai SLA/OLA per alat, per bulan & tahun acuan. Satu baris = satu alat
-// untuk satu periode bulan tertentu (mis. AWOS Sentani - Juli - 2026).
-// Ini yang membuat data SLA/OLA per bulan beneran tersimpan permanen di
-// database, bukan sekadar tampilan sementara di browser yang hilang saat
-// refresh.
 model DeviceMonthlyScore {
   id        String   @id @default(uuid())
   deviceId  String
-  month     String // nama bulan dalam Bahasa Indonesia, mis. "Juli"
+  month     String
   year      Int
   sla       Float
   ola       Float
   actor     String   @default("Admin INSKAL")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  device    Device   @relation(fields: [deviceId], references: [devicesId], onDelete: Cascade)
 
   @@unique([deviceId, month, year])
   @@map("device_monthly_scores")
@@ -130,7 +121,7 @@ model CalibrationRecord {
   calibrationStatus     CalibrationStatus @default(VALID)
   notes                 String?
   createdAt             DateTime          @default(now())
-  device                Device            @relation(fields: [deviceId], references: [id])
+  device                Device            @relation(fields: [deviceId], references: [devicesId])
 
   @@index([deviceId])
   @@index([createdAt])
