@@ -4,8 +4,8 @@ import { prisma } from '../db/prisma.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { JWT_SECRET } from '../config/env.js';
-import { AuthRequest } from '../middleware/authMiddleware.js';
+import { JWT_SECRET, JWT_COOKIE_OPTIONS } from '../config/env.js';
+import { AuthRequest, JWT_COOKIE_NAME } from '../middleware/authMiddleware.js';
 
 // Angka "cost factor" bcrypt - makin tinggi makin aman tapi makin lambat.
 // 10-12 adalah standar umum yang seimbang antara aman & cepat.
@@ -128,6 +128,16 @@ export const userController = {
         JWT_SECRET,
         { expiresIn: '24h' }
       );
+      const decodedForExpiry = jwt.decode(token) as { exp?: number } | null;
+      const expiresAt = decodedForExpiry?.exp ? decodedForExpiry.exp * 1000 : Date.now() + JWT_COOKIE_OPTIONS.maxAge;
+
+      // Simpan token sebagai cookie httpOnly - browser akan otomatis
+      // mengirimkannya di request berikutnya, tapi JavaScript di halaman
+      // (termasuk skrip jahat lewat XSS) TIDAK BISA membacanya sama sekali.
+      // Ini menggantikan pola lama: kirim token di body JSON lalu frontend
+      // simpan sendiri ke localStorage (yang SELALU bisa dibaca oleh JS apa
+      // pun yang berhasil disuntikkan ke halaman).
+      res.cookie(JWT_COOKIE_NAME, token, JWT_COOKIE_OPTIONS);
 
       // Audit Log
       try {
@@ -148,7 +158,11 @@ export const userController = {
       return res.json({
         success: true,
         message: 'Login berhasil.',
-        token,
+        // Catatan: token JWT SENGAJA tidak dikirim di body JSON lagi - token
+        // sudah dikirim lewat cookie httpOnly di atas. expiresAt bukan data
+        // rahasia (cuma timestamp), aman dipakai frontend untuk UI (mis.
+        // hitung mundur sesi) tanpa perlu menyimpan token itu sendiri.
+        expiresAt,
         user: {
           id: user.id,
           username: user.username,
@@ -165,6 +179,49 @@ export const userController = {
       console.error('Error login:', error);
       return res.status(500).json({ success: false, message: 'Terjadi kesalahan pada server saat autentikasi.' });
     }
+  },
+
+  // Logout: hapus cookie httpOnly di sisi browser.
+  // Karena cookie ini httpOnly, frontend TIDAK BISA menghapusnya sendiri
+  // lewat JavaScript (mis. document.cookie) - harus lewat response dari
+  // endpoint ini yang mengirim header Set-Cookie dengan masa berlaku sudah
+  // lewat, memerintahkan browser membuang cookie tersebut.
+  //
+  // Route ini SENGAJA tidak dipasangi middleware verifyToken (lihat
+  // authRoutes.ts) supaya tetap bisa membersihkan cookie basi meski token
+  // sudah invalid/kedaluwarsa. Di sini kita coba verifikasi token secara
+  // "lunak" (best-effort) hanya untuk mengisi actor pada audit log.
+  logout: async (req: Request, res: Response) => {
+    try {
+      const cookies = (req.headers.cookie || '')
+        .split(';')
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(`${JWT_COOKIE_NAME}=`));
+      const token = cookies ? decodeURIComponent(cookies.split('=').slice(1).join('=')) : null;
+
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as { id: string; name: string };
+          await prisma.auditLog.create({
+            data: {
+              table: 'autentikasi',
+              action: 'LOGOUT',
+              recordId: decoded.id,
+              recordName: decoded.name,
+              actor: decoded.name,
+              details: 'Pengguna melakukan logout dan mengakhiri sesi aktif.',
+            },
+          });
+        } catch {
+          // Token sudah invalid/kedaluwarsa - lewati audit log, tetap lanjut hapus cookie.
+        }
+      }
+    } catch (e) {
+      // Audit log gagal (mis. DB unreachable) tidak boleh menghalangi logout.
+    }
+
+    res.clearCookie(JWT_COOKIE_NAME, { ...JWT_COOKIE_OPTIONS, maxAge: undefined });
+    return res.json({ success: true, message: 'Logout berhasil.' });
   },
 
   // Get all users

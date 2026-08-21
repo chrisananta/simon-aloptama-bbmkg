@@ -24,25 +24,60 @@ function generateRandomPassword(): string {
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// Aplikasi ini SELALU jalan di belakang reverse proxy (ngrok tunnel di
+// docker-compose.yml, atau proxy lain saat deploy). Tanpa "trust proxy",
+// Express membaca req.ip dari koneksi TCP langsung (yaitu alamat proxy
+// itu sendiri, BUKAN alamat klien asli) - akibatnya:
+//   1. loginRateLimiter (rate-limit login per-IP) akan menganggap SEMUA
+//      pengguna datang dari satu "IP" yang sama (IP proxy), sehingga satu
+//      pengguna yang salah password berkali-kali bisa mengunci pengguna
+//      lain yang berbagi proxy yang sama.
+//   2. req.ip yang dicatat di audit log (ipOrSource) jadi tidak berguna
+//      untuk forensik/investigasi.
+// "1" berarti percaya SATU hop proxy di depan app (sesuai topologi kita:
+// ngrok/reverse-proxy -> app). Express lalu membaca IP asli dari header
+// X-Forwarded-For yang disuntik oleh proxy tepercaya tsb.
+app.set('trust proxy', 1);
+
 // 1. Header keamanan standar (CSP dimatikan agar aset inline Vite/dist tidak terblokir)
 app.use(helmet({ contentSecurityPolicy: false }));
 
 // 2. Perbaikan CORS: Izinkan ngrok & localhost secara fleksibel tanpa melempar Error 500
+//
+// PENTING: pencocokan HARUS berbasis hostname yang sudah di-parse, BUKAN
+// origin.includes("...") mentah. String.includes() mencocokkan substring di
+// posisi manapun, jadi origin jahat seperti "https://notlocalhost.evil.com"
+// atau "https://simon-ngrok-free.dev.evil.com" akan ikut lolos karena
+// mengandung "localhost" / "ngrok-free.dev" sebagai substring - padahal itu
+// bukan domain localhost atau ngrok yang sebenarnya. Di bawah ini kita parse
+// origin jadi hostname asli lalu cek exact match atau suffix match yang
+// diawali titik (".ngrok-free.dev"), supaya tidak bisa dikelabui seperti itu.
+const NGROK_HOST_SUFFIXES = [".ngrok-free.dev", ".ngrok-free.app", ".ngrok.io", ".ngrok.app"];
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function isAllowedHostname(hostname: string): boolean {
+  if (LOCAL_HOSTNAMES.has(hostname)) return true;
+  return NGROK_HOST_SUFFIXES.some(
+    (suffix) => hostname === suffix.slice(1) || hostname.endsWith(suffix)
+  );
+}
+
 app.use(
   cors({
     origin(origin, callback) {
       // Request tanpa header Origin (misal curl, server-to-server, health check, atau same-origin asset)
       if (!origin) return callback(null, true);
 
-      // Izinkan jika ada di list env var, domain ngrok, atau localhost
-      if (
-        CORS_ORIGINS.includes(origin) ||
-        origin.includes("ngrok-free.dev") ||
-        origin.includes("ngrok.io") ||
-        origin.includes("localhost") ||
-        origin.includes("127.0.0.1")
-      ) {
-        return callback(null, true);
+      // Origin dari whitelist env var (CORS_ORIGIN) - exact match, ini paling aman.
+      if (CORS_ORIGINS.includes(origin)) return callback(null, true);
+
+      // Izinkan localhost & domain ngrok, tapi berdasarkan HOSTNAME yang benar-benar
+      // di-parse dari origin, bukan substring cocok-cocokan di string mentah.
+      try {
+        const { hostname } = new URL(origin);
+        if (isAllowedHostname(hostname)) return callback(null, true);
+      } catch {
+        // Origin tidak bisa di-parse sebagai URL valid -> tolak di bawah.
       }
 
       // Jangan lempar Error() agar tidak menjadi JSON 500 pada file CSS/JS
@@ -53,6 +88,11 @@ app.use(
 );
 
 app.use(express.json());
+
+import cookieParser from 'cookie-parser';
+
+app.use(express.json());
+app.use(cookieParser()); // Pasang middleware pembaca cookie
 
 // Auto-seed database when empty
 async function autoSeedDatabase() {

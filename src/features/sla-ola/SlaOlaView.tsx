@@ -128,9 +128,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
 
   const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
   const currentMonthData = slaTrendData[monthIdx] || { month: 'Ags', sla: 0, ola: 0 };
-  
-  const monthlySlaValue = currentMonthData.sla;
-  const monthlyOlaValue = currentMonthData.ola;
 
   const olaByCategoryData = useMemo(() => {
     const CATEGORIES = [
@@ -333,18 +330,19 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
       let gangguanCount = 0;
       let matiCount = 0;
 
-      if (reportedDevs.length > 0) {
-        const avgSla = reportedDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0) / reportedDevs.length;
-        const avgOla = reportedDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedDevs.length;
-        sla = Number(avgSla.toFixed(1));
-        ola = Number(avgOla.toFixed(1));
+    if (jumlahLokasi > 0) {
+      normalCount = reportedDevs.filter((d) => d.conditionStatus === 'NORMAL').length;
+      gangguanCount = reportedDevs.filter((d) => d.conditionStatus === 'GANGGUAN').length;
+      // Alat yang belum lapor atau tidak beroperasi otomatis dihitung dalam matiCount
+      matiCount = jumlahLokasi - normalCount - gangguanCount;
 
-        normalCount = reportedDevs.filter((d) => d.conditionStatus === 'NORMAL').length;
-        gangguanCount = reportedDevs.filter((d) => d.conditionStatus === 'GANGGUAN').length;
-        matiCount = reportedDevs.filter((d) => d.conditionStatus === 'MATI').length;
-      } else {
-        matiCount = jumlahLokasi;
-      }
+      const totalSla = reportedDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0);
+      const totalOla = reportedDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
+
+      // Pembagi diubah menggunakan jumlahLokasi (Master Total Alat)
+      sla = Number((totalSla / jumlahLokasi).toFixed(1));
+      ola = Number((totalOla / jumlahLokasi).toFixed(1));
+    }
 
       return {
         no: catObj.no,
@@ -358,24 +356,30 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         diff: null as number | null,
       };
     });
-  }, [selectedYear, selectedMonth, monthIdx, selectedUpt, uptFilteredDevices]);
+}, [selectedYear, selectedMonth, monthIdx, selectedUpt, uptFilteredDevices]);
 
+  // 1. Kalkulasi Card SLA & OLA Bulanan (Rata-rata 10 jenis alat)
+  const monthlySlaValue = useMemo(() => {
+    const sumSla = rekapTableData.reduce((acc, curr) => acc + curr.sla, 0);
+    return Number((sumSla / 10).toFixed(1));
+  }, [rekapTableData]);
+
+  const monthlyOlaValue = useMemo(() => {
+    const sumOla = rekapTableData.reduce((acc, curr) => acc + curr.ola, 0);
+    return Number((sumOla / 10).toFixed(1));
+  }, [rekapTableData]);
+
+  // 2. Akumulasi Total Lokasi
   const totalLokasiSum = useMemo(
     () => rekapTableData.reduce((acc, curr) => acc + curr.jumlahLokasi, 0),
     [rekapTableData]
   );
-  const avgSlaTotal = useMemo(() => {
-    if (totalLokasiSum === 0) return 0;
-    const weighted = rekapTableData.reduce((acc, curr) => acc + curr.sla * curr.jumlahLokasi, 0);
-    return Number((weighted / totalLokasiSum).toFixed(1));
-  }, [rekapTableData, totalLokasiSum]);
 
-  const avgOlaTotal = useMemo(() => {
-    if (totalLokasiSum === 0) return 0;
-    const weighted = rekapTableData.reduce((acc, curr) => acc + curr.ola * curr.jumlahLokasi, 0);
-    return Number((weighted / totalLokasiSum).toFixed(1));
-  }, [rekapTableData, totalLokasiSum]);
+  // 3. Menyamakan Nilai Footer Tabel dengan Card Bulanan
+  const avgSlaTotal = monthlySlaValue;
+  const avgOlaTotal = monthlyOlaValue;
 
+  // 4. Akumulasi Jumlah Kondisi Alat
   const totalNormalSum = useMemo(
     () => rekapTableData.reduce((acc, curr) => acc + curr.normalCount, 0),
     [rekapTableData]
@@ -388,7 +392,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     () => rekapTableData.reduce((acc, curr) => acc + curr.matiCount, 0),
     [rekapTableData]
   );
-
+  
+// 5. Menyaring Alat yang Belum Dilaporkan Hari Ini
   const filteredDevices = devices.filter((dev) => {
     if (isReportedToday(dev)) {
       return false;

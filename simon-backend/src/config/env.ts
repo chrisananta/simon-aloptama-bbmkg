@@ -51,3 +51,26 @@ if (isProduction && CORS_ORIGINS.length === 0) {
   console.warn('   Semua request lintas-origin dari browser akan DITOLAK sampai env var ini diisi.');
   console.warn('   Tambahkan: CORS_ORIGIN="https://domain-frontend-anda"\n');
 }
+
+/**
+ * Opsi cookie httpOnly tempat JWT disimpan di browser (menggantikan
+ * localStorage). httpOnly: true membuat cookie ini TIDAK BISA dibaca oleh
+ * JavaScript sama sekali (termasuk skrip jahat lewat XSS) - beda dengan
+ * localStorage yang selalu bisa dibaca kode JS apa pun yang berjalan di halaman.
+ *
+ * - secure: true di production (cookie hanya dikirim lewat HTTPS - app kita
+ *   selalu diakses lewat ngrok/HTTPS di production, jadi ini aman diaktifkan).
+ *   false di development supaya tetap jalan di http://localhost biasa.
+ * - sameSite: 'lax' cukup karena frontend & backend disajikan dari origin yang
+ *   SAMA (satu proses Express yang sama menyajikan API sekaligus aset SPA -
+ *   lihat server.ts), jadi ini bukan skenario lintas-situs (cross-site) yang
+ *   butuh 'none'. 'lax' juga membantu mitigasi CSRF untuk cookie ini.
+ * - maxAge: samakan dengan masa berlaku JWT (24 jam, lihat userController.ts).
+ */
+export const JWT_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 24 * 60 * 60 * 1000, // 24 jam, harus sinkron dengan expiresIn jwt.sign
+};

@@ -1,59 +1,71 @@
-import { AuthUser, AuthSession, JWTPayload, UserRole, RBACPermissions } from './authTypes';
+import { AuthUser, AuthSession, UserRole, RBACPermissions } from './authTypes';
 import { ActiveNavMenu } from '../../shared/types';
-import { apiClient } from '../../shared/api';
+import { SESSION_INFO_KEY, authFetch } from '../../shared/api/http';
 
-const TOKEN_KEY = 'simon_jwt_token';
-const SESSION_EXP_KEY = 'simon_session_exp';
+// Kunci localStorage untuk METADATA sesi non-rahasia (user + waktu
+// kedaluwarsa). Token JWT itu sendiri TIDAK PERNAH disimpan di sini atau di
+// tempat lain yang bisa dibaca JavaScript - dia hidup di cookie httpOnly
+// "simon_jwt" yang di-set backend saat login (lihat userController.ts) dan
+// otomatis dikirim browser di setiap request lewat `credentials: 'include'`
+// (lihat shared/api/http.ts authFetch). Ini sengaja dipisah dari nama kunci
+// lama "simon_jwt_token" supaya sesi lama (yang masih menyimpan token mentah
+// di localStorage dari sebelum perubahan ini) otomatis diabaikan, bukan
+// disalahartikan sebagai session info baru.
+interface StoredSessionInfo {
+  user: AuthUser;
+  expiresAt: number; // Unix timestamp ms
+  createdAt: number;
+}
+
+function readStoredSession(): StoredSessionInfo | null {
+  try {
+    const raw = localStorage.getItem(SESSION_INFO_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredSessionInfo;
+    if (!parsed?.user || typeof parsed.expiresAt !== 'number') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSession(info: StoredSessionInfo): void {
+  try {
+    localStorage.setItem(SESSION_INFO_KEY, JSON.stringify(info));
+  } catch {
+    // localStorage penuh/tidak tersedia - sesi tetap jalan lewat cookie,
+    // hanya saja hitung-mundur & data user di UI tidak akan bertahan lewat
+    // refresh halaman sampai login ulang.
+  }
+}
+
+function clearStoredSession(): void {
+  try {
+    localStorage.removeItem(SESSION_INFO_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 // Mockup preset dinonaktifkan - Otentikasi murni via PostgreSQL
 export const PRESET_USERS: Record<string, AuthUser & { defaultPass: string }> = {};
 
-const base64UrlDecode = (str: string): string => {
-  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  while (base64.length % 4) {
-    base64 += '=';
-  }
-  return decodeURIComponent(escape(atob(base64)));
-};
-
-/**
- * Parse JWT payload
- */
-export const parseJWT = (token: string): JWTPayload | null => {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const decodedPayload = base64UrlDecode(parts[1]);
-    return JSON.parse(decodedPayload) as JWTPayload;
-  } catch (err) {
-    console.error('Failed to parse JWT token:', err);
-    return null;
-  }
-};
-
-/**
- * Validate JWT Token
- */
-export const validateToken = (token: string): { valid: boolean; payload: JWTPayload | null; reason?: string } => {
-  if (!token) return { valid: false, payload: null, reason: 'Token tidak ditemukan' };
-  const payload = parseJWT(token);
-  if (!payload) return { valid: false, payload: null, reason: 'Format token tidak valid' };
-
-  const nowSec = Math.floor(Date.now() / 1000);
-  if (payload.exp < nowSec) {
-    return { valid: false, payload, reason: 'Sesi telah berakhir (Expired Token)' };
-  }
-
-  return { valid: true, payload };
-};
-
 /**
  * Authentication Service (Terhubung Langsung ke PostgreSQL)
+ *
+ * CATATAN KEAMANAN: Token JWT dikirim & disimpan lewat cookie httpOnly,
+ * BUKAN localStorage. JavaScript di aplikasi ini (termasuk skrip jahat yang
+ * mungkin berhasil disuntikkan lewat celah XSS di masa depan) sama sekali
+ * tidak bisa membaca atau menyalin token tsb, karena cookie httpOnly tidak
+ * pernah terekspos ke `document.cookie` maupun API JS apa pun. Yang boleh
+ * disimpan di localStorage di sini hanyalah metadata non-rahasia (nama user,
+ * role, waktu kedaluwarsa) untuk keperluan tampilan UI semata.
  */
 export const authService = {
-
-/**
-   * Login user melalui Backend API PostgreSQL
+  /**
+   * Login user melalui Backend API PostgreSQL. Backend akan men-set cookie
+   * httpOnly berisi JWT lewat header Set-Cookie pada response ini -
+   * `credentials: 'include'` WAJIB supaya browser menyimpan cookie tsb.
    */
   login: async (username: string, password?: string): Promise<AuthSession> => {
     const cleanUser = username.trim().toLowerCase();
@@ -62,6 +74,7 @@ export const authService = {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // wajib: agar cookie httpOnly dari Set-Cookie tersimpan
         body: JSON.stringify({ username: cleanUser, password }),
       });
 
@@ -73,24 +86,29 @@ export const authService = {
       }
 
       if (res.ok && data?.success && data?.user) {
-        // Sesi hanya sah jika token diterbitkan dan ditandatangani backend.
-        if (typeof data.token !== 'string' || !data.token) {
-          throw new Error('Server tidak mengirim token autentikasi yang valid.');
+        // Sesi hanya sah kalau backend juga mengembalikan expiresAt (dikirim
+        // bersamaan dengan cookie httpOnly - lihat userController.ts).
+        if (typeof data.expiresAt !== 'number') {
+          throw new Error('Server tidak mengirim informasi kedaluwarsa sesi yang valid.');
         }
-        const token = data.token;
-        const payload = parseJWT(token);
-        if (!payload?.exp || !payload?.iat) throw new Error('Token autentikasi server tidak valid.');
-        const exp = payload.exp * 1000;
 
-        localStorage.setItem(TOKEN_KEY, token);
-        localStorage.setItem(SESSION_EXP_KEY, String(exp));
+        const sessionInfo: StoredSessionInfo = {
+          user: data.user,
+          expiresAt: data.expiresAt,
+          createdAt: Date.now(),
+        };
+        writeStoredSession(sessionInfo);
 
         return {
-          token,
+          // Token TIDAK pernah ada di sisi JS - field ini sengaja dikosongkan.
+          // Semua request selanjutnya otomatis terautentikasi lewat cookie
+          // httpOnly, tidak ada kode di app ini yang boleh bergantung pada
+          // field `token` berisi nilai asli.
+          token: '',
           refreshToken: '',
           user: data.user,
-          expiresAt: exp,
-          createdAt: Date.now(),
+          expiresAt: data.expiresAt,
+          createdAt: sessionInfo.createdAt,
         };
       }
 
@@ -108,7 +126,7 @@ export const authService = {
   /**
    * Preset Quick Login (for demo/convenience)
    */
- loginAsPreset: async (rolePreset: UserRole): Promise<AuthSession> => {
+  loginAsPreset: async (_rolePreset: UserRole): Promise<AuthSession> => {
     throw new Error('Mode preset login dinonaktifkan. Silakan login menggunakan akun terdaftar di PostgreSQL.');
   },
 
@@ -121,64 +139,51 @@ export const authService = {
   },
 
   /**
-   * Logout user and invalidate session
+   * Logout: memanggil endpoint backend supaya SERVER yang mengirim instruksi
+   * hapus cookie httpOnly (lewat header Set-Cookie kedaluwarsa). Frontend
+   * tidak bisa menghapus cookie httpOnly sendiri lewat JavaScript - ini beda
+   * dari perilaku lama yang cukup `localStorage.removeItem(...)`.
    */
-  logout: (actorName = 'Pengguna'): void => {
-    const currentToken = localStorage.getItem(TOKEN_KEY);
-    if (currentToken) {
-      const payload = parseJWT(currentToken);
-      if (payload) {
-        apiClient.auditLogs.add({
-          table: 'autentikasi',
-          action: 'LOGOUT',
-          recordId: payload.sub || payload.id || 'UNKNOWN',
-          recordName: payload.name,
-          actor: actorName,
-          details: `Pengguna melakukan logout dan mengakhiri sesi aktif`,
-          status: 'SUCCESS',
-        });
-      }
-    }
-
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(SESSION_EXP_KEY);
+  logout: (_actorName = 'Pengguna'): void => {
+    clearStoredSession();
+    // Fire-and-forget: tidak perlu ditunggu (await) karena UI harus langsung
+    // kembali ke halaman login tanpa menunggu network round-trip. authFetch
+    // otomatis menyertakan credentials, dan endpoint /logout backend sendiri
+    // yang mencatat audit log dari identitas di dalam cookie (kalau valid).
+    authFetch('/api/logout', { method: 'POST' }).catch(() => {
+      // Kalaupun request logout gagal (mis. offline), sesi lokal di frontend
+      // sudah dianggap berakhir lewat clearStoredSession() di atas. Cookie
+      // di browser mungkin masih ada sampai kedaluwarsa alami (maks 24 jam),
+      // tapi frontend sudah tidak menganggap user login.
+    });
   },
 
   /**
-   * Get Active Session if valid
+   * Get Active Session if valid.
+   *
+   * PENTING: ini TIDAK memvalidasi token yang sebenarnya (tidak bisa - token
+   * ada di cookie httpOnly yang tidak terbaca JS). Ini hanya membaca metadata
+   * sesi non-rahasia yang disimpan saat login, untuk keperluan render UI awal
+   * (siapa user-nya, kapan sesi berakhir) sebelum request API pertama
+   * dikirim. Validitas SEBENARNYA selalu diputuskan oleh backend di setiap
+   * request - kalau cookie ternyata sudah tidak valid, request API pertama
+   * akan pulang dengan 401 dan authFetch akan memicu 'simon_session_expired'.
    */
   getCurrentSession: (): AuthSession | null => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) return null;
+    const stored = readStoredSession();
+    if (!stored) return null;
 
-    const validation = validateToken(token);
-    if (!validation.valid || !validation.payload) {
-      console.warn('JWT Token invalid or expired:', validation.reason);
+    if (stored.expiresAt <= Date.now()) {
+      clearStoredSession();
       return null;
     }
 
-    const payload = validation.payload;
-    const allUsers = apiClient.users.getAll();
-    const foundUser = allUsers.find(
-      (u) =>
-        (u.id && (payload.sub || payload.id) && u.id === (payload.sub || payload.id)) ||
-        (u.username && payload.username && u.username.toLowerCase() === payload.username.toLowerCase())
-    );
-    const user: AuthUser = foundUser || {
-      id: payload.sub || payload.id || '',
-      username: payload.username || 'user',
-      name: payload.name || 'User',
-      role: payload.role || 'UPT_PIMPINAN',
-      title: payload.title || 'Operator UPT',
-      uptStation: payload.uptStation || 'BBMKG Wilayah V Papua',
-    };
-
     return {
-      token,
+      token: '',
       refreshToken: '',
-      user,
-      expiresAt: payload.exp * 1000,
-      createdAt: payload.iat * 1000,
+      user: stored.user,
+      expiresAt: stored.expiresAt,
+      createdAt: stored.createdAt,
     };
   },
 

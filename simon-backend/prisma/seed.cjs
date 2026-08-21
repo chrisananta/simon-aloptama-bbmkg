@@ -55,14 +55,14 @@ async function main() {
     if (!item.ID_STASIUN) continue;
     try {
       await prisma.uptStation.upsert({
-        where: { code: item.ID_STASIUN },
+        where: { stationid: item.ID_STASIUN },
         update: {
           name: item.NAMA_STASIUN,
           regionGroup: item.JENIS_STASIUN,
           location: item.KOTA,
         },
         create: {
-          code: item.ID_STASIUN,
+          stationid: item.ID_STASIUN,
           name: item.NAMA_STASIUN,
           regionGroup: item.JENIS_STASIUN,
           location: item.KOTA,
@@ -93,28 +93,28 @@ async function main() {
 
     try {
       await prisma.device.upsert({
-        where: { id: item.ID_ALAT },
+        where: { devicesId: item.ID_ALAT },
         update: {
-          name: item.NAMA_PERALATAN || item.ID_ALAT,
+          site: item.NAMA_PERALATAN || item.ID_ALAT,
           category: item.JENIS_PERALATAN || "Umum",
-          subCategory: item.MERK || "",
+          merk: item.MERK || "",
           uptStation: item.ID_STASIUN || "-",
           locationName: item.NAMA_PERALATAN || "-",
           latitude: lat,
           longitude: lng,
         },
         create: {
-          id: item.ID_ALAT,
-          name: item.NAMA_PERALATAN || item.ID_ALAT,
+          devicesId: item.ID_ALAT,
+          site: item.NAMA_PERALATAN || item.ID_ALAT,
           category: item.JENIS_PERALATAN || "Umum",
-          subCategory: item.MERK || "",
+          merk: item.MERK || "",
           uptStation: item.ID_STASIUN || "-",
           locationName: item.NAMA_PERALATAN || "-",
           latitude: lat,
           longitude: lng,
-          lastCalibrated: "2025-01-01",
-          calibrationValidUntil: "2026-01-01",
-          calibrationAgency: "Balai Besar MKG Wilayah V",
+          lastCalibrated: new Date("2025-01-01T00:00:00.000Z"),
+          calibrationValidUntil: new Date("2026-01-01T00:00:00.000Z"),
+          timkalibrasi: "Balai Besar MKG Wilayah V",
         },
       });
       alatCount++;

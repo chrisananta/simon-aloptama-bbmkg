@@ -12,21 +12,64 @@ export interface AuthRequest extends Request {
   };
 }
 
+// Nama cookie httpOnly tempat JWT disimpan sisi browser. httpOnly berarti
+// JavaScript di browser (termasuk skrip jahat lewat XSS) TIDAK BISA membaca
+// cookie ini sama sekali - beda dengan localStorage yang selalu bisa dibaca
+// oleh kode JS apa pun yang berjalan di halaman.
+export const JWT_COOKIE_NAME = 'simon_jwt';
+
 /**
- * Memverifikasi JWT yang dikirim lewat header: Authorization: Bearer <token>
+ * Parser cookie header manual & minimal (tanpa dependency tambahan).
+ * Contoh input: "simon_jwt=abc.def.ghi; other=xyz"
+ */
+function parseCookieHeader(header: string | undefined): Record<string, string> {
+  const result: Record<string, string> = {};
+  if (!header) return result;
+  for (const part of header.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx === -1) continue;
+    const key = part.slice(0, idx).trim();
+    const value = part.slice(idx + 1).trim();
+    if (!key) continue;
+    try {
+      result[key] = decodeURIComponent(value);
+    } catch {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+function extractToken(req: Request): string | null {
+  // 1. Prioritaskan cookie httpOnly (jalur utama untuk browser/SPA kita).
+  const cookies = parseCookieHeader(req.headers.cookie);
+  if (cookies[JWT_COOKIE_NAME]) return cookies[JWT_COOKIE_NAME];
+
+  // 2. Fallback header "Authorization: Bearer <token>" - dipertahankan untuk
+  //    klien non-browser (script internal, testing lewat curl/Postman, dll)
+  //    yang tidak menyimpan cookie.
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.split(' ')[1] || null;
+  }
+
+  return null;
+}
+
+/**
+ * Memverifikasi JWT yang dikirim lewat cookie httpOnly "simon_jwt" (jalur utama)
+ * atau header Authorization: Bearer <token> (fallback).
  * Menolak request dengan 401 jika token tidak ada / tidak valid / kedaluwarsa.
  */
 export function verifyToken(req: AuthRequest, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
+  const token = extractToken(req);
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
     return res.status(401).json({
       success: false,
       message: 'Akses ditolak. Token tidak ditemukan, silakan login kembali.',
     });
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthRequest['user'];
