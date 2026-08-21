@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "../../shared/api";
@@ -42,14 +42,14 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   >("AWOS_III");
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [modeInput, setModeInput] = useState<"KALKULATOR" | "MANUAL">(
-    "KALKULATOR",
+    "KALKULATOR"
   );
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const [stationsList, setStationsList] = useState<any[]>(() =>
-    apiClient.stations.getAll(),
+    apiClient.stations.getAll()
   );
 
   useEffect(() => {
@@ -122,30 +122,73 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     }
   }, [watchCategory]);
 
-  const matchingDevices = devices.filter((d) => {
-    if (d.uptStation !== watchUptStation) return false;
-    if (watchCategory === "ALL") return true;
-    if (watchCategory.startsWith("AWOS")) {
-      if (d.category === watchCategory) return true;
+  // Lookup objek stasiun terpilih untuk mencocokkan Nama Stasiun vs ID Stasiun
+  const selectedStationObj = useMemo(() => {
+    return stationsList.find(
+      (s) => s.name === watchUptStation || s.stationid === watchUptStation || s.id === watchUptStation
+    );
+  }, [stationsList, watchUptStation]);
 
-      if (d.category === "AWOS") {
+  const targetStationId = selectedStationObj?.stationid || selectedStationObj?.id;
+  const targetStationName = selectedStationObj?.name || watchUptStation;
+
+  const matchingDevices = useMemo(() => {
+    return devices.filter((d) => {
+      // Cocokkan berdasarkan ID Stasiun maupun Nama Stasiun
+      const matchesUpt =
+        d.uptStation === watchUptStation ||
+        (targetStationId && d.uptStation === targetStationId) ||
+        (targetStationName && d.uptStation === targetStationName);
+
+      if (!matchesUpt) return false;
+      if (!watchCategory || watchCategory === "ALL") return true;
+
+      const devCat = (d.category || "").toLowerCase();
+      const devSite = (d.site || "").toLowerCase();
+      const selCat = watchCategory.toLowerCase();
+
+      if (selCat.startsWith("awos")) {
+        if (!devCat.includes("awos")) return false;
         if (watchCategory === "AWOS Kat. I")
-          return d.site.includes("Kat I") && !d.site.includes("Kat III");
+          return devSite.includes("kat i") && !devSite.includes("kat iii");
         if (watchCategory === "AWOS Kat. II")
-          return d.site.includes("Kat II");
+          return devSite.includes("kat ii");
         if (watchCategory === "AWOS Kat. III")
           return (
-            d.site.includes("Kat III") ||
-            (!d.site.includes("Kat I") && !d.site.includes("Kat II"))
+            devSite.includes("kat iii") ||
+            (!devSite.includes("kat i") && !devSite.includes("kat ii"))
           );
+        return true;
       }
-      return false;
-    }
-    return (
-      d.category === watchCategory ||
-      (watchCategory === "Sirine Tsunami" && d.category === "Sirine")
-    );
-  });
+
+      if (selCat.includes("sirine")) {
+        return devCat.includes("sirine") || devCat.includes("siren");
+      }
+      if (selCat.includes("seismometer")) {
+        return devCat.includes("seismometer") || devCat.includes("seismo");
+      }
+      if (selCat.includes("accelerograph")) {
+        return devCat.includes("accelerograph") || devCat.includes("akselero");
+      }
+      if (selCat.includes("wrs")) {
+        return devCat.includes("wrs");
+      }
+      if (selCat.includes("lightning")) {
+        return devCat.includes("lightning") || devCat.includes("petir");
+      }
+      if (selCat.includes("radar")) {
+        return devCat.includes("radar");
+      }
+      if (selCat.includes("aws")) {
+        return (devCat.includes("aws") || devCat.includes("automatic weather")) && !devCat.includes("awos");
+      }
+      if (selCat.includes("arg")) {
+        return devCat.includes("arg") || devCat.includes("automatic rain");
+      }
+
+      return devCat.includes(selCat) || selCat.includes(devCat);
+    });
+  }, [devices, watchUptStation, targetStationId, targetStationName, watchCategory]);
 
   useEffect(() => {
     setErrorMessage(null);
@@ -158,7 +201,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     } else {
       setValue("deviceId", "");
     }
-  }, [watchUptStation, watchCategory, devices, setValue]);
+  }, [matchingDevices, setValue]);
 
   useEffect(() => {
     if (!watchKondisiSla) {
@@ -255,7 +298,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
     const rounded = Math.min(
       100,
-      Math.max(0, Math.round(computedOla * 10) / 10),
+      Math.max(0, Math.round(computedOla * 10) / 10)
     );
     setValue("kondisiOla", rounded);
   }, [
@@ -369,18 +412,19 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const sensorList = getSensorList();
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden my-6 flex flex-col max-h-[92vh]">
-        <div className="bg-[#0A203C] text-white p-5 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
-              <CalculatorIcon size={22} />
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh]">
+        {/* Header Modal */}
+        <div className="bg-[#0A203C] text-white p-3.5 sm:p-5 flex items-center justify-between shrink-0 gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 shrink-0">
+              <CalculatorIcon size={18} className="sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="font-heading text-lg font-bold">
+              <h3 className="font-heading text-base sm:text-lg font-bold leading-tight">
                 Form Pengisian SLA &amp; OLA UPT
               </h3>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5">
                 Kalkulator Indikator Kinerja Operational Level Agreement BBMKG V
               </p>
             </div>
@@ -389,18 +433,18 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
             onClick={onClose}
             type="button"
             disabled={isSubmitting}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:opacity-50 shrink-0"
           >
-            <XIcon size={20} />
+            <XIcon size={18} />
           </button>
         </div>
 
         {isSubmitted ? (
-          <div className="p-8 text-center space-y-3 bg-emerald-50">
+          <div className="p-6 sm:p-8 text-center space-y-3 bg-emerald-50">
             <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-300">
               <Check size={24} />
             </div>
-            <h4 className="font-heading font-bold text-lg text-emerald-900">
+            <h4 className="font-heading font-bold text-base sm:text-lg text-emerald-900">
               Data SLA &amp; OLA Berhasil Disimpan!
             </h4>
             <p className="text-xs text-emerald-700">
@@ -411,11 +455,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         ) : (
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="p-5 space-y-4 overflow-y-auto"
+            className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto"
           >
             {errorMessage && (
-              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs font-semibold animate-fade-in">
-                <AlertTriangle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-rose-800 text-xs font-semibold animate-fade-in">
+                <AlertTriangle size={16} className="text-rose-600 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold block text-rose-900">Akses Ditolak / Gagal Menyimpan:</span>
                   <span>{errorMessage}</span>
@@ -423,8 +467,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <BuildingIcon size={14} className="text-[#0052CC]" />
                   STASIUN BMKG / UPT:
@@ -432,7 +476,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 <select
                   {...register("uptStation")}
                   disabled={isSubmitting}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
                 >
                   {stationsList.map((st) => (
                     <option key={st.id || st.stationid || st.name} value={st.name}>
@@ -447,7 +491,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 )}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <WrenchIcon size={14} className="text-[#0052CC]" />
                   JENIS PERALATAN ALOPTAMA:
@@ -455,7 +499,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 <select
                   {...register("category")}
                   disabled={isSubmitting}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
                 >
                   {EQUIPMENT_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
@@ -471,15 +515,17 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            {matchingDevices.length > 0 && (
-              <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <label className="block text-[11px] font-bold text-slate-700">
-                  Pilih Spesifik Unit Peralatan di {watchUptStation}:
+            {/* Field Pemilihan Unit Alat Spesifik */}
+            {matchingDevices.length > 0 ? (
+              <div className="space-y-1 bg-blue-50/60 p-3 rounded-xl border border-blue-200 animate-fade-in">
+                <label className="block text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
+                  <WrenchIcon size={13} className="text-[#0052CC]" />
+                  PILIH SPESIFIK UNIT PERALATAN ({matchingDevices.length} Unit Terdeteksi):
                 </label>
                 <select
                   {...register("deviceId")}
                   disabled={isSubmitting}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 disabled:opacity-50"
+                  className="w-full bg-white border border-blue-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC] disabled:opacity-50"
                 >
                   {matchingDevices.map((d) => (
                     <option key={d.devicesId} value={d.devicesId}>
@@ -488,55 +534,63 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   ))}
                 </select>
                 {errors.deviceId && (
-                  <span className="text-[10px] text-rose-600 font-bold">
+                  <span className="text-[10px] text-rose-600 font-bold block mt-0.5">
                     {String(errors.deviceId.message)}
                   </span>
                 )}
               </div>
+            ) : (
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-medium flex items-center gap-2">
+                <span>⚠️</span>
+                <span>
+                  Tidak ada unit spesifik <strong>{watchCategory}</strong> yang terdaftar di <strong>{targetStationName}</strong>.
+                </span>
+              </div>
             )}
 
-            <div className="flex items-center justify-between bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+            {/* Toggle Switch Mode */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-slate-100 p-1 sm:p-1.5 rounded-xl border border-slate-200 gap-1 sm:gap-0">
               <button
                 type="button"
                 onClick={() => setModeInput("KALKULATOR")}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                className={`flex-1 py-1.5 sm:py-2 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   modeInput === "KALKULATOR"
                     ? "bg-[#0052CC] text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <CalculatorIcon size={15} />
+                <CalculatorIcon size={14} />
                 Kalkulator Persentase OLA
               </button>
               <button
                 type="button"
                 onClick={() => setModeInput("MANUAL")}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                className={`flex-1 py-1.5 sm:py-2 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   modeInput === "MANUAL"
                     ? "bg-[#0052CC] text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <PercentIcon size={15} />
+                <PercentIcon size={14} />
                 Slider Manual Persentase OLA
               </button>
             </div>
 
             {modeInput === "KALKULATOR" && (
-              <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <div className="bg-slate-50/80 rounded-2xl p-3 sm:p-4 border border-slate-200 space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-2 gap-1.5 sm:gap-0">
                   <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Info size={14} className="text-[#0052CC]" />
+                    <Info size={14} className="text-[#0052CC] shrink-0" />
                     Pilih Kondisi Kelayakan Aspek Peralatan ({watchCategory}):
                   </h4>
-                  <span className="text-[11px] font-bold text-[#0052CC] bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200">
+                  <span className="text-[11px] font-bold text-[#0052CC] bg-blue-100 px-2.5 py-0.5 rounded-lg border border-blue-200 shrink-0">
                     Kalkulasi OLA: {watchKondisiOla}%
                   </span>
                 </div>
 
                 {(watchCategory === "AWS" ||
                   watchCategory.startsWith("AWOS")) && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700 block">
                         1. Logger &amp; Data
@@ -626,7 +680,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                           </label>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-xl border border-slate-200 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-white p-2 sm:p-2.5 rounded-xl border border-slate-200 text-xs">
                           {sensorList.map((s) => {
                             const isChecked = Boolean(activeSensors[s.key]);
                             return (
@@ -640,7 +694,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                                     : "bg-slate-50 border-slate-200 text-slate-500"
                                 }`}
                               >
-                                <div className="flex items-center gap-2 truncate">
+                                <div className="flex items-center gap-2">
                                   {isChecked ? (
                                     <CheckSquare
                                       size={15}
@@ -652,7 +706,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                                       className="text-slate-400 shrink-0"
                                     />
                                   )}
-                                  <span className="truncate">{s.label}</span>
+                                  <span className="text-xs">{s.label}</span>
                                 </div>
                               </button>
                             );
@@ -664,7 +718,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 )}
 
                 {(watchCategory === "WRS NG" || watchCategory === "WRS") && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700 block">
                         1. Tampilan Display
@@ -729,7 +783,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
                 {(watchCategory === "Sirine Tsunami" ||
                   watchCategory === "Sirine") && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700 block">
                         1. Sistem Sound &amp; Audio
@@ -794,7 +848,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
                 {(watchCategory === "Accelerograph" ||
                   watchCategory === "Seismometer") && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700 block">
                         1. Data Availability &amp; Latency
@@ -859,7 +913,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 )}
 
                 {watchCategory === "Lightning Detector" && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700 block">
                         1. Logger &amp; Server Data
@@ -948,7 +1002,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
                 {(watchCategory === "Radar Cuaca" ||
                   watchCategory === "Radar Weather") && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700 block">
                         1. Radar ON &amp; Data
@@ -1032,7 +1086,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 )}
 
                 {watchCategory === "ARG" && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-700 block">
                         1. Sensor Hujan / Tipping Bucket
@@ -1044,21 +1098,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         }
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
-                        <option value={100}>
-                          Data konsisten (100%)
-                        </option>
-                        <option value={80}>
-                          Tip kadang delay (80%)
-                        </option>
-                        <option value={60}>
-                          Banyak anomali (60%)
-                        </option>
-                        <option value={50}>
-                          Sering tidak tercatat (50%)
-                        </option>
-                        <option value={0}>
-                          Macet total (0%)
-                        </option>
+                        <option value={100}>Data konsisten (100%)</option>
+                        <option value={80}>Tip kadang delay (80%)</option>
+                        <option value={60}>Banyak anomali (60%)</option>
+                        <option value={50}>Sering tidak tercatat (50%)</option>
+                        <option value={0}>Macet total (0%)</option>
                       </select>
                     </div>
 
@@ -1073,18 +1117,12 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         }
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
-                        <option value={100}>
-                          Rutin kirim data (100%)
-                        </option>
+                        <option value={100}>Rutin kirim data (100%)</option>
                         <option value={80}>
                           Timestamp terlambat sesekali (80%)
                         </option>
-                        <option value={60}>
-                          Gap data 1–2 jam/hari (60%)
-                        </option>
-                        <option value={50}>
-                          Data harian tidak utuh (50%)
-                        </option>
+                        <option value={60}>Gap data 1–2 jam/hari (60%)</option>
+                        <option value={50}>Data harian tidak utuh (50%)</option>
                         <option value={0}>Logger mati total (0%)</option>
                       </select>
                     </div>
@@ -1103,15 +1141,9 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         <option value={100}>
                           Terkirim sesuai interval (100%)
                         </option>
-                        <option value={80}>
-                          Delay &lt;1 jam (80%)
-                        </option>
-                        <option value={70}>
-                          Delay &gt;1 jam (70%)
-                        </option>
-                        <option value={50}>
-                          Data hilang sebagian (50%)
-                        </option>
+                        <option value={80}>Delay &lt;1 jam (80%)</option>
+                        <option value={70}>Delay &gt;1 jam (70%)</option>
+                        <option value={50}>Data hilang sebagian (50%)</option>
                         <option value={0}>Tidak ada data (0%)</option>
                       </select>
                     </div>
@@ -1127,21 +1159,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         }
                         className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
                       >
-                        <option value={100}>
-                          Tegangan stabil (100%)
-                        </option>
-                        <option value={80}>
-                          Tegangan turun sesekali (80%)
-                        </option>
-                        <option value={60}>
-                          Baterai drop malam hari (60%)
-                        </option>
-                        <option value={50}>
-                          Solar panel lemah (50%)
-                        </option>
-                        <option value={0}>
-                          Alat mati total (0%)
-                        </option>
+                        <option value={100}>Tegangan stabil (100%)</option>
+                        <option value={80}>Tegangan turun sesekali (80%)</option>
+                        <option value={60}>Baterai drop malam hari (60%)</option>
+                        <option value={50}>Solar panel lemah (50%)</option>
+                        <option value={0}>Alat mati total (0%)</option>
                       </select>
                     </div>
                   </div>
@@ -1150,17 +1172,17 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
             )}
 
             {modeInput === "MANUAL" && (
-              <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <div className="space-y-1.5 bg-slate-50 p-3 sm:p-3.5 rounded-xl border border-slate-200">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <PercentIcon size={14} className="text-[#0052CC]" />
                     KONDISI OLA (Operational Level Agreement):
                   </label>
-                  <span className="font-mono font-bold text-sm text-[#0052CC] bg-blue-100 px-2.5 py-0.5 rounded-md border border-blue-200">
+                  <span className="font-mono font-bold text-sm text-[#0052CC] bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200">
                     {watchKondisiOla}%
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <input
                     type="range"
                     min="0"
@@ -1183,17 +1205,17 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         "kondisiOla",
                         Math.min(
                           100,
-                          Math.max(0, parseFloat(e.target.value) || 0),
-                        ),
+                          Math.max(0, parseFloat(e.target.value) || 0)
+                        )
                       )
                     }
-                    className="w-20 px-2 py-1 text-xs font-mono font-bold text-slate-800 border border-slate-300 rounded-lg text-center"
+                    className="w-16 sm:w-20 px-1.5 py-1 text-xs font-mono font-bold text-slate-800 border border-slate-300 rounded-lg text-center"
                   />
                 </div>
               </div>
             )}
 
-            <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div className="space-y-1.5 bg-slate-50 p-3 sm:p-3.5 rounded-xl border border-slate-200">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-xs font-bold text-slate-800">
@@ -1203,11 +1225,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                     Keberadaan/ketersediaan peralatan dalam kondisi ON (aktif)
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => setValue("kondisiSla", true)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                       watchKondisiSla
                         ? "bg-emerald-600 text-white border-emerald-700 shadow-xs"
                         : "bg-white text-slate-700 border-slate-300"
@@ -1221,7 +1243,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                       setValue("kondisiSla", false);
                       setValue("kondisiOla", 0);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                       !watchKondisiSla
                         ? "bg-rose-600 text-white border-rose-700 shadow-xs"
                         : "bg-white text-slate-700 border-slate-300"
@@ -1233,10 +1255,10 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 text-slate-800 flex items-center justify-between shadow-xs">
-              <div className="flex items-center gap-2.5">
+            <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-slate-200/80 text-slate-800 flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-2">
                 <div
-                  className={`p-2 rounded-lg ${
+                  className={`p-1.5 sm:p-2 rounded-lg ${
                     !watchKondisiSla || watchKondisiOla === 0
                       ? "bg-rose-50 text-rose-600"
                       : watchKondisiOla >= 80
@@ -1246,24 +1268,24 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                           : "bg-rose-50 text-rose-600"
                   }`}
                 >
-                  <PercentIcon size={18} />
+                  <PercentIcon size={16} className="sm:w-4 sm:h-4" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                     Total Persentase OLA
                   </p>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
                     {!watchKondisiSla
-                      ? "Kondisi SLA OFF — Total OLA otomatis 0%"
+                      ? "Kondisi SLA OFF — OLA otomatis 0%"
                       : modeInput === "KALKULATOR"
-                        ? "Hasil kalkulasi matriks kelayakan aspek"
+                        ? "Hasil kalkulasi matriks aspek"
                         : "Hasil input manual slider OLA"}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <span
-                  className={`text-lg font-black font-mono px-3.5 py-1 rounded-xl border ${
+                  className={`text-base sm:text-lg font-black font-mono px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-xl border ${
                     !watchKondisiSla || watchKondisiOla === 0
                       ? "bg-rose-50 text-rose-700 border-rose-200"
                       : watchKondisiOla >= 80
@@ -1278,7 +1300,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-800">
                 KENDALA OPERASIONAL / CATATAN{" "}
                 {!watchKondisiSla || watchKondisiOla < 100 ? (
@@ -1297,7 +1319,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                     ? "Wajib diisi: jelaskan penyebab alat OFF atau OLA < 100%..."
                     : "Tuliskan jika ada kendala sensor, jaringan, atau suplai daya..."
                 }
-                className={`w-full bg-slate-50 border rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50 ${
+                className={`w-full bg-slate-50 border rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50 ${
                   errors.kendala
                     ? "border-rose-400 bg-rose-50/30"
                     : "border-slate-300"
@@ -1310,21 +1332,21 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               )}
             </div>
 
-            <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-200">
+            <div className="pt-2 sm:pt-3 flex items-center justify-end gap-2 border-t border-slate-200 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#0052CC] hover:bg-blue-700 text-white shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-bold bg-[#0052CC] hover:bg-blue-700 text-white shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                <Check size={16} />
+                <Check size={15} />
                 {isSubmitting ? "Menyimpan..." : "Simpan & Perbarui Data"}
               </button>
             </div>

@@ -11,12 +11,10 @@ import {
   Users, 
   UserCheck, 
   CheckCircle2, 
-  AlertCircle, 
   Info,
   ShieldCheck,
   Eye,
   Building2,
-  HelpCircle,
   Upload,
   Image as ImageIcon,
   Paperclip,
@@ -79,25 +77,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     setEndDateIso(isoVal);
     if (isoVal) {
       setEndDate(formatDateToIndonesian(isoVal));
-    }
-  };
-
-  const handleSelectPreset = (preset: 'WEEK3_JUN' | 'WEEK4_JUN' | 'MONTH_JUN' | 'MONTH_JUL' | 'MONTH_AUG') => {
-    if (preset === 'WEEK3_JUN') {
-      handleStartDateIsoChange('2026-06-15');
-      handleEndDateIsoChange('2026-06-19');
-    } else if (preset === 'WEEK4_JUN') {
-      handleStartDateIsoChange('2026-06-22');
-      handleEndDateIsoChange('2026-06-26');
-    } else if (preset === 'MONTH_JUN') {
-      handleStartDateIsoChange('2026-06-01');
-      handleEndDateIsoChange('2026-06-30');
-    } else if (preset === 'MONTH_JUL') {
-      handleStartDateIsoChange('2026-07-01');
-      handleEndDateIsoChange('2026-07-31');
-    } else if (preset === 'MONTH_AUG') {
-      handleStartDateIsoChange('2026-08-01');
-      handleEndDateIsoChange('2026-08-31');
     }
   };
 
@@ -526,12 +505,13 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         }
       `}</style>
 
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl my-4 overflow-hidden flex flex-col max-h-[95vh] animate-scaleUp">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl my-auto overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[92vh] animate-scaleUp">
 
-        <div className="no-print bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800 shrink-0">
+        {/* Modal Header */}
+        <div className="no-print bg-slate-900 text-white p-3.5 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-600/30 text-blue-400 rounded-xl border border-blue-500/30">
-              <FileText size={22} />
+            <div className="p-2.5 bg-blue-600/30 text-blue-400 rounded-xl border border-blue-500/30 shrink-0">
+              <FileText size={20} className="sm:w-5 sm:h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -539,15 +519,16 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   Laporan BBMKG Wil. V
                 </span>
               </div>
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
+              <h2 className="text-sm sm:text-lg font-black tracking-tight text-white mt-0.5 leading-tight">
                 Buat Laporan Mingguan Monitoring Aloptama
               </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end border-t border-slate-800/80 md:border-t-0 pt-2.5 md:pt-0">
             <div className="bg-slate-800 p-1 rounded-xl flex items-center border border-slate-700 text-xs font-bold">
               <button
+                type="button"
                 onClick={() => setActiveTab('config')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'config'
@@ -556,9 +537,10 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 }`}
               >
                 <Users size={14} />
-                <span>Input & Param</span>
+                <span>Input &amp; Param</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('preview')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'preview'
@@ -572,116 +554,74 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
             </div>
 
             <button
-              onClick={handleDownloadPdf}
-              disabled={isExportingPdf}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer ml-1"
-              title="Unduh langsung file PDF"
-            >
-              {isExportingPdf ? (
-                <>
-                  <Loader2 size={15} className="animate-spin" />
-                  <span className="hidden xs:inline">Unduh PDF...</span>
-                </>
-              ) : (
-                <>
-                  <Download size={15} />
-                  <span className="hidden xs:inline">Unduh PDF</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={handleOpenPrintWindow}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
-              title="Buka jendela cetak baru untuk simpan PDF"
-            >
-              <Printer size={15} />
-              <span className="hidden xs:inline">Cetak / PDF</span>
-            </button>
-
-            <button
+              type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 bg-slate-50/50">
           {activeTab === 'config' && (
-            <div className="space-y-6 max-w-3xl mx-auto no-print">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="space-y-4 sm:space-y-6 max-w-3xl mx-auto no-print">
+              
+              {/* Periode Tanggal */}
+              <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5 sm:space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                  <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                  <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
                     <Calendar size={18} className="text-[#0052CC]" />
-                    Periode & Tanggal Monitoring
+                    Periode &amp; Tanggal Monitoring
                   </h3>
                   <span className="text-[11px] font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 shrink-0">
                     {calculatedPeriodDays} Hari Operasional ({calculatedPeriodDays * 24} Jam)
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Tanggal Mulai Monitoring <span className="text-rose-500">*</span>
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
-                        value={startDateIso}
-                        onChange={(e) => handleStartDateIsoChange(e.target.value)}
-                        className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white transition-all cursor-pointer shrink-0"
-                      />
-                      <input
-                        type="text"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        placeholder="Contoh: 15 Juni 2026"
-                        className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white transition-all"
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      value={startDateIso}
+                      onChange={(e) => handleStartDateIsoChange(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white transition-all cursor-pointer"
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Tanggal Selesai Monitoring <span className="text-rose-500">*</span>
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
-                        value={endDateIso}
-                        onChange={(e) => handleEndDateIsoChange(e.target.value)}
-                        className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white transition-all cursor-pointer shrink-0"
-                      />
-                      <input
-                        type="text"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        placeholder="Contoh: 19 Juni 2026"
-                        className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white transition-all"
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      value={endDateIso}
+                      onChange={(e) => handleEndDateIsoChange(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white transition-all cursor-pointer"
+                    />
                   </div>
                 </div>
 
-                <div className="p-3.5 bg-blue-50/90 border border-blue-200 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-extrabold text-[#0052CC]">
+                <div className="p-3 sm:p-3.5 bg-blue-50/90 border border-blue-200 rounded-xl space-y-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs font-extrabold text-[#0052CC] gap-1">
                     <span className="flex items-center gap-1.5">
                       <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                      <span>Rata-Rata SLA & OLA Berdasarkan Periode Input:</span>
+                      <span>Rata-Rata SLA &amp; OLA Berdasarkan Periode Input:</span>
                     </span>
-                    <span className="font-bold text-[#0052CC]">{startDate} s.d. {endDate}</span>
+                    <span className="font-bold text-[#0052CC] text-[11px] sm:text-xs">{startDate} s.d. {endDate}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs pt-0.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-0.5">
                     <div className="bg-white p-2.5 rounded-lg border border-blue-100 flex justify-between items-center shadow-2xs">
-                      <span className="text-slate-600 font-semibold">Rata-Rata SLA :</span>
-                      <span className="font-black text-[#0052CC] text-sm">{avgSlaTotal.toFixed(1)}%</span>
+                      <span className="text-slate-600 font-bold">Rata-Rata SLA :</span>
+                      <span className="font-black text-[#0052CC] text-sm sm:text-base">{avgSlaTotal.toFixed(1)}%</span>
                     </div>
                     <div className="bg-white p-2.5 rounded-lg border border-blue-100 flex justify-between items-center shadow-2xs">
-                      <span className="text-slate-600 font-semibold">Rata-Rata OLA :</span>
-                      <span className="font-black text-emerald-700 text-sm">{avgOlaTotal.toFixed(1)}%</span>
+                      <span className="text-slate-600 font-bold">Rata-Rata OLA :</span>
+                      <span className="font-black text-emerald-700 text-sm sm:text-base">{avgOlaTotal.toFixed(1)}%</span>
                     </div>
                   </div>
                 </div>
@@ -692,17 +632,18 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </p>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              {/* Petugas Monitoring */}
+              <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                    <Users size={18} className="text-[#0052CC]" />
+                  <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
+                    <Users size={16} className="text-[#0052CC]" />
                     Petugas Monitoring
                   </h3>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-600">Jumlah Personel:</span>
-                    <span className="px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg font-extrabold text-xs text-[#0052CC]">
-                      {petugasList.length}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-600 hidden sm:inline">Jumlah Personel:</span>
+                    <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-200 rounded-lg font-extrabold text-xs text-[#0052CC]">
+                      {petugasList.length} Personel
                     </span>
                   </div>
                 </div>
@@ -720,20 +661,20 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     Memuat data petugas dari database...
                   </div>
                 ) : (
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {petugasList.map((petugas, index) => (
                       <div key={petugas.id || index} className="flex items-center gap-2 animate-fadeIn">
-                        <span className="w-6 text-center text-xs font-extrabold text-slate-400">
+                        <span className="w-5 text-center text-xs font-extrabold text-slate-400 shrink-0">
                           {index + 1}.
                         </span>
-                        <span className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
+                        <span className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 truncate">
                           {petugas.name}
                         </span>
                         {petugasList.length > 1 && (
                           <button
                             type="button"
                             onClick={() => handleRemovePersonel(petugas.id)}
-                            className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer shrink-0"
                             title="Hapus personil ini"
                           >
                             <Trash2 size={16} />
@@ -756,14 +697,14 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       value={inputPersonel}
                       onChange={(e) => setInputPersonel(e.target.value)}
                       placeholder="Pilih Nama Personel"
-                      className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
+                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
                     />
 
                     <button
                       type="button"
                       onClick={handleAddPersonelFromMaster}
                       disabled={!inputPersonel.trim()}
-                      className="px-4 py-2 bg-[#0052CC] hover:bg-blue-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+                      className="px-3.5 py-2 bg-[#0052CC] hover:bg-blue-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shrink-0 flex items-center gap-1"
                     >
                       <Plus size={14} />
                       <span>Tambah</span>
@@ -772,13 +713,14 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <UserCheck size={18} className="text-[#0052CC]" />
-                  Penanggung Jawab & Catatan Laporan
+              {/* Penanggung Jawab */}
+              <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <UserCheck size={16} className="text-[#0052CC]" />
+                  Penanggung Jawab &amp; Catatan Laporan
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Jabatan Penanggung Jawab (Mengetahui)
@@ -787,7 +729,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       type="text"
                       value={jabatanMengetahui}
                       onChange={(e) => setJabatanMengetahui(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
                     />
                   </div>
 
@@ -799,7 +741,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       type="text"
                       value={namaMengetahui}
                       onChange={(e) => setNamaMengetahui(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
                     />
                   </div>
                 </div>
@@ -813,28 +755,29 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     value={catatanText}
                     onChange={(e) => setCatatanText(e.target.value)}
                     placeholder="Contoh: 1. - atau Terdapat pemeliharaan berkala pada Seismometer Jayapura."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-[#0052CC] focus:bg-white resize-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-[#0052CC] focus:bg-white resize-none"
                   />
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                    <ImageIcon size={18} className="text-[#0052CC]" />
+              {/* Lampiran Gambar */}
+              <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-3 gap-1.5 sm:gap-0">
+                  <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
+                    <ImageIcon size={16} className="text-[#0052CC]" />
                     Lampiran Gambar Dokumentasi Monitoring
                   </h3>
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                     Dapat Diunggah Foto / Tangkapan Layar
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                   <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Building2 size={14} className="text-blue-600" />
-                        <span>Monitoring Website AWS Center</span>
+                        <Building2 size={14} className="text-blue-600 shrink-0" />
+                        <span>AWS Center</span>
                       </label>
                       {imgAwsCenter && (
                         <button
@@ -848,17 +791,17 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     </div>
                     {imgAwsCenter ? (
                       <div className="relative rounded-lg overflow-hidden border border-slate-300 group">
-                        <img src={imgAwsCenter} alt="AWS Center" className="w-full h-32 object-cover" />
+                        <img src={imgAwsCenter} alt="AWS Center" className="w-full h-28 sm:h-32 object-cover" />
                         <label className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white text-xs font-bold gap-1">
-                          <Upload size={16} /> Ganti Gambar
+                          <Upload size={16} /> Ganti
                           <input type="file" accept="image/*" onChange={(e) => handleSingleImageUpload(e, setImgAwsCenter)} className="hidden" />
                         </label>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-300 hover:border-[#0052CC] rounded-lg bg-white cursor-pointer transition-colors p-2 text-center">
-                        <Upload size={22} className="text-slate-400 mb-1.5" />
-                        <span className="text-[11px] font-bold text-slate-700">Unggah Foto AWS Center</span>
-                        <span className="text-[9px] text-slate-400">Klik / Drag & Drop file (PNG, JPG)</span>
+                      <label className="flex flex-col items-center justify-center h-28 sm:h-32 border-2 border-dashed border-slate-300 hover:border-[#0052CC] rounded-lg bg-white cursor-pointer transition-colors p-2 text-center">
+                        <Upload size={20} className="text-slate-400 mb-1" />
+                        <span className="text-[11px] font-bold text-slate-700">Foto AWS Center</span>
+                        <span className="text-[9px] text-slate-400">Klik / Drag file</span>
                         <input type="file" accept="image/*" onChange={(e) => handleSingleImageUpload(e, setImgAwsCenter)} className="hidden" />
                       </label>
                     )}
@@ -867,8 +810,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <FileText size={14} className="text-indigo-600" />
-                        <span>Informasi SLA & OLA</span>
+                        <FileText size={14} className="text-indigo-600 shrink-0" />
+                        <span>SLA &amp; OLA</span>
                       </label>
                       {imgSlaOla && (
                         <button
@@ -882,17 +825,17 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     </div>
                     {imgSlaOla ? (
                       <div className="relative rounded-lg overflow-hidden border border-slate-300 group">
-                        <img src={imgSlaOla} alt="SLA OLA" className="w-full h-32 object-cover" />
+                        <img src={imgSlaOla} alt="SLA OLA" className="w-full h-28 sm:h-32 object-cover" />
                         <label className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white text-xs font-bold gap-1">
-                          <Upload size={16} /> Ganti Gambar
+                          <Upload size={16} /> Ganti
                           <input type="file" accept="image/*" onChange={(e) => handleSingleImageUpload(e, setImgSlaOla)} className="hidden" />
                         </label>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-300 hover:border-[#0052CC] rounded-lg bg-white cursor-pointer transition-colors p-2 text-center">
-                        <Upload size={22} className="text-slate-400 mb-1.5" />
-                        <span className="text-[11px] font-bold text-slate-700">Unggah Matriks SLA & OLA</span>
-                        <span className="text-[9px] text-slate-400">Klik / Drag & Drop file (PNG, JPG)</span>
+                      <label className="flex flex-col items-center justify-center h-28 sm:h-32 border-2 border-dashed border-slate-300 hover:border-[#0052CC] rounded-lg bg-white cursor-pointer transition-colors p-2 text-center">
+                        <Upload size={20} className="text-slate-400 mb-1" />
+                        <span className="text-[11px] font-bold text-slate-700">Matriks SLA &amp; OLA</span>
+                        <span className="text-[9px] text-slate-400">Klik / Drag file</span>
                         <input type="file" accept="image/*" onChange={(e) => handleSingleImageUpload(e, setImgSlaOla)} className="hidden" />
                       </label>
                     )}
@@ -901,8 +844,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Users size={14} className="text-emerald-600" />
-                        <span>Diseminasi WA Teknisi</span>
+                        <Users size={14} className="text-emerald-600 shrink-0" />
+                        <span>Diseminasi WA</span>
                       </label>
                       {imgDiseminasi && (
                         <button
@@ -916,17 +859,17 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     </div>
                     {imgDiseminasi ? (
                       <div className="relative rounded-lg overflow-hidden border border-slate-300 group">
-                        <img src={imgDiseminasi} alt="Diseminasi" className="w-full h-32 object-cover" />
+                        <img src={imgDiseminasi} alt="Diseminasi" className="w-full h-28 sm:h-32 object-cover" />
                         <label className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white text-xs font-bold gap-1">
-                          <Upload size={16} /> Ganti Gambar
+                          <Upload size={16} /> Ganti
                           <input type="file" accept="image/*" onChange={(e) => handleSingleImageUpload(e, setImgDiseminasi)} className="hidden" />
                         </label>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-300 hover:border-[#0052CC] rounded-lg bg-white cursor-pointer transition-colors p-2 text-center">
-                        <Upload size={22} className="text-slate-400 mb-1.5" />
-                        <span className="text-[11px] font-bold text-slate-700">Unggah Diseminasi WA</span>
-                        <span className="text-[9px] text-slate-400">Klik / Drag & Drop file (PNG, JPG)</span>
+                      <label className="flex flex-col items-center justify-center h-28 sm:h-32 border-2 border-dashed border-slate-300 hover:border-[#0052CC] rounded-lg bg-white cursor-pointer transition-colors p-2 text-center">
+                        <Upload size={20} className="text-slate-400 mb-1" />
+                        <span className="text-[11px] font-bold text-slate-700">Diseminasi WA</span>
+                        <span className="text-[9px] text-slate-400">Klik / Drag file</span>
                         <input type="file" accept="image/*" onChange={(e) => handleSingleImageUpload(e, setImgDiseminasi)} className="hidden" />
                       </label>
                     )}
@@ -937,35 +880,35 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <Paperclip size={14} className="text-slate-600" />
-                      <span>Lampiran Foto Lapangan / Dokumentasi Tambahan</span>
+                      <span>Lampiran Foto Tambahan</span>
                     </span>
                     <button
                       type="button"
                       onClick={handleAddExtraAttachment}
-                      className="px-3 py-1 bg-[#0052CC]/10 hover:bg-[#0052CC]/20 text-[#0052CC] text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                      className="px-2.5 py-1 bg-[#0052CC]/10 hover:bg-[#0052CC]/20 text-[#0052CC] text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <Plus size={14} />
-                      <span>Tambah Foto Tambahan</span>
+                      <span>Tambah Foto</span>
                     </button>
                   </div>
 
                   {extraAttachments.length > 0 && (
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       {extraAttachments.map((item, idx) => (
-                        <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
                           <span className="text-xs font-bold text-slate-500 w-6">#{idx + 1}</span>
                           <input
                             type="text"
                             value={item.title}
                             onChange={(e) => handleUpdateExtraTitle(item.id, e.target.value)}
-                            placeholder="Judul / Keterangan Lampiran (mis: Foto Perbaikan Radar)"
-                            className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-[#0052CC]"
+                            placeholder="Judul / Keterangan Lampiran"
+                            className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-[#0052CC]"
                           />
-                          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
                             {item.imageUrl ? (
                               <div className="flex items-center gap-2">
-                                <img src={item.imageUrl} alt="Extra" className="w-10 h-10 object-cover rounded border border-slate-300" />
-                                <label className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-bold rounded cursor-pointer">
+                                <img src={item.imageUrl} alt="Extra" className="w-9 h-9 object-cover rounded border border-slate-300" />
+                                <label className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-bold rounded cursor-pointer">
                                   Ganti
                                   <input type="file" accept="image/*" onChange={(e) => handleExtraImageUpload(e, item.id)} className="hidden" />
                                 </label>
@@ -973,14 +916,14 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                             ) : (
                               <label className="px-3 py-1.5 bg-[#0052CC] text-white text-xs font-bold rounded-lg cursor-pointer hover:bg-blue-800 transition-colors flex items-center gap-1">
                                 <Upload size={13} />
-                                <span>Unggah Foto</span>
+                                <span>Unggah</span>
                                 <input type="file" accept="image/*" onChange={(e) => handleExtraImageUpload(e, item.id)} className="hidden" />
                               </label>
                             )}
                             <button
                               type="button"
                               onClick={() => handleRemoveExtraAttachment(item.id)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                              className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"
                               title="Hapus lampiran ini"
                             >
                               <Trash2 size={16} />
@@ -992,7 +935,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
                     <input
                       type="checkbox"
@@ -1000,13 +943,13 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       onChange={(e) => setIncludeDocumentation(e.target.checked)}
                       className="w-4 h-4 text-[#0052CC] rounded border-slate-300 focus:ring-blue-500"
                     />
-                    <span>Sertakan Halaman Lampiran </span>
+                    <span>Sertakan Halaman Lampiran</span>
                   </label>
 
                   <button
                     type="button"
                     onClick={() => setActiveTab('preview')}
-                    className="px-5 py-2.5 bg-[#0052CC] hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-4 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Eye size={15} />
                     <span>Pratinjau Dokumen</span>
@@ -1016,6 +959,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
             </div>
           )}
 
+          {/* TAB PREVIEW */}
           {(activeTab === 'preview' || activeTab === 'config') && (
             <div className={activeTab === 'config' ? 'hidden' : 'block'}>
               <div className="no-print mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-900 font-medium">
@@ -1023,8 +967,9 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   <ShieldCheck size={16} className="text-[#0052CC] shrink-0" />
                   <span>Pratinjau Hasil Cetak Laporan Mingguan. Silakan unduh PDF langsung atau cetak via jendela baru.</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                   <button
+                    type="button"
                     onClick={handleDownloadPdf}
                     disabled={isExportingPdf}
                     className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-800 disabled:bg-blue-400 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
@@ -1032,7 +977,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     {isExportingPdf ? (
                       <>
                         <Loader2 size={14} className="animate-spin" />
-                        <span>Mengunduh PDF...</span>
+                        <span>Mengunduh...</span>
                       </>
                     ) : (
                       <>
@@ -1043,280 +988,284 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleOpenPrintWindow}
                     className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
                   >
-                    <ExternalLink size={14} />
+                    <Printer size={14} />
                     <span>Cetak Jendela Baru</span>
                   </button>
                 </div>
               </div>
 
-              <div 
-                id="printable-report-area"
-                className="bg-white p-8 sm:p-12 shadow-md border border-slate-300 max-w-4xl mx-auto text-slate-900 font-sans leading-normal text-xs"
-                style={{ minHeight: '297mm' }}
-              >
-                <div className="border-b-4 border-slate-900 pb-3 mb-6 relative">
-                  <div className="flex items-center gap-4">
-                    <img 
-                      src={printlogobmkg} 
-                      alt="Logo BMKG" 
-                      className="w-16 h-20 object-contain shrink-0"
-                    />
-                    <div className="text-center flex-1">
-                      <h1 className="font-extrabold text-sm sm:text-base tracking-wide uppercase text-black">
-                        BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA
-                      </h1>
-                      <h2 className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black mt-0.5">
-                        BALAI BESAR METEOROLOGI, KLIMATOLOGI DAN GEOFISIKA WILAYAH V
-                      </h2>
-                      <p className="text-[10px] text-slate-800 font-medium mt-1">
-                        Jl. Raya Abepura Entrop - Jayapura, Telp : (0967) 5165442, Kode Pos 99224
-                      </p>
-                      <p className="text-[10px] text-slate-800 font-medium">
-                        Email : <span className="text-blue-800 underline">bbmkg5@bmkg.go.id</span> Website : <span className="text-blue-800 underline">bbmkg5.bmkg.go.id</span>
-                      </p>
+              {/* Printable Wrapper */}
+              <div className="w-full overflow-x-auto pb-6">
+                <div 
+                  id="printable-report-area"
+                  className="bg-white p-6 sm:p-10 md:p-12 shadow-md border border-slate-300 min-w-[650px] max-w-4xl mx-auto text-slate-900 font-sans leading-normal text-xs"
+                  style={{ minHeight: '297mm' }}
+                >
+                  <div className="border-b-4 border-slate-900 pb-3 mb-6 relative">
+                    <div className="flex items-center gap-4">
+                      <img 
+                        src={printlogobmkg} 
+                        alt="Logo BMKG" 
+                        className="w-16 h-20 object-contain shrink-0"
+                      />
+                      <div className="text-center flex-1">
+                        <h1 className="font-extrabold text-sm sm:text-base tracking-wide uppercase text-black">
+                          BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA
+                        </h1>
+                        <h2 className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black mt-0.5">
+                          BALAI BESAR METEOROLOGI, KLIMATOLOGI DAN GEOFISIKA WILAYAH V
+                        </h2>
+                        <p className="text-[10px] text-slate-800 font-medium mt-1">
+                          Jl. Raya Abepura Entrop - Jayapura, Telp : (0967) 5165442, Kode Pos 99224
+                        </p>
+                        <p className="text-[10px] text-slate-800 font-medium">
+                          Email : <span className="text-blue-800 underline">bbmkg5@bmkg.go.id</span> Website : <span className="text-blue-800 underline">bbmkg5.bmkg.go.id</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="border-b border-slate-900 mt-2" />
+                  </div>
+
+                  <div className="text-center my-6">
+                    <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
+                      LAPORAN MINGGUAN MONITORING 
+                    </h2>
+                    <h3 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase mt-0.5">
+                      ALOPTAMA DI BBMKG WILAYAH V
+                    </h3>
+                  </div>
+
+                  <div className="border border-black p-3 my-5 max-w-xl text-xs font-semibold text-black space-y-1">
+                    <div className="flex">
+                      <span className="w-36 shrink-0">Periode Pemantauan</span>
+                      <span className="w-4 text-center shrink-0">:</span>
+                      <span className="flex-1 font-bold">{startDate} - {endDate} ({calculatedPeriodDays} Hari / {calculatedPeriodDays * 24} Jam)</span>
+                    </div>
+                    <div className="flex items-start">
+                      <span className="w-36 shrink-0">Petugas Monitoring</span>
+                      <span className="w-4 text-center shrink-0">:</span>
+                      <div className="flex-1 space-y-0.5">
+                        {petugasList.map((p, idx) => (
+                          <div key={p.id}>{p.name}</div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="border-b border-slate-900 mt-2" />
-                </div>
 
-                <div className="text-center my-6">
-                  <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
-                    LAPORAN MINGGUAN MONITORING 
-                  </h2>
-                  <h3 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase mt-0.5">
-                    ALOPTAMA DI BBMKG WILAYAH V
-                  </h3>
-                </div>
-
-                <div className="border border-black p-3 my-5 max-w-xl text-xs font-semibold text-black space-y-1">
-                  <div className="flex">
-                    <span className="w-36 shrink-0">Periode Pemantauan</span>
-                    <span className="w-4 text-center shrink-0">:</span>
-                    <span className="flex-1 font-bold">{startDate} - {endDate} ({calculatedPeriodDays} Hari / {calculatedPeriodDays * 24} Jam)</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="w-36 shrink-0">Petugas Monitoring</span>
-                    <span className="w-4 text-center shrink-0">:</span>
-                    <div className="flex-1 space-y-0.5">
-                      {petugasList.map((p, idx) => (
-                        <div key={p.id}>{p.name}</div>
-                      ))}
+                  <div className="my-6">
+                    <div className="font-extrabold text-xs uppercase mb-2 text-black">
+                      <span>Rekapitulasi Kinerja Aloptama:</span>
                     </div>
-                  </div>
-                </div>
-
-                <div className="my-6">
-                  <div className="font-extrabold text-xs uppercase mb-2 text-black">
-                    <span>Rekapitulasi Kinerja Aloptama:</span>
-                  </div>
-                  <table className="w-full border-collapse border border-black text-center text-xs">
-                    <thead>
-                      <tr className="bg-slate-100 font-bold border-b border-black">
-                        <th className="border border-black py-1.5 px-2 w-10">No.</th>
-                        <th className="border border-black py-1.5 px-3 text-left">Peralatan</th>
-                        <th className="border border-black py-1.5 px-2 w-28">Jumlah Lokasi</th>
-                        <th className="border border-black py-1.5 px-2 w-24">SLA</th>
-                        <th className="border border-black py-1.5 px-2 w-24">OLA</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rekapData.map((row) => (
-                        <tr key={row.no} className="border-b border-black font-medium">
-                          <td className="border border-black py-1 px-2">{row.no}</td>
-                          <td className="border border-black py-1 px-3 text-left font-bold">{row.name}</td>
-                          <td className="border border-black py-1 px-2">{row.jumlahLokasi}</td>
-                          <td className="border border-black py-1 px-2 font-bold">{row.sla.toFixed(1)}%</td>
-                          <td className="border border-black py-1 px-2 font-bold">{row.ola.toFixed(1)}%</td>
+                    <table className="w-full border-collapse border border-black text-center text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 font-bold border-b border-black">
+                          <th className="border border-black py-1.5 px-2 w-10">No.</th>
+                          <th className="border border-black py-1.5 px-3 text-left">Peralatan</th>
+                          <th className="border border-black py-1.5 px-2 w-28">Jumlah Lokasi</th>
+                          <th className="border border-black py-1.5 px-2 w-24">SLA</th>
+                          <th className="border border-black py-1.5 px-2 w-24">OLA</th>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-slate-100 font-extrabold border-t-2 border-black">
-                        <td colSpan={2} className="border border-black py-1.5 px-3 text-left uppercase">
-                          TOTAL PERSENTASE
-                        </td>
-                        <td className="border border-black py-1.5 px-2">{totalLokasiSum}</td>
-                        <td className="border border-black py-1.5 px-2">{avgSlaTotal.toFixed(1)}%</td>
-                        <td className="border border-black py-1.5 px-2">{avgOlaTotal.toFixed(1)}%</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-
-                <div className="my-8">
-                  <h4 className="font-extrabold text-xs uppercase mb-2 text-black">Kondisi Aloptama</h4>
-                  <table className="w-full border-collapse border border-black text-center text-xs">
-                    <thead>
-                      <tr className="bg-slate-100 font-bold border-b border-black">
-                        <th className="border border-black py-1.5 px-3 text-left">Peralatan</th>
-                        <th className="border border-black py-1.5 px-2 w-32">Normal (100%)</th>
-                        <th className="border border-black py-1.5 px-2 w-36">Gangguan (1-99%)</th>
-                        <th className="border border-black py-1.5 px-2 w-40">Tidak Beroperasi (0%)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rekapData.map((row) => (
-                        <tr key={row.no} className="border-b border-black font-medium">
-                          <td className="border border-black py-1 px-3 text-left font-bold">{row.name}</td>
-                          <td className="border border-black py-1 px-2">{row.normal}</td>
-                          <td className="border border-black py-1 px-2">{row.gangguan}</td>
-                          <td className="border border-black py-1 px-2">{row.mati}</td>
+                      </thead>
+                      <tbody>
+                        {rekapData.map((row) => (
+                          <tr key={row.no} className="border-b border-black font-medium">
+                            <td className="border border-black py-1 px-2">{row.no}</td>
+                            <td className="border border-black py-1 px-3 text-left font-bold">{row.name}</td>
+                            <td className="border border-black py-1 px-2">{row.jumlahLokasi}</td>
+                            <td className="border border-black py-1 px-2 font-bold">{row.sla.toFixed(1)}%</td>
+                            <td className="border border-black py-1 px-2 font-bold">{row.ola.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-slate-100 font-extrabold border-t-2 border-black">
+                          <td colSpan={2} className="border border-black py-1.5 px-3 text-left uppercase">
+                            TOTAL PERSENTASE
+                          </td>
+                          <td className="border border-black py-1.5 px-2">{totalLokasiSum}</td>
+                          <td className="border border-black py-1.5 px-2">{avgSlaTotal.toFixed(1)}%</td>
+                          <td className="border border-black py-1.5 px-2">{avgOlaTotal.toFixed(1)}%</td>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-slate-100 font-extrabold border-t-2 border-black">
-                        <td className="border border-black py-1.5 px-3 text-left uppercase">TOTAL</td>
-                        <td className="border border-black py-1.5 px-2">{totalNormalSum}</td>
-                        <td className="border border-black py-1.5 px-2">{totalGangguanSum}</td>
-                        <td className="border border-black py-1.5 px-2">{totalMatiSum}</td>
-                      </tr>
-                      <tr className="bg-slate-200 font-extrabold border-t border-black">
-                        <td className="border border-black py-1.5 px-3 text-left uppercase">PERSENTASE</td>
-                        <td className="border border-black py-1.5 px-2">{percentNormal}%</td>
-                        <td className="border border-black py-1.5 px-2">{percentGangguan}%</td>
-                        <td className="border border-black py-1.5 px-2">{percentMati}%</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-
-                <div className="my-8 pt-4 flex flex-col justify-between min-h-[160px]">
-                  <div className="text-xs font-semibold text-black space-y-1">
-                    <p className="font-bold">Catatan :</p>
-                    <p className="pl-4">{catatanText}</p>
+                      </tfoot>
+                    </table>
                   </div>
 
-                  <div className="flex justify-end mt-8">
-                    <div className="text-center min-w-[240px] text-xs font-semibold text-black space-y-1">
-                      <p>Mengetahui,</p>
-                      <p>{jabatanMengetahui},</p>
-                      <div className="h-20 flex items-center justify-center my-1">
-                        <div className="border border-slate-300 rounded px-3 py-1.5 bg-slate-50/50 text-[10px] text-slate-400 italic">
-                          ( Tanda Tangan Digital )
+                  <div className="my-8">
+                    <h4 className="font-extrabold text-xs uppercase mb-2 text-black">Kondisi Aloptama</h4>
+                    <table className="w-full border-collapse border border-black text-center text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 font-bold border-b border-black">
+                          <th className="border border-black py-1.5 px-3 text-left">Peralatan</th>
+                          <th className="border border-black py-1.5 px-2 w-32">Normal (100%)</th>
+                          <th className="border border-black py-1.5 px-2 w-36">Gangguan (1-99%)</th>
+                          <th className="border border-black py-1.5 px-2 w-40">Tidak Beroperasi (0%)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rekapData.map((row) => (
+                          <tr key={row.no} className="border-b border-black font-medium">
+                            <td className="border border-black py-1 px-3 text-left font-bold">{row.name}</td>
+                            <td className="border border-black py-1 px-2">{row.normal}</td>
+                            <td className="border border-black py-1 px-2">{row.gangguan}</td>
+                            <td className="border border-black py-1 px-2">{row.mati}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-slate-100 font-extrabold border-t-2 border-black">
+                          <td className="border border-black py-1.5 px-3 text-left uppercase">TOTAL</td>
+                          <td className="border border-black py-1.5 px-2">{totalNormalSum}</td>
+                          <td className="border border-black py-1.5 px-2">{totalGangguanSum}</td>
+                          <td className="border border-black py-1.5 px-2">{totalMatiSum}</td>
+                        </tr>
+                        <tr className="bg-slate-200 font-extrabold border-t border-black">
+                          <td className="border border-black py-1.5 px-3 text-left uppercase">PERSENTASE</td>
+                          <td className="border border-black py-1.5 px-2">{percentNormal}%</td>
+                          <td className="border border-black py-1.5 px-2">{percentGangguan}%</td>
+                          <td className="border border-black py-1.5 px-2">{percentMati}%</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  <div className="my-8 pt-4 flex flex-col justify-between min-h-[160px]">
+                    <div className="text-xs font-semibold text-black space-y-1">
+                      <p className="font-bold">Catatan :</p>
+                      <p className="pl-4">{catatanText}</p>
+                    </div>
+
+                    <div className="flex justify-end mt-8">
+                      <div className="text-center min-w-[240px] text-xs font-semibold text-black space-y-1">
+                        <p>Mengetahui,</p>
+                        <p>{jabatanMengetahui},</p>
+                        <div className="h-20 flex items-center justify-center my-1">
+                          <div className="border border-slate-300 rounded px-3 py-1.5 bg-slate-50/50 text-[10px] text-slate-400 italic">
+                            ( Tanda Tangan Digital )
+                          </div>
                         </div>
+                        <p className="font-extrabold underline text-sm">{namaMengetahui}</p>
                       </div>
-                      <p className="font-extrabold underline text-sm">{namaMengetahui}</p>
                     </div>
                   </div>
-                </div>
 
-                {includeDocumentation && (
-                  <div className="page-break pt-8 mt-12 border-t-2 border-dashed border-slate-300">
-                    <div className="text-center mb-6">
-                      <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
-                        LAMPIRAN DOKUMENTASI MONITORING ALOPTAMA 
-                      </h2>
-                    </div>
-
-                    <div className="space-y-8">
-                      <div className="border border-slate-300 p-4 rounded-lg space-y-2">
-                        <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                          1. Monitoring AWS Center 
-                        </h3>
-                        {imgAwsCenter ? (
-                          <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
-                            <img 
-                              src={imgAwsCenter} 
-                              alt="Tangkapan Layar AWS Center" 
-                              className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
-                            />
-                            <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
-                              Tangkapan Layar Dashboard AWS Center BBMKG Wilayah V
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
-                            <Building2 size={32} className="text-blue-600 mb-2" />
-                            <p className="font-bold text-xs text-slate-800">Tangkapan Layar Dashboard AWS Center </p>
-                            <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
-                          </div>
-                        )}
+                  {includeDocumentation && (
+                    <div className="page-break pt-8 mt-12 border-t-2 border-dashed border-slate-300">
+                      <div className="text-center mb-6">
+                        <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
+                          LAMPIRAN DOKUMENTASI MONITORING ALOPTAMA 
+                        </h2>
                       </div>
 
-                      <div className="border border-slate-300 p-4 rounded-lg space-y-2">
-                        <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                          2. Monitoring SLA dan OLA 
-                        </h3>
-                        {imgSlaOla ? (
-                          <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
-                            <img 
-                              src={imgSlaOla} 
-                              alt="Matriks SLA dan OLA" 
-                              className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
-                            />
-                            <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
-                              Tangkapan Layar Matriks SLA & OLA Aloptama
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
-                            <FileText size={32} className="text-indigo-600 mb-2" />
-                            <p className="font-bold text-xs text-slate-800">Tangkapan Layar Rekapitulasi Web SLA dan OLA</p>
-                            <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="border border-slate-300 p-4 rounded-lg space-y-2">
-                        <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                          3. Diseminasi Hasil Monitoring Aloptama (Grup Koordinasi Teknis)
-                        </h3>
-                        {imgDiseminasi ? (
-                          <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
-                            <img 
-                              src={imgDiseminasi} 
-                              alt="Diseminasi WA" 
-                              className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
-                            />
-                            <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
-                              Bukti Diseminasi Hasil Monitoring ke Grup WhatsApp UPT Lingkungan BBMKG V
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
-                            <Users size={32} className="text-emerald-600 mb-2" />
-                            <p className="font-bold text-xs text-slate-800">Laporan Diseminasi WhatsApp </p>
-                            <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {extraAttachments.length > 0 && (
-                        <div className="space-y-6 pt-4 border-t border-slate-200">
-                          {extraAttachments.map((att, idx) => (
-                            <div key={att.id} className="border border-slate-300 p-4 rounded-lg space-y-2">
-                              <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                                {4 + idx}. {att.title || `Lampiran Foto Tambahan #${idx + 1}`}
-                              </h3>
-                              {att.imageUrl ? (
-                                <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
-                                  <img 
-                                    src={att.imageUrl} 
-                                    alt={att.title} 
-                                    className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
-                                  />
-                                  <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
-                                    {att.title}
-                                  </p>
-                                </div>
-                              ) : (
-                                <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[140px]">
-                                  <FileImage size={28} className="text-slate-400 mb-2" />
-                                  <p className="font-bold text-xs text-slate-700">{att.title}</p>
-                                  <p className="text-[10px] text-slate-500 mt-1">(Gambar belum diunggah)</p>
-                                </div>
-                              )}
+                      <div className="space-y-8">
+                        <div className="border border-slate-300 p-4 rounded-lg space-y-2">
+                          <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
+                            1. Monitoring AWS Center 
+                          </h3>
+                          {imgAwsCenter ? (
+                            <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
+                              <img 
+                                src={imgAwsCenter} 
+                                alt="Tangkapan Layar AWS Center" 
+                                className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
+                              />
+                              <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
+                                Tangkapan Layar Dashboard AWS Center BBMKG Wilayah V
+                              </p>
                             </div>
-                          ))}
+                          ) : (
+                            <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
+                              <Building2 size={32} className="text-blue-600 mb-2" />
+                              <p className="font-bold text-xs text-slate-800">Tangkapan Layar Dashboard AWS Center </p>
+                              <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
+                            </div>
+                          )}
                         </div>
-                      )}
+
+                        <div className="border border-slate-300 p-4 rounded-lg space-y-2">
+                          <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
+                            2. Monitoring SLA dan OLA 
+                          </h3>
+                          {imgSlaOla ? (
+                            <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
+                              <img 
+                                src={imgSlaOla} 
+                                alt="Matriks SLA dan OLA" 
+                                className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
+                              />
+                              <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
+                                Tangkapan Layar Matriks SLA &amp; OLA Aloptama
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
+                              <FileText size={32} className="text-indigo-600 mb-2" />
+                              <p className="font-bold text-xs text-slate-800">Tangkapan Layar Rekapitulasi Web SLA dan OLA</p>
+                              <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="border border-slate-300 p-4 rounded-lg space-y-2">
+                          <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
+                            3. Diseminasi Hasil Monitoring Aloptama (Grup Koordinasi Teknis)
+                          </h3>
+                          {imgDiseminasi ? (
+                            <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
+                              <img 
+                                src={imgDiseminasi} 
+                                alt="Diseminasi WA" 
+                                className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
+                              />
+                              <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
+                                Bukti Diseminasi Hasil Monitoring ke Grup WhatsApp UPT Lingkungan BBMKG V
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
+                              <Users size={32} className="text-emerald-600 mb-2" />
+                              <p className="font-bold text-xs text-slate-800">Laporan Diseminasi WhatsApp </p>
+                              <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {extraAttachments.length > 0 && (
+                          <div className="space-y-6 pt-4 border-t border-slate-200">
+                            {extraAttachments.map((att, idx) => (
+                              <div key={att.id} className="border border-slate-300 p-4 rounded-lg space-y-2">
+                                <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
+                                  {4 + idx}. {att.title || `Lampiran Foto Tambahan #${idx + 1}`}
+                                </h3>
+                                {att.imageUrl ? (
+                                  <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
+                                    <img 
+                                      src={att.imageUrl} 
+                                      alt={att.title} 
+                                      className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
+                                    />
+                                    <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
+                                      {att.title}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[140px]">
+                                    <FileImage size={28} className="text-slate-400 mb-2" />
+                                    <p className="font-bold text-xs text-slate-700">{att.title}</p>
+                                    <p className="text-[10px] text-slate-500 mt-1">(Gambar belum diunggah)</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )}

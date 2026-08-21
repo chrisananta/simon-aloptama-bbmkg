@@ -126,11 +126,16 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     Juli: 6, Agustus: 7, September: 8, Oktober: 9, November: 10, Desember: 11
   };
 
-  const slaTrendData = useMemo(() => {
+const slaTrendData = useMemo(() => {
     return MONTHS_LIST.map((mObj, idx) => {
       const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
+      const totalMasterDevs = targetDevs.length;
       const targetMonthNum = idx + 1;
       const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
+
+      if (totalMasterDevs === 0) {
+        return { month: mObj.short, sla: 0, ola: 0 };
+      }
 
       const reportedInThisMonthAndYear = targetDevs.filter((d) => {
         if (d.slaScore === undefined && d.olaScore === undefined) return false;
@@ -139,30 +144,30 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
       });
 
-      if (reportedInThisMonthAndYear.length === 0) {
-        return { month: mObj.short, sla: 0, ola: 0 };
-      }
+      const totalSla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.slaScore ?? 0), 0);
+      const totalOla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
 
-      const avgSla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.slaScore ?? 0), 0) / reportedInThisMonthAndYear.length;
-      const avgOla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedInThisMonthAndYear.length;
+      // Pembagi diubah ke totalMasterDevs agar sesuai dengan tabel
+      const avgSla = totalSla / totalMasterDevs;
+      const avgOla = totalOla / totalMasterDevs;
 
       return {
         month: mObj.short,
-        sla: Math.round(avgSla),
-        ola: Math.round(avgOla),
+        sla: Number(avgSla.toFixed(1)),
+        ola: Number(avgOla.toFixed(1)),
       };
     });
   }, [selectedYear, selectedUpt, uptFilteredDevices, devices]);
 
   const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
 
-  const olaByCategoryData = useMemo(() => {
+const olaByCategoryData = useMemo(() => {
     const CATEGORIES = [
       { key: 'AWOS', name: 'AWOS' },
       { key: 'AWS', name: 'AWS' },
       { key: 'ARG', name: 'ARG' },
       { key: 'Radar Cuaca', name: 'Radar Cuaca' },
-      { key: 'Lightning Detector', name: 'Lightning Detector' },
+      { key: 'Lightning Detector', name: 'Lightning' },
       { key: 'Seismometer', name: 'Seismometer' },
       { key: 'Accelerograph', name: 'Accelerograph' },
       { key: 'WRS NG', name: 'WRS NG' },
@@ -181,6 +186,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
       );
 
+      const jumlahLokasi = catDevs.length;
+
       const reportedInSelectedMonthAndYearCatDevs = catDevs.filter((d) => {
         if (d.olaScore === undefined) return false;
         if (!d.lastReportedDate) return false;
@@ -189,15 +196,16 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       });
 
       let score = 0;
-      if (reportedInSelectedMonthAndYearCatDevs.length > 0) {
-        const avgOla = reportedInSelectedMonthAndYearCatDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / reportedInSelectedMonthAndYearCatDevs.length;
-        score = Math.round(avgOla);
+      if (jumlahLokasi > 0) {
+        const totalOla = reportedInSelectedMonthAndYearCatDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
+        // Pembagi diubah ke jumlahLokasi (Master Alat)
+        score = Number((totalOla / jumlahLokasi).toFixed(1));
       }
 
       return {
         category: catObj.name,
         score,
-        count: catDevs.length,
+        count: jumlahLokasi,
       };
     });
   }, [selectedYear, selectedUpt, selectedMonth, monthIdx, devices, uptFilteredDevices]);
@@ -1008,7 +1016,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                           {dev.name}
                           <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {dev.reportedDate}</span>
                         </td>
-                        <td className="p-2.5 text-slate-600">{dev.uptStation}</td>
+                        <td className="p-2.5 text-slate-600 font-medium">
+                          {stationMap.get(dev.uptStation) || dev.uptStation}
+                        </td>
                         <td className="p-2.5">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                             🟡 Gangguan
@@ -1186,9 +1196,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                         {dev.category} • <span className="font-mono">{dev.devicesId}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-slate-800">
-                      {dev.uptStation}
-                      <span className="block text-[10px] text-slate-400">{dev.locationName}</span>
+                    <td className="p-3 text-slate-800 font-semibold">
+                      {stationMap.get(dev.uptStation) || dev.uptStation}
                     </td>
                     <td className="p-3 text-slate-700 font-medium">
                       <div className="flex items-center gap-1.5">

@@ -4,10 +4,17 @@
   h1, h2, h3, h4, h5, h6, .font-heading {
     font-family: 'Poppins', sans-serif;
   }
-  body {
+  html, body {
     font-family: 'Inter', sans-serif;
     background-color: #F5F7FA;
     color: #1E293B;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  /* Mencegah auto-zoom tanpa merusak ukuran font element */
+  input, select, textarea {
+    touch-action: manipulation;
   }
 }
 
@@ -58,4 +65,3 @@
 .marker-ring {
   animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-
