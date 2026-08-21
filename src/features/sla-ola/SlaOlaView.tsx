@@ -25,16 +25,18 @@ import {
   CartesianGrid, 
   Tooltip
 } from 'recharts';
-import { AloptamaDevice } from '../../shared/types';
+import { AloptamaDevice, UPTStation } from '../../shared/types';
+import { apiClient } from '../../shared/api';
 import { WaReportModal } from '../monitoring/WaReportModal';
 import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
 import { useAuth } from '../auth/AuthContext';
 
 interface SlaOlaViewProps {
   devices: AloptamaDevice[];
+  stations?: UPTStation[];
 }
 
-export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
+export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
@@ -47,13 +49,39 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [isWeeklyReportModalOpen, setIsWeeklyReportModalOpen] = useState(false);
 
-  const uptOptions = useMemo(() => {
-    const stationNames = new Set<string>();
-    devices.forEach((d) => {
-      if (d.uptStation) stationNames.add(d.uptStation);
+  // Map pencarian ID Stasiun -> Nama Stasiun
+  const stationMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const stationList = stations && stations.length > 0 ? stations : apiClient.stations.getAll();
+    stationList.forEach((s) => {
+      if (s.stationid) map.set(s.stationid, s.name);
+      if (s.id) map.set(s.id, s.name);
     });
-    return Array.from(stationNames).sort();
-  }, [devices]);
+    return map;
+  }, [stations]);
+
+  // Opsi dropdown dengan ID sebagai value dan Nama Stasiun sebagai tampilan label
+  const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
+    const stationIds = new Set<string>();
+    devices.forEach((d) => {
+      if (d.uptStation) {
+        const idStr = typeof d.uptStation === 'string' 
+          ? d.uptStation 
+          : (d.uptStation as any).stationid || (d.uptStation as any).id;
+        if (idStr) stationIds.add(idStr);
+      }
+    });
+    return Array.from(stationIds).sort().map((id) => ({
+      id: String(id),
+      name: stationMap.get(String(id)) || String(id),
+    }));
+  }, [devices, stationMap]);
+
+  // Nama Stasiun Terpilih untuk Tampilan UI
+  const selectedUptName = useMemo(() => {
+    if (selectedUpt === 'ALL') return 'Seluruh UPT';
+    return stationMap.get(selectedUpt) || selectedUpt;
+  }, [selectedUpt, stationMap]);
 
   const uptFilteredDevices = useMemo(() => {
     if (selectedUpt === 'ALL') return devices;
@@ -127,7 +155,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
   }, [selectedYear, selectedUpt, uptFilteredDevices, devices]);
 
   const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
-  const currentMonthData = slaTrendData[monthIdx] || { month: 'Ags', sla: 0, ola: 0 };
 
   const olaByCategoryData = useMemo(() => {
     const CATEGORIES = [
@@ -179,8 +206,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
   const tidakTerlambatCount = uptFilteredDevices.filter(
     (d) => d.calibrationStatus === 'VALID' || d.calibrationStatus === 'SEGERA_DIKALIBRASI'
   ).length;
-  const terlambatCount = uptFilteredDevices.filter((d) => d.calibrationStatus === 'KADALUWARSA').length;
-  const kondisiKalibrasiPercent = Math.round((tidakTerlambatCount / totalDevs) * 100);
 
   const balaiDevices = uptFilteredDevices.filter(
     (d) => (d.picKalibrasi || 'Balai').toLowerCase() === 'balai'
@@ -330,19 +355,17 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
       let gangguanCount = 0;
       let matiCount = 0;
 
-    if (jumlahLokasi > 0) {
-      normalCount = reportedDevs.filter((d) => d.conditionStatus === 'NORMAL').length;
-      gangguanCount = reportedDevs.filter((d) => d.conditionStatus === 'GANGGUAN').length;
-      // Alat yang belum lapor atau tidak beroperasi otomatis dihitung dalam matiCount
-      matiCount = jumlahLokasi - normalCount - gangguanCount;
+      if (jumlahLokasi > 0) {
+        normalCount = reportedDevs.filter((d) => d.conditionStatus === 'NORMAL').length;
+        gangguanCount = reportedDevs.filter((d) => d.conditionStatus === 'GANGGUAN').length;
+        matiCount = jumlahLokasi - normalCount - gangguanCount;
 
-      const totalSla = reportedDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0);
-      const totalOla = reportedDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
+        const totalSla = reportedDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0);
+        const totalOla = reportedDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
 
-      // Pembagi diubah menggunakan jumlahLokasi (Master Total Alat)
-      sla = Number((totalSla / jumlahLokasi).toFixed(1));
-      ola = Number((totalOla / jumlahLokasi).toFixed(1));
-    }
+        sla = Number((totalSla / jumlahLokasi).toFixed(1));
+        ola = Number((totalOla / jumlahLokasi).toFixed(1));
+      }
 
       return {
         no: catObj.no,
@@ -356,9 +379,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         diff: null as number | null,
       };
     });
-}, [selectedYear, selectedMonth, monthIdx, selectedUpt, uptFilteredDevices]);
+  }, [selectedYear, selectedMonth, monthIdx, selectedUpt, uptFilteredDevices]);
 
-  // 1. Kalkulasi Card SLA & OLA Bulanan (Rata-rata 10 jenis alat)
   const monthlySlaValue = useMemo(() => {
     const sumSla = rekapTableData.reduce((acc, curr) => acc + curr.sla, 0);
     return Number((sumSla / 10).toFixed(1));
@@ -369,17 +391,14 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     return Number((sumOla / 10).toFixed(1));
   }, [rekapTableData]);
 
-  // 2. Akumulasi Total Lokasi
   const totalLokasiSum = useMemo(
     () => rekapTableData.reduce((acc, curr) => acc + curr.jumlahLokasi, 0),
     [rekapTableData]
   );
 
-  // 3. Menyamakan Nilai Footer Tabel dengan Card Bulanan
   const avgSlaTotal = monthlySlaValue;
   const avgOlaTotal = monthlyOlaValue;
 
-  // 4. Akumulasi Jumlah Kondisi Alat
   const totalNormalSum = useMemo(
     () => rekapTableData.reduce((acc, curr) => acc + curr.normalCount, 0),
     [rekapTableData]
@@ -393,7 +412,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
     [rekapTableData]
   );
   
-// 5. Menyaring Alat yang Belum Dilaporkan Hari Ini
   const filteredDevices = devices.filter((dev) => {
     if (isReportedToday(dev)) {
       return false;
@@ -572,9 +590,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
               className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer truncate w-full"
             >
               <option value="ALL">Semua Stasiun UPT</option>
-              {uptOptions.map((uptName) => (
-                <option key={uptName} value={uptName}>
-                  {uptName}
+              {uptOptions.map((upt) => (
+                <option key={upt.id} value={upt.id}>
+                  {upt.name}
                 </option>
               ))}
             </select>
@@ -605,7 +623,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
 
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700">
             <span>Tahun:</span>
-           <select
+            <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
               className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer"
@@ -635,7 +653,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
         <div className="flex items-center gap-2.5 bg-amber-50/90 border border-amber-200 text-amber-900 rounded-xl px-4 py-3 text-xs font-medium shadow-2xs">
           <Info size={18} className="shrink-0 text-amber-600" />
           <span>
-            Belum ada data pengisian atau rekapitulasi historis untuk <strong>{selectedMonth} {selectedYear}</strong>{selectedUpt !== 'ALL' ? ` (${selectedUpt})` : ''}.
+            Belum ada data pengisian atau rekapitulasi historis untuk <strong>{selectedMonth} {selectedYear}</strong>{selectedUpt !== 'ALL' ? ` (${selectedUptName})` : ''}.
           </span>
         </div>
       )}
@@ -719,7 +737,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs font-bold text-emerald-800 bg-emerald-50/90 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5 shadow-xs">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              {selectedUpt === 'ALL' ? 'Seluruh UPT' : selectedUpt}
+              {selectedUptName}
             </span>
           </div>
         </div>
@@ -832,11 +850,11 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices }) => {
                 Grafik Tren SLA Bulanan {selectedYear}
               </h3>
               <p className="text-xs text-slate-500">
-                Rata-rata SLA ketersediaan peralatan {selectedUpt !== 'ALL' ? `milik ${selectedUpt}` : 'seluruh UPT'} per bulan
+                Rata-rata SLA ketersediaan peralatan {selectedUpt !== 'ALL' ? `milik ${selectedUptName}` : 'seluruh UPT'} per bulan
               </p>
             </div>
             <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
-              {selectedUpt === 'ALL' ? `Filter: Tahun ${selectedYear}` : selectedUpt}
+              {selectedUpt === 'ALL' ? `Filter: Tahun ${selectedYear}` : selectedUptName}
             </span>
           </div>
 

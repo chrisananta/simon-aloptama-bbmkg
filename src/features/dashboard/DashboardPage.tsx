@@ -1,20 +1,49 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
-import { EquipmentCategory } from '../../shared/types';
+import { EquipmentCategory, UPTStation } from '../../shared/types';
+import { apiClient } from '../../shared/api';
 import { MapContainer } from '../monitoring/MapContainer';
 import { DashboardPageProps } from './DashboardTypes';
 import { DashboardCard } from './DashboardCard';
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ devices }) => {
+interface ExtendedDashboardProps extends DashboardPageProps {
+  stations?: UPTStation[];
+}
+
+export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stations }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUpt, setSelectedUpt] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
 
-  const uptList = useMemo(() => {
-    return Array.from(new Set(devices.map((d) => d.uptStation).filter(Boolean))).sort();
-  }, [devices]);
+  // Map pencarian ID Stasiun -> Nama Stasiun
+  const stationMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const stationList = stations && stations.length > 0 ? stations : apiClient.stations.getAll();
+    stationList.forEach((s) => {
+      if (s.stationid) map.set(s.stationid, s.name);
+      if (s.id) map.set(s.id, s.name);
+    });
+    return map;
+  }, [stations]);
+
+  // List opsi dropdown { id, name }
+  const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
+    const stationIds = new Set<string>();
+    devices.forEach((d) => {
+      if (d.uptStation) {
+        const idStr = typeof d.uptStation === 'string' 
+          ? d.uptStation 
+          : (d.uptStation as any).stationid || (d.uptStation as any).id;
+        if (idStr) stationIds.add(idStr);
+      }
+    });
+    return Array.from(stationIds).sort().map((id) => ({
+      id: String(id),
+      name: stationMap.get(String(id)) || String(id),
+    }));
+  }, [devices, stationMap]);
 
   const filteredDevices = devices.filter((dev) => {
     const matchesSearch =
@@ -79,10 +108,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ devices }) => {
                 onChange={(e) => setSelectedUpt(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-[#0052CC] cursor-pointer"
               >
-                <option value="ALL">Semua UPT ({uptList.length} Station)</option>
-                {uptList.map((upt) => (
-                  <option key={upt} value={upt}>
-                    {upt}
+                <option value="ALL">Semua UPT ({uptOptions.length} Station)</option>
+                {uptOptions.map((upt) => (
+                  <option key={upt.id} value={upt.id}>
+                    {upt.name}
                   </option>
                 ))}
               </select>

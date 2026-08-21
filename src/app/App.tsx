@@ -224,14 +224,15 @@ function AppContent() {
         >
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             {activeMenu === 'dashboard' && (
-              <DashboardView devices={devicesData} lastUpdate={lastUpdate} />
-            )}
+            <DashboardView devices={devicesData} stations={stationsData} lastUpdate={lastUpdate} />
+          )}
 
-            {activeMenu === 'sla-ola' && <SlaOlaView devices={devicesData} />}
+            {activeMenu === 'sla-ola' && <SlaOlaView devices={devicesData} stations={stationsData} />}
 
             {activeMenu === 'kalibrasi' && (
               <CalibrationView
                 devices={devicesData}
+                stations={stationsData}
                 calibrationLogs={calibrationLogs}
                 onOpenAddCalibrationModal={() => setIsCalibrationModalOpen(true)}
               />

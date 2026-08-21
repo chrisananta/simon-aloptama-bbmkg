@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Calendar, 
   Search, 
@@ -10,18 +10,21 @@ import {
   Plus,
   Archive
 } from 'lucide-react';
-import { AloptamaDevice, CalibrationStatus } from '../../shared/types';
+import { AloptamaDevice, CalibrationStatus, UPTStation } from '../../shared/types';
+import { apiClient } from '../../shared/api';
 import { CalibrationRecord } from './CalibrationTypes';
 import { useAuth } from '../auth/AuthContext';
 
 interface CalibrationViewProps {
   devices: AloptamaDevice[];
+  stations?: UPTStation[];
   calibrationLogs?: CalibrationRecord[];
   onOpenAddCalibrationModal?: () => void;
 }
 
 export const CalibrationView: React.FC<CalibrationViewProps> = ({ 
   devices, 
+  stations,
   calibrationLogs = [],
   onOpenAddCalibrationModal 
 }) => {
@@ -32,6 +35,34 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
   const [selectedUpt, setSelectedUpt] = useState<string>('ALL');
   const [selectedAgency, setSelectedAgency] = useState<string>('ALL');
   const [activeTab, setActiveTab] = useState<'latest' | 'repository'>('latest');
+
+  // Map pencarian ID Stasiun -> Nama Stasiun
+  const stationMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const stationList = stations && stations.length > 0 ? stations : apiClient.stations.getAll();
+    stationList.forEach((s) => {
+      if (s.stationid) map.set(s.stationid, s.name);
+      if (s.id) map.set(s.id, s.name);
+    });
+    return map;
+  }, [stations]);
+
+  // List opsi dropdown { id, name }
+  const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
+    const stationIds = new Set<string>();
+    devices.forEach((d) => {
+      if (d.uptStation) {
+        const idStr = typeof d.uptStation === 'string' 
+          ? d.uptStation 
+          : (d.uptStation as any).stationid || (d.uptStation as any).id;
+        if (idStr) stationIds.add(idStr);
+      }
+    });
+    return Array.from(stationIds).sort().map((id) => ({
+      id: String(id),
+      name: stationMap.get(String(id)) || String(id),
+    }));
+  }, [devices, stationMap]);
 
   const allRecords = [
     ...devices.map((dev) => ({
@@ -65,6 +96,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       searchQuery === '' ||
       (rec.deviceName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (rec.uptStation || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (stationMap.get(rec.uptStation) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (rec.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (rec.calibrationAgency || '').toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -204,9 +236,9 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
               className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
             >
               <option value="ALL">Semua Stasiun UPT</option>
-              {Array.from(new Set(devices.map(d => d.uptStation).filter(Boolean))).sort().map((st) => (
-                <option key={st} value={st}>
-                  {st}
+              {uptOptions.map((upt) => (
+                <option key={upt.id} value={upt.id}>
+                  {upt.name}
                 </option>
               ))}
             </select>
@@ -291,7 +323,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                       )}
                     </td>
                     <td className="p-3.5 font-medium text-slate-800">
-                      {rec.uptStation}
+                      {stationMap.get(rec.uptStation) || rec.uptStation}
                     </td>
                     <td className="p-3.5 font-medium text-slate-700">
                       {formatDateIndo(rec.lastCalibrated)}
