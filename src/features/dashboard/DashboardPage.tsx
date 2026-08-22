@@ -66,9 +66,9 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
   const matiCount = filteredDevices.filter((d) => d.conditionStatus === 'MATI').length;
 
   const categoriesList: EquipmentCategory[] = [
-    'AWOS Kat. I',
-    'AWOS Kat. II',
-    'AWOS Kat. III',
+    'AWOS Kat.I',
+    'AWOS Kat.II',
+    'AWOS Kat.III',
     'AWS',
     'ARG',
     'Radar Cuaca',

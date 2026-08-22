@@ -384,72 +384,72 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
 
       {/* Log Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden my-6 flex flex-col">
-            <div className="bg-[#0A203C] text-white p-5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
-                  <ShieldCheck size={22} />
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden my-2 sm:my-6 flex flex-col max-h-[95vh]">
+            <div className="bg-[#0A203C] text-white p-3 sm:p-5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 shrink-0">
+                  <ShieldCheck size={18} className="sm:w-[22px] sm:h-[22px]" />
                 </div>
-                <div>
-                  <h3 className="font-heading text-lg font-bold">Detail Record Audit Log</h3>
-                  <p className="text-xs text-slate-300 mt-0.5">ID: {selectedLog.id}</p>
+                <div className="min-w-0">
+                  <h3 className="font-heading text-sm sm:text-lg font-bold">Detail Record Audit Log</h3>
+                  <p className="text-[10px] sm:text-xs text-slate-300 mt-0.5 truncate">ID: {selectedLog.id}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                className="p-1 sm:p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
               >
-                <X size={20} />
+                <X size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
 
-            <div className="p-5 space-y-4 text-xs text-slate-800">
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div className="p-3 sm:p-5 space-y-3 sm:space-y-4 text-[11px] sm:text-xs text-slate-800 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 bg-slate-50 p-2.5 sm:p-3.5 rounded-lg sm:rounded-xl border border-slate-200">
                 <div>
-                  <span className="text-slate-500 font-semibold block text-[11px]">Waktu Eksekusi:</span>
+                  <span className="text-slate-500 font-semibold block text-[10px] sm:text-[11px]">Waktu Eksekusi:</span>
                   <span className="font-mono font-bold text-slate-900">{selectedLog.timestamp}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-semibold block text-[11px]">Operator / Aktor:</span>
+                  <span className="text-slate-500 font-semibold block text-[10px] sm:text-[11px]">Operator / Aktor:</span>
                   <span className="font-bold text-blue-700">{selectedLog.actor}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-semibold block text-[11px]">Aksi / Operations:</span>
+                  <span className="text-slate-500 font-semibold block text-[10px] sm:text-[11px]">Aksi / Operations:</span>
                   <div className="mt-1">{getActionBadge(selectedLog.action)}</div>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-semibold block text-[11px]">Modul / Tabel:</span>
+                  <span className="text-slate-500 font-semibold block text-[10px] sm:text-[11px]">Modul / Tabel:</span>
                   <div className="mt-1">{getTableBadge(selectedLog.table)}</div>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-500 font-semibold block text-[11px]">Target Record:</span>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-0.5">
-                  <p className="font-bold text-slate-900 text-sm">{selectedLog.recordName}</p>
-                  <p className="font-mono text-blue-700 text-xs">ID: {selectedLog.recordId}</p>
+                <span className="text-slate-500 font-semibold block text-[10px] sm:text-[11px]">Target Record:</span>
+                <div className="p-2.5 sm:p-3 bg-slate-50 rounded-lg sm:rounded-xl border border-slate-200 space-y-0.5">
+                  <p className="font-bold text-slate-900 text-xs sm:text-sm">{selectedLog.recordName}</p>
+                  <p className="font-mono text-blue-700 text-[11px] sm:text-xs break-all">ID: {selectedLog.recordId}</p>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-500 font-semibold block text-[11px]">Rincian Deskripsi Aktivitas:</span>
-                <div className="p-3 bg-slate-900 text-slate-200 rounded-xl font-mono leading-relaxed text-xs">
+                <span className="text-slate-500 font-semibold block text-[10px] sm:text-[11px]">Rincian Deskripsi Aktivitas:</span>
+                <div className="p-2.5 sm:p-3 bg-slate-900 text-slate-200 rounded-lg sm:rounded-xl font-mono leading-relaxed text-[11px] sm:text-xs break-words">
                   {selectedLog.details}
                 </div>
               </div>
 
               {selectedLog.ipOrSource && (
-                <div className="text-[11px] text-slate-400 italic">
+                <div className="text-[10px] sm:text-[11px] text-slate-400 italic break-all">
                   Sumber Sistem: {selectedLog.ipOrSource}
                 </div>
               )}
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-[#0052CC] text-white hover:bg-blue-700 transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold bg-[#0052CC] text-white hover:bg-blue-700 transition-colors cursor-pointer"
               >
                 Tutup Detail
               </button>
@@ -460,29 +460,29 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
 
       {/* Clear Confirmation Modal */}
       {showClearConfirm && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden p-6 text-center space-y-4">
-            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto border border-rose-300">
-              <Trash2 size={24} />
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden p-4 sm:p-6 text-center space-y-3 sm:space-y-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto border border-rose-300">
+              <Trash2 size={20} className="sm:w-6 sm:h-6" />
             </div>
 
             <div>
-              <h3 className="font-heading font-bold text-lg text-slate-900">Bersihkan Audit Log Sistem?</h3>
-              <p className="text-xs text-slate-600 mt-1">
+              <h3 className="font-heading font-bold text-base sm:text-lg text-slate-900">Bersihkan Audit Log Sistem?</h3>
+              <p className="text-[11px] sm:text-xs text-slate-600 mt-1">
                 Semua {totalCount} catatan riwayat aktivitas akan dihapus. Aksi ini akan dicatat kembali sebagai peristiwa reset log.
               </p>
             </div>
 
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-2 sm:gap-3 pt-2">
               <button
                 onClick={() => setShowClearConfirm(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Batal
               </button>
               <button
                 onClick={handleConfirmClear}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all cursor-pointer"
               >
                 Ya, Bersihkan Log
               </button>
