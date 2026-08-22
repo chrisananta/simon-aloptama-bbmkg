@@ -30,7 +30,10 @@ import {
   UserCheck,
   FileText,
   User,
-  Mail
+  Mail,
+  Server,
+  Wrench,
+  Hash
 } from 'lucide-react';
 import { 
   UPTStation, 
@@ -1528,8 +1531,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0052CC]"
                 >
                   <option value="ALL">Semua Peran Access Level</option>
-                  <option value="ADMIN">ADMIN (Inskal & Balai)</option>
-                  <option value="UPT_PIMPINAN">UPT & Pimpinan</option>
+                  <option value="ADMIN">ADMIN (Inskal &amp; Balai)</option>
+                  <option value="UPT_PIMPINAN">UPT &amp; Pimpinan</option>
                 </select>
               </div>
             </div>
@@ -1723,7 +1726,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-600 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
-                    <th className="p-3.5 pl-4">ID Log & Waktu</th>
+                    <th className="p-3.5 pl-4">ID Log &amp; Waktu</th>
                     <th className="p-3.5">Tabel Target</th>
                     <th className="p-3.5 text-center">Jenis Aksi</th>
                     <th className="p-3.5">ID / Nama Item Target</th>
@@ -1792,24 +1795,25 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* ================= MODAL: ADD / EDIT STASIUN ================= */}
       {isStationModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-5 animate-scaleUp">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh] overflow-hidden">
+            <div className="bg-[#0A203C] text-white p-3.5 sm:p-4 flex items-center justify-between shrink-0 gap-2">
               <div className="flex items-center gap-2">
-                <Building2 size={20} className="text-[#0052CC]" />
-                <h3 className="font-extrabold text-slate-900 text-lg">
+                <Building2 size={18} className="text-blue-400" />
+                <h3 className="font-extrabold text-sm sm:text-base">
                   {editingStation ? 'Edit Master Stasiun UPT' : 'Tambah Stasiun UPT Baru'}
                 </h3>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsStationModalOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveStation} className="space-y-4 text-xs text-slate-700">
+            <form onSubmit={handleSaveStation} className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 text-xs text-slate-700 flex-1">
               <div>
                 <label className="block font-bold text-slate-800 mb-1">Kode Stasiun UPT (stationid)</label>
                 <input
@@ -1818,7 +1822,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   value={stationForm.stationid || ''}
                   onChange={(e) => setStationForm({ ...stationForm, stationid: e.target.value })}
                   placeholder="Contoh: MET015"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-mono font-bold"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-mono font-bold"
                 />
               </div>
 
@@ -1830,7 +1834,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   value={stationForm.name || ''}
                   onChange={(e) => setStationForm({ ...stationForm, name: e.target.value })}
                   placeholder="Contoh: Stasiun Meteorologi Nabire"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC]"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-semibold"
                 />
               </div>
 
@@ -1840,7 +1844,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   <select
                     value={stationForm.regionGroup || 'Papua Barat Daya'}
                     onChange={(e) => setStationForm({ ...stationForm, regionGroup: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-semibold"
                   >
                     <option value="Papua">Papua</option>
                     <option value="Papua Barat">Papua Barat</option>
@@ -1858,12 +1862,12 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     value={stationForm.location || ''}
                     onChange={(e) => setStationForm({ ...stationForm, location: e.target.value })}
                     placeholder="Contoh: Nabire"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-800 mb-1">Latitude (LS)</label>
                   <input
@@ -1871,7 +1875,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     step="any"
                     value={stationForm.latitude || 0}
                     onChange={(e) => setStationForm({ ...stationForm, latitude: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] font-mono"
                   />
                 </div>
 
@@ -1882,7 +1886,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     step="any"
                     value={stationForm.longitude || 0}
                     onChange={(e) => setStationForm({ ...stationForm, longitude: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] font-mono"
                   />
                 </div>
               </div>
@@ -1891,17 +1895,17 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                 Setiap perubahan pada form ini akan dicatat otomatis ke dalam audit trail <strong className="font-bold">Log_Perubahan</strong>.
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsStationModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                  className="px-4 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer"
                 >
                   Simpan Stasiun
                 </button>
@@ -1913,24 +1917,25 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* ================= MODAL: ADD / EDIT ALAT ================= */}
       {isDeviceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl p-6 space-y-5 animate-scaleUp my-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh] overflow-hidden">
+            <div className="bg-[#0A203C] text-white p-3.5 sm:p-4 flex items-center justify-between shrink-0 gap-2">
               <div className="flex items-center gap-2">
-                <Radio size={20} className="text-[#0052CC]" />
-                <h3 className="font-extrabold text-slate-900 text-lg">
+                <Radio size={18} className="text-blue-400 shrink-0" />
+                <h3 className="font-extrabold text-sm sm:text-base leading-tight">
                   {editingDevice ? 'Edit Master Peralatan' : 'Tambah Peralatan Master Baru'}
                 </h3>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsDeviceModalOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveDevice} className="space-y-4 text-xs text-slate-700">
+            <form onSubmit={handleSaveDevice} className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 text-xs text-slate-700 flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-800 mb-1">ID Alat (devicesId)</label>
@@ -1940,7 +1945,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     value={deviceForm.devicesId || ''}
                     onChange={(e) => setDeviceForm({ ...deviceForm, devicesId: e.target.value })}
                     placeholder="Contoh: ALT0191"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-mono font-bold"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-mono font-bold"
                   />
                 </div>
 
@@ -1949,7 +1954,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   <select
                     value={deviceForm.category || 'AWS'}
                     onChange={(e) => setDeviceForm({ ...deviceForm, category: e.target.value as EquipmentCategory })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-bold"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-bold"
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -1967,7 +1972,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     value={deviceForm.site || ''}
                     onChange={(e) => setDeviceForm({ ...deviceForm, site: e.target.value })}
                     placeholder="Contoh: AWOS KAT III Bandara Sentani"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-medium"
                   />
                 </div>
 
@@ -1978,7 +1983,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     value={deviceForm.merk || ''}
                     onChange={(e) => setDeviceForm({ ...deviceForm, merk: e.target.value })}
                     placeholder="Contoh: Vaisala, AWI, dll."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-medium"
                   />
                 </div>
               </div>
@@ -1989,7 +1994,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   <select
                     value={deviceForm.uptStation || ''}
                     onChange={(e) => setDeviceForm({ ...deviceForm, uptStation: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-semibold"
                   >
                     {stations.map((s) => (
                       <option key={s.id} value={s.name}>{s.name}</option>
@@ -2004,7 +2009,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     value={deviceForm.locationName || ''}
                     onChange={(e) => setDeviceForm({ ...deviceForm, locationName: e.target.value })}
                     placeholder="Contoh: Taman Alat Stamet Sentani"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white"
                   />
                 </div>
               </div>
@@ -2022,7 +2027,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                         timkalibrasi: selectedPic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'
                       });
                     }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-bold"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-bold"
                   >
                     <option value="Balai">Balai (BBMKG Wilayah V)</option>
                     <option value="Pusat">Pusat (BMKG Pusat)</option>
@@ -2034,7 +2039,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   <select
                     value={deviceForm.calibrationStatus || 'VALID'}
                     onChange={(e) => setDeviceForm({ ...deviceForm, calibrationStatus: e.target.value as CalibrationStatus })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-bold"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-bold"
                   >
                     <option value="VALID">VALID (Sertifikat Berlaku)</option>
                     <option value="SEGERA_DIKALIBRASI">SEGERA_DIKALIBRASI</option>
@@ -2050,7 +2055,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     type="date"
                     value={deviceForm.lastCalibrated || '2026-07-08'}
                     onChange={(e) => setDeviceForm({ ...deviceForm, lastCalibrated: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white"
                   />
                 </div>
 
@@ -2060,12 +2065,12 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     type="date"
                     value={deviceForm.calibrationValidUntil || '2027-07-07'}
                     onChange={(e) => setDeviceForm({ ...deviceForm, calibrationValidUntil: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-800 mb-1">Latitude (LS)</label>
                   <input
@@ -2073,7 +2078,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     step="any"
                     value={deviceForm.latitude || 0}
                     onChange={(e) => setDeviceForm({ ...deviceForm, latitude: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] font-mono"
                   />
                 </div>
 
@@ -2084,7 +2089,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     step="any"
                     value={deviceForm.longitude || 0}
                     onChange={(e) => setDeviceForm({ ...deviceForm, longitude: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#0052CC] font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] font-mono"
                   />
                 </div>
               </div>
@@ -2093,17 +2098,17 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                 Pembaruan alat ini akan langsung memperbarui pemetaan peta interaktif dan tercatat pada <strong className="font-bold">Log_Perubahan</strong>.
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsDeviceModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                  className="px-4 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer"
                 >
                   Simpan Peralatan
                 </button>
@@ -2115,13 +2120,13 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* ================= MODAL CONFIRM DELETE ================= */}
       {deleteConfirmTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4 animate-scaleUp">
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 sm:p-6 space-y-4 animate-scaleUp">
             <div className="flex items-center gap-3 text-rose-600">
-              <div className="p-2.5 bg-rose-100 rounded-xl">
-                <AlertTriangle size={24} />
+              <div className="p-2.5 bg-rose-100 rounded-xl shrink-0">
+                <AlertTriangle size={22} />
               </div>
-              <h3 className="font-extrabold text-slate-900 text-lg">Konfirmasi Hapus Data</h3>
+              <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">Konfirmasi Hapus Data</h3>
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
@@ -2131,14 +2136,16 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <button
+                type="button"
                 onClick={() => setDeleteConfirmTarget(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
               >
                 Batal
               </button>
               <button
+                type="button"
                 onClick={handleConfirmDelete}
-                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 Hapus Data
               </button>
@@ -2149,22 +2156,23 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* MODAL EDIT SLA OLA KHUSUS TAB DATABASE SLA OLA */}
       {isSlaOlaEditModalOpen && editingSlaDevice && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
-            <div className="bg-[#0A203C] text-white p-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden my-auto flex flex-col max-h-[92vh]">
+            <div className="bg-[#0A203C] text-white p-3.5 sm:p-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <Activity size={20} className="text-blue-400" />
-                <h3 className="font-bold text-sm">Input / Overwrite SLA &amp; OLA Bulanan</h3>
+                <Activity size={18} className="text-blue-400 shrink-0" />
+                <h3 className="font-bold text-xs sm:text-sm">Input / Overwrite SLA &amp; OLA Bulanan</h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsSlaOlaEditModalOpen(false)}
-                className="p-1 rounded bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white cursor-pointer"
+                className="p-1.5 rounded bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white cursor-pointer shrink-0"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveSlaOla} className="p-5 space-y-4">
+            <form onSubmit={handleSaveSlaOla} className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 flex-1">
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
                 <p className="font-bold text-slate-900">{editingSlaDevice.site}</p>
                 <p className="text-slate-500">ID: <span className="font-mono text-blue-700 font-bold">{editingSlaDevice.devicesId}</span> | UPT: {editingSlaDevice.uptStation}</p>
@@ -2182,14 +2190,14 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     max="100"
                     value={editSlaVal}
                     onChange={(e) => setEditSlaVal(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-sm outline-none focus:border-[#0052CC]"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-xs outline-none focus:border-[#0052CC]"
                     required
                   />
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => setEditSlaVal(100)}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${editSlaVal === 100 ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-100 text-slate-700'}`}
+                      className={`px-2 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${editSlaVal === 100 ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-100 text-slate-700'}`}
                     >
                       100% (ON)
                     </button>
@@ -2199,7 +2207,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                         setEditSlaVal(0);
                         setEditOlaVal(0);
                       }}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${editSlaVal === 0 ? 'bg-rose-600 text-white border-rose-700' : 'bg-slate-100 text-slate-700'}`}
+                      className={`px-2 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${editSlaVal === 0 ? 'bg-rose-600 text-white border-rose-700' : 'bg-slate-100 text-slate-700'}`}
                     >
                       0% (OFF)
                     </button>
@@ -2217,7 +2225,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   max="100"
                   value={editOlaVal}
                   onChange={(e) => setEditOlaVal(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-sm outline-none focus:border-[#0052CC]"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-xs outline-none focus:border-[#0052CC]"
                   required
                 />
                 <p className="text-[10px] text-slate-500 mt-1">Acuan Status: 100% = Normal, 1-99% = Gangguan, 0% = Mati</p>
@@ -2240,11 +2248,11 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsSlaOlaEditModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Batal
                 </button>
@@ -2262,24 +2270,25 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* ================= MODAL: TAMBAH / EDIT AKUN PENGGUNA ================= */}
       {isUserModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden">
-            <div className="bg-[#0052CC] p-4 text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-[3000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh]">
+            <div className="bg-[#0052CC] p-3.5 sm:p-4 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Users size={18} />
-                <h3 className="font-bold text-sm">
+                <h3 className="font-bold text-xs sm:text-sm">
                   {editingUser ? 'Edit Data Akun Pengguna' : 'Tambah Akun Pengguna Baru'}
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsUserModalOpen(false)}
-                className="p-1 hover:bg-white/20 rounded-lg text-white transition-colors cursor-pointer"
+                className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors cursor-pointer shrink-0"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveUser} className="p-5 space-y-4 text-left">
+            <form onSubmit={handleSaveUser} className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 text-left text-xs flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-800 mb-1">
@@ -2292,7 +2301,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                       placeholder="contoh: admin.kalibrasi"
                       value={userForm.username || ''}
                       onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                      className="w-full pl-7 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-semibold text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
+                      className="w-full pl-7 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
                       required
                     />
                   </div>
@@ -2300,14 +2309,14 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-800 mb-1">
-                    Kata Sandi / Password {editingUser ? <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span> : <span className="text-rose-500">*</span>}
+                    Kata Sandi {editingUser ? <span className="text-[10px] text-slate-400 font-normal">(Opsional)</span> : <span className="text-rose-500">*</span>}
                   </label>
                   <input
                     type="password"
-                    placeholder={editingUser ? 'Kosongkan jika tidak diubah' : 'Kosongkan untuk generate password otomatis'}
+                    placeholder={editingUser ? 'Kosongkan jika tidak diubah' : 'Sandi baru'}
                     value={userForm.password || ''}
                     onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-semibold text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
                     required={!editingUser}
                   />
                 </div>
@@ -2322,7 +2331,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   placeholder="contoh: Ir. Ahmad Yani, M.T."
                   value={userForm.name || ''}
                   onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
                   required
                 />
               </div>
@@ -2335,10 +2344,10 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   <select
                     value={userForm.role || 'UPT_PIMPINAN'}
                     onChange={(e) => setUserForm({ ...userForm, role: e.target.value as UserRole })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-[#0052CC] focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#0052CC] focus:bg-white"
                   >
-                    <option value="ADMIN">ADMIN (Inskal &amp; Kalibrasi Full Access)</option>
-                    <option value="UPT_PIMPINAN">UPT &amp; PIMPINAN (Read-Only &amp; SLA/OLA)</option>
+                    <option value="ADMIN">ADMIN (Inskal Full Access)</option>
+                    <option value="UPT_PIMPINAN">UPT &amp; PIMPINAN (Read-Only)</option>
                   </select>
                 </div>
 
@@ -2351,7 +2360,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     placeholder="contoh: 19880101 201212 1 001"
                     value={userForm.nip || ''}
                     onChange={(e) => setUserForm({ ...userForm, nip: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
                   />
                 </div>
               </div>
@@ -2365,7 +2374,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   placeholder="contoh: Teknisi Inskal / Kepala BBMKG Wilayah V"
                   value={userForm.title || ''}
                   onChange={(e) => setUserForm({ ...userForm, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
                 />
               </div>
 
@@ -2377,7 +2386,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   <select
                     value={userForm.uptStation || ''}
                     onChange={(e) => setUserForm({ ...userForm, uptStation: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-[#0052CC] focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#0052CC] focus:bg-white"
                   >
                     <option value="BBMKG Wilayah V Papua">BBMKG Wilayah V Papua</option>
                     {stations.map((s) => (
@@ -2397,21 +2406,21 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                     placeholder="contoh: user@bmkg.go.id"
                     value={userForm.email || ''}
                     onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
                   />
                 </div>
               </div>
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-800 space-y-1">
                 <span className="font-bold block">Catatan Keamanan Sesi:</span>
-                <p>Pengguna dapat langsung login ke aplikasi menggunakan username ini tanpa memilih peran secara manual.</p>
+                <p>Pengguna dapat langsung login ke aplikasi menggunakan username ini secara fleksibel.</p>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsUserModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Batal
                 </button>
@@ -2419,7 +2428,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   type="submit"
                   className="px-4 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer"
                 >
-                  {editingUser ? 'Simpan Perubahan Akun' : 'Tambah Akun Pengguna'}
+                  {editingUser ? 'Simpan Akun' : 'Tambah Akun'}
                 </button>
               </div>
             </form>
@@ -2429,9 +2438,9 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* ================= MODAL: KONFIRMASI HAPUS AKUN ================= */}
       {deleteConfirmUser && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 text-center space-y-4">
-            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-[3000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-5 sm:p-6 text-center space-y-4">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto shrink-0">
               <AlertTriangle size={24} />
             </div>
             <div>
@@ -2440,14 +2449,16 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                 Apakah Anda yakin ingin menghapus akun <span className="font-bold text-slate-900">{deleteConfirmUser.name}</span> (@{deleteConfirmUser.username})? Tindakan ini akan dicatat dalam audit log.
               </p>
             </div>
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="flex items-center justify-center gap-2 pt-2 border-t border-slate-100">
               <button
+                type="button"
                 onClick={() => setDeleteConfirmUser(null)}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
               >
                 Batal
               </button>
               <button
+                type="button"
                 onClick={handleConfirmDeleteUser}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer"
               >
@@ -2460,22 +2471,23 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* ================= MODAL: TAMBAH / EDIT PETUGAS MONITORING ================= */}
       {isPetugasModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                <UserCheck size={18} className="text-[#0052CC]" />
+        <div className="fixed inset-0 z-[3000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 my-auto flex flex-col max-h-[92vh]">
+            <div className="bg-[#0A203C] text-white p-3.5 sm:p-4 flex items-center justify-between shrink-0">
+              <h3 className="font-extrabold text-xs sm:text-sm flex items-center gap-2">
+                <UserCheck size={18} className="text-blue-400 shrink-0" />
                 <span>{editingPetugas ? 'Edit Personil Petugas Monitoring' : 'Tambah Personil Petugas Monitoring'}</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setIsPetugasModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors shrink-0"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSavePetugas} className="space-y-4">
+            <form onSubmit={handleSavePetugas} className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 text-xs flex-1">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Nama Lengkap &amp; Gelar <span className="text-rose-500">*</span>
@@ -2486,7 +2498,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   value={petugasForm.name || ''}
                   onChange={(e) => setPetugasForm({ ...petugasForm, name: e.target.value })}
                   placeholder="Contoh: Asrul Sani Arifin, S.Tr"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
                 />
               </div>
 
@@ -2499,7 +2511,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   value={petugasForm.nip || ''}
                   onChange={(e) => setPetugasForm({ ...petugasForm, nip: e.target.value })}
                   placeholder="Contoh: 19950312 201801 1 001"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white font-mono"
                 />
               </div>
 
@@ -2512,15 +2524,15 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                   value={petugasForm.jabatan || ''}
                   onChange={(e) => setPetugasForm({ ...petugasForm, jabatan: e.target.value })}
                   placeholder="Contoh: Staf Inskal &amp; Kalibrasi"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsPetugasModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-3.5 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
@@ -2538,9 +2550,9 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* ================= MODAL: KONFIRMASI HAPUS PETUGAS ================= */}
       {deleteConfirmPetugas && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center space-y-4">
-            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-[3000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 text-center space-y-4">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto shrink-0">
               <AlertTriangle size={24} />
             </div>
             <div>
@@ -2550,14 +2562,16 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center justify-center gap-2 pt-2">
+            <div className="flex items-center justify-center gap-2 pt-2 border-t border-slate-100">
               <button
+                type="button"
                 onClick={() => setDeleteConfirmPetugas(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
               >
                 Batal
               </button>
               <button
+                type="button"
                 onClick={handleConfirmDeletePetugas}
                 className="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
               >

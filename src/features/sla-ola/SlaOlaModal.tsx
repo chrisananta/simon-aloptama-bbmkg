@@ -1178,9 +1178,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                     <PercentIcon size={14} className="text-[#0052CC]" />
                     KONDISI OLA (Operational Level Agreement):
                   </label>
-                  <span className="font-mono font-bold text-sm text-[#0052CC] bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200">
-                    {watchKondisiOla}%
-                  </span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <input

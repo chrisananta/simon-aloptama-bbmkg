@@ -84,9 +84,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
         {/* Jayapura WIT Clock */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-700">
+        <div className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700">
           <Clock size={13} className="text-[#0052CC] shrink-0" />
-          <span className="whitespace-nowrap">{witTime || 'Memuat Waktu...'}</span>
+          
+          {/* Layar HP: Hanya Jam (misal "16.11.23 WIT") */}
+          <span className="sm:hidden whitespace-nowrap">
+            {witTime 
+              ? (witTime.includes('pukul') 
+                  ? witTime.split('pukul')[1]?.trim() 
+                  : witTime) 
+              : 'Memuat...'}
+          </span>
+
+          {/* Layar Tablet & PC: Tanggal + Jam Lengkap */}
+          <span className="hidden sm:inline whitespace-nowrap">
+            {witTime || 'Memuat Waktu...'}
+          </span>
         </div>
       </div>
     </header>

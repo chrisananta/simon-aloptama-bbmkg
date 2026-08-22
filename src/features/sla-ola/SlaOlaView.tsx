@@ -126,7 +126,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     Juli: 6, Agustus: 7, September: 8, Oktober: 9, November: 10, Desember: 11
   };
 
-const slaTrendData = useMemo(() => {
+  const slaTrendData = useMemo(() => {
     return MONTHS_LIST.map((mObj, idx) => {
       const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
       const totalMasterDevs = targetDevs.length;
@@ -147,7 +147,6 @@ const slaTrendData = useMemo(() => {
       const totalSla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.slaScore ?? 0), 0);
       const totalOla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
 
-      // Pembagi diubah ke totalMasterDevs agar sesuai dengan tabel
       const avgSla = totalSla / totalMasterDevs;
       const avgOla = totalOla / totalMasterDevs;
 
@@ -161,7 +160,7 @@ const slaTrendData = useMemo(() => {
 
   const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
 
-const olaByCategoryData = useMemo(() => {
+  const olaByCategoryData = useMemo(() => {
     const CATEGORIES = [
       { key: 'AWOS', name: 'AWOS' },
       { key: 'AWS', name: 'AWS' },
@@ -198,7 +197,6 @@ const olaByCategoryData = useMemo(() => {
       let score = 0;
       if (jumlahLokasi > 0) {
         const totalOla = reportedInSelectedMonthAndYearCatDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
-        // Pembagi diubah ke jumlahLokasi (Master Alat)
         score = Number((totalOla / jumlahLokasi).toFixed(1));
       }
 
@@ -209,11 +207,6 @@ const olaByCategoryData = useMemo(() => {
       };
     });
   }, [selectedYear, selectedUpt, selectedMonth, monthIdx, devices, uptFilteredDevices]);
-
-  const totalDevs = uptFilteredDevices.length || 1;
-  const tidakTerlambatCount = uptFilteredDevices.filter(
-    (d) => d.calibrationStatus === 'VALID' || d.calibrationStatus === 'SEGERA_DIKALIBRASI'
-  ).length;
 
   const balaiDevices = uptFilteredDevices.filter(
     (d) => (d.picKalibrasi || 'Balai').toLowerCase() === 'balai'
@@ -240,11 +233,7 @@ const olaByCategoryData = useMemo(() => {
             !c.includes('kat iii') &&
             !c.includes('kat. iii') &&
             !c.includes('kat 2') &&
-            !c.includes('kat 3') &&
-            !c.includes('kategori 2') &&
-            !c.includes('kategori 3') &&
-            !c.includes('kategori ii') &&
-            !c.includes('kategori iii')
+            !c.includes('kat 3')
           );
         },
       },
@@ -261,11 +250,7 @@ const olaByCategoryData = useMemo(() => {
               c.includes('kat iii') ||
               c.includes('kat. iii') ||
               c.includes('kat 2') ||
-              c.includes('kat 3') ||
-              c.includes('kategori 2') ||
-              c.includes('kategori 3') ||
-              c.includes('kategori ii') ||
-              c.includes('kategori iii'))
+              c.includes('kat 3'))
           );
         },
       },
@@ -581,10 +566,10 @@ const olaByCategoryData = useMemo(() => {
         <div>
           <h2 className="font-heading font-bold text-lg sm:text-xl text-slate-900 flex items-center gap-2">
             <BarChart2 size={20} className="text-[#0052CC] sm:w-5 sm:h-5" />
-            SLA & OLA ALOPTAMA
+            SLA &amp; OLA ALOPTAMA
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Service Level Agreement & Operational Level Agreement Performa ALOPTAMA
+            Service Level Agreement &amp; Operational Level Agreement Performa ALOPTAMA
           </p>
         </div>
 
@@ -739,7 +724,7 @@ const olaByCategoryData = useMemo(() => {
               <span className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 shadow-xs">
                 <BarChart2 className="w-5 h-5" />
               </span>
-              Rekapitulasi, Kondisi & Analisa SLA OLA ({selectedMonth} {selectedYear})
+              Rekapitulasi, Kondisi &amp; Analisa SLA OLA ({selectedMonth} {selectedYear})
             </h3>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -928,165 +913,166 @@ const olaByCategoryData = useMemo(() => {
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="bg-white rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 border border-slate-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0052CC] flex items-center justify-center font-bold border border-blue-100">
-              <Clock size={20} />
+      {/* FILTER TUNGGAL & RESPONSIF DI MOBILE: RIWAYAT LOG GANGGUAN & ALAT MATI */}
+      <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0052CC] flex items-center justify-center shrink-0">
+              <Clock size={18} />
             </div>
             <div>
-              <h3 className="font-heading font-bold text-sm text-slate-900 flex items-center gap-2">
-                Filter Riwayat Log Gangguan & Alat Mati
-                {tableFilterMonth === 'REALTIME' ? (
-                  <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-300 animate-pulse">
-                    ⚡ STATUS LIVE REAL-TIME
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full border border-indigo-300">
-                    📅 ARSIP REKAP: {activePeriodTarget}
-                  </span>
-                )}
+              <h3 className="font-bold text-xs sm:text-sm text-slate-900">
+                Filter Riwayat Log Gangguan &amp; Alat Mati
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Pilih mode data status live real-time saat ini atau arsip rekapan gangguan berdasarkan bulan & tahun
+              <p className="text-[10px] sm:text-xs text-slate-500">
+                Pilih mode data status live real-time saat ini atau arsip rekapan
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-            <span className="text-xs font-semibold text-slate-600 pl-2">Periode Tabel:</span>
-            <select
-              value={tableFilterMonth}
-              onChange={(e) => setTableFilterMonth(e.target.value)}
-              className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-            >
-              <option value="REALTIME">⚡ Real-Time (Status Terkini Hari Ini)</option>
-              <option value="HEADER_SYNC">🔄 Mengikuti Filter Header ({selectedMonth} {selectedYear})</option>
-              <optgroup label="Bulan Tahun 2026">
-                <option value="Juli 2026">Juli 2026</option>
-                <option value="Juni 2026">Juni 2026</option>
-                <option value="Mei 2026">Mei 2026</option>
-                <option value="April 2026">April 2026</option>
-                <option value="Maret 2026">Maret 2026</option>
-                <option value="Februari 2026">Februari 2026</option>
-                <option value="Januari 2026">Januari 2026</option>
-              </optgroup>
-              <optgroup label="Arsip Rekap">
-                <option value="ALL">Semua Rekam Historis (≥ 2026)</option>
-              </optgroup>
-            </select>
+          <span className="self-start sm:self-auto bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
+            ⚡ STATUS LIVE REAL-TIME
+          </span>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-slate-50 p-2 sm:p-3 rounded-xl border border-slate-200 gap-2">
+          <span className="text-xs font-bold text-slate-700 shrink-0">
+            Periode Tabel:
+          </span>
+
+          <select
+            value={tableFilterMonth}
+            onChange={(e) => setTableFilterMonth(e.target.value)}
+            className="w-full sm:w-auto bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] cursor-pointer"
+          >
+            <option value="REALTIME">⚡ Real-Time (Status Terkini Hari Ini)</option>
+            <option value="HEADER_SYNC">🔄 Mengikuti Filter Header ({selectedMonth} {selectedYear})</option>
+            <optgroup label="Bulan Tahun 2026">
+              <option value="Juli 2026">Juli 2026</option>
+              <option value="Juni 2026">Juni 2026</option>
+              <option value="Mei 2026">Mei 2026</option>
+              <option value="April 2026">April 2026</option>
+              <option value="Maret 2026">Maret 2026</option>
+              <option value="Februari 2026">Februari 2026</option>
+              <option value="Januari 2026">Januari 2026</option>
+            </optgroup>
+            <optgroup label="Arsip Rekap">
+              <option value="ALL">Semua Rekam Historis (≥ 2026)</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+              <h3 className="font-heading font-bold text-sm text-slate-900">
+                Daftar Alat Gangguan ({displayGangguan.length})
+              </h3>
+            </div>
+            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+              🟡 Gangguan {tableFilterMonth !== 'REALTIME' && `(${activePeriodTarget})`}
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
+                <tr>
+                  <th className="p-2.5">Nama Alat</th>
+                  <th className="p-2.5">Lokasi / UPT</th>
+                  <th className="p-2.5">Status</th>
+                  <th className="p-2.5">Durasi Gangguan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {displayGangguan.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-6 text-slate-400">
+                      🟢 Tidak ada catatan peralatan Gangguan pada periode {activePeriodTarget}.
+                    </td>
+                  </tr>
+                ) : (
+                  displayGangguan.map((dev) => (
+                    <tr key={dev.id} className="hover:bg-amber-50/40 transition-colors">
+                      <td className="p-2.5 font-semibold text-slate-900">
+                        {dev.name}
+                        <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {dev.reportedDate}</span>
+                      </td>
+                      <td className="p-2.5 text-slate-600 font-medium">
+                        {stationMap.get(dev.uptStation) || dev.uptStation}
+                      </td>
+                      <td className="p-2.5">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                          🟡 Gangguan
+                        </span>
+                      </td>
+                      <td className="p-2.5 font-medium text-slate-800">
+                        {dev.downtimeDuration}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                <h3 className="font-heading font-bold text-sm text-slate-900">
-                  Daftar Alat Gangguan ({displayGangguan.length})
-                </h3>
-              </div>
-              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                🟡 Gangguan {tableFilterMonth !== 'REALTIME' && `(${activePeriodTarget})`}
-              </span>
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-rose-600"></div>
+              <h3 className="font-heading font-bold text-sm text-slate-900">
+                Daftar Alat Mati ({displayMati.length})
+              </h3>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
-                  <tr>
-                    <th className="p-2.5">Nama Alat</th>
-                    <th className="p-2.5">Lokasi / UPT</th>
-                    <th className="p-2.5">Status</th>
-                    <th className="p-2.5">Durasi Gangguan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {displayGangguan.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="text-center py-6 text-slate-400">
-                        🟢 Tidak ada catatan peralatan Gangguan pada periode {activePeriodTarget}.
-                      </td>
-                    </tr>
-                  ) : (
-                    displayGangguan.map((dev) => (
-                      <tr key={dev.id} className="hover:bg-amber-50/40 transition-colors">
-                        <td className="p-2.5 font-semibold text-slate-900">
-                          {dev.name}
-                          <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {dev.reportedDate}</span>
-                        </td>
-                        <td className="p-2.5 text-slate-600 font-medium">
-                          {stationMap.get(dev.uptStation) || dev.uptStation}
-                        </td>
-                        <td className="p-2.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                            🟡 Gangguan
-                          </span>
-                        </td>
-                        <td className="p-2.5 font-medium text-slate-800">
-                          {dev.downtimeDuration}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+              🔴 Mati {tableFilterMonth !== 'REALTIME' && `(${activePeriodTarget})`}
+            </span>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-600"></div>
-                <h3 className="font-heading font-bold text-sm text-slate-900">
-                  Daftar Alat Mati ({displayMati.length})
-                </h3>
-              </div>
-              <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-                🔴 Mati {tableFilterMonth !== 'REALTIME' && `(${activePeriodTarget})`}
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
+                <tr>
+                  <th className="p-2.5">Nama Alat</th>
+                  <th className="p-2.5">Lokasi / UPT</th>
+                  <th className="p-2.5">Status</th>
+                  <th className="p-2.5">Durasi Off</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {displayMati.length === 0 ? (
                   <tr>
-                    <th className="p-2.5">Nama Alat</th>
-                    <th className="p-2.5">Lokasi / UPT</th>
-                    <th className="p-2.5">Status</th>
-                    <th className="p-2.5">Durasi Off</th>
+                    <td colSpan={4} className="text-center py-6 text-slate-400">
+                      🟢 Tidak ada catatan peralatan Mati pada periode {activePeriodTarget}.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {displayMati.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="text-center py-6 text-slate-400">
-                        🟢 Tidak ada catatan peralatan Mati pada periode {activePeriodTarget}.
+                ) : (
+                  displayMati.map((dev) => (
+                    <tr key={dev.id} className="hover:bg-rose-50/40 transition-colors">
+                      <td className="p-2.5 font-semibold text-slate-900">
+                        {dev.name}
+                        <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {dev.reportedDate}</span>
+                      </td>
+                      <td className="p-2.5 text-slate-600 font-medium">
+                        {stationMap.get(dev.uptStation) || dev.uptStation}
+                      </td>
+                      <td className="p-2.5">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                          🔴 Mati
+                        </span>
+                      </td>
+                      <td className="p-2.5 font-bold text-rose-600">
+                        {dev.downtimeDuration}
                       </td>
                     </tr>
-                  ) : (
-                    displayMati.map((dev) => (
-                      <tr key={dev.id} className="hover:bg-rose-50/40 transition-colors">
-                        <td className="p-2.5 font-semibold text-slate-900">
-                          {dev.name}
-                          <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {dev.reportedDate}</span>
-                        </td>
-                        <td className="p-2.5 text-slate-600">{dev.uptStation}</td>
-                        <td className="p-2.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                            🔴 Mati
-                          </span>
-                        </td>
-                        <td className="p-2.5 font-bold text-rose-600">
-                          {dev.downtimeDuration}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1158,7 +1144,7 @@ const olaByCategoryData = useMemo(() => {
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-[10px] border-b border-slate-200">
               <tr>
-                <th className="p-3">Nama & ID Peralatan</th>
+                <th className="p-3">Nama &amp; ID Peralatan</th>
                 <th className="p-3">Stasiun UPT</th>
                 <th className="p-3">Terakhir Update</th>
               </tr>
@@ -1220,6 +1206,7 @@ const olaByCategoryData = useMemo(() => {
         isOpen={isWaModalOpen}
         onClose={() => setIsWaModalOpen(false)}
         devices={sortedDevices}
+        stations={stations}
       />
 
       <WeeklySlaOlaReportModal
