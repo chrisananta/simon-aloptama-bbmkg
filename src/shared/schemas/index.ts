@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import { getTodayIsoWIT, getIsoDaysAgoWIT } from '../utils/dateUtils';
+
+// Batas maksimal mundur untuk pengisian SLA/OLA susulan (harus sinkron
+// dengan MAX_BACKDATE_DAYS di simon-backend/src/controllers/slaOlaController.ts).
+export const SLA_OLA_MAX_BACKDATE_DAYS = 10;
 
 export const slaOlaSchema = z.object({
   uptStation: z.string().min(1, 'Stasiun UPT wajib dipilih'),
@@ -7,6 +12,7 @@ export const slaOlaSchema = z.object({
   kondisiSla: z.boolean(),
   kondisiOla: z.number().min(0, 'Kondisi OLA minimal 0%').max(100, 'Kondisi OLA maksimal 100%'),
   kendala: z.string().optional(),
+  tanggal: z.string().min(1, 'Tanggal laporan wajib dipilih'),
 }).superRefine((data, ctx) => {
   const isOffOrSub100 = !data.kondisiSla || data.kondisiOla < 100;
   if (isOffOrSub100 && (!data.kendala || !data.kendala.trim())) {
@@ -14,6 +20,22 @@ export const slaOlaSchema = z.object({
       code: z.ZodIssueCode.custom,
       message: 'Kendala operasional / catatan wajib diisi jika alat OFF atau OLA < 100%',
       path: ['kendala'],
+    });
+  }
+
+  const todayIso = getTodayIsoWIT();
+  const minIso = getIsoDaysAgoWIT(SLA_OLA_MAX_BACKDATE_DAYS);
+  if (data.tanggal > todayIso) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Tanggal laporan tidak boleh di masa depan.',
+      path: ['tanggal'],
+    });
+  } else if (data.tanggal < minIso) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Tanggal laporan hanya boleh mundur maksimal ${SLA_OLA_MAX_BACKDATE_DAYS} hari.`,
+      path: ['tanggal'],
     });
   }
 });

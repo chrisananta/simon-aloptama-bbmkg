@@ -222,8 +222,9 @@ export const apiClient = {
       kondisiSla: boolean;
       kondisiOla: number;
       kendala: string;
+      tanggal?: string;
       actor?: string;
-    }): Promise<{ devices: AloptamaDevice[]; lastSync: string }> => {
+    }): Promise<{ devices: AloptamaDevice[]; lastSync: string; isLate?: boolean; tanggal?: string }> => {
       const response = await authFetch("/api/sla-ola", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -249,6 +250,8 @@ export const apiClient = {
       return {
         devices: resData.devices,
         lastSync: resData.lastSync || new Date().toLocaleString("id-ID"),
+        isLate: resData.isLate,
+        tanggal: resData.tanggal,
       };
     },
 

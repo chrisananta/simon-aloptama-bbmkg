@@ -1,18 +1,19 @@
 # Spesifikasi REST API SIMON BBMKG V
 
-Backend berjalan dalam satu proses Express bersama frontend (`server.ts`), listening di port `3000` (default). Semua endpoint di-mount di bawah prefix `/api`.
-
-Setiap route grup didaftarkan di **dua path sekaligus** (lihat `simon-backend/src/routes/index.ts`): path utama (root) dan alias namespaced (`/auth`, `/master`, `/operational`, `/system`) — keduanya mengarah ke controller yang sama, jadi bisa dipakai bergantian.
+Backend berjalan dalam satu proses Express bersama frontend (`server.ts`), listening di port `3000` (default). Semua endpoint di-mount di bawah prefix `/api` (dan juga di-mount ulang di `/api/v1` — lihat `server.ts`: `app.use("/api", apiRouter)` dan `app.use("/api/v1", apiRouter)`), tapi **tidak ada** alias namespaced per-grup (`/auth`, `/master`, `/operational`, dst.) — semua route grup didaftarkan langsung di root (`apiRouter.use('/', ...)`, lihat `simon-backend/src/routes/index.ts`).
 
 ## Autentikasi
 
-Semua endpoint **wajib** menyertakan header berikut, KECUALI `POST /api/login` dan `GET /api/health`:
+Jalur utama: token JWT dikirim & disimpan lewat **cookie `httpOnly` bernama `simon_jwt`**, di-set otomatis oleh backend lewat header `Set-Cookie` saat `POST /api/login` berhasil. Browser mengirim cookie ini otomatis di setiap request (asal request menyertakan `credentials: 'include'`) — JavaScript di halaman (termasuk skrip jahat lewat XSS) **tidak bisa membaca cookie ini sama sekali**.
 
+Fallback (untuk klien non-browser seperti script/Postman/curl yang tidak menyimpan cookie): header
 ```
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-Token didapat dari response `POST /api/login`. Endpoint yang butuh hak admin (create/update/delete pada data master) menolak dengan `403` jika token valid tapi role bukan `ADMIN`.
+Semua endpoint **wajib** terautentikasi (lewat salah satu dari dua jalur di atas), KECUALI `POST /api/login` dan `GET /api/health`.
+
+Token didapat dari cookie `Set-Cookie` pada response `POST /api/login` (**bukan** dari body JSON — lihat catatan di bawah). Endpoint yang butuh hak admin (create/update/delete pada data master) menolak dengan `403` jika token valid tapi role bukan `ADMIN`.
 
 **Response jika token tidak ada / tidak valid (401):**
 ```json
@@ -29,44 +30,52 @@ Token didapat dari response `POST /api/login`. Endpoint yang butuh hak admin (cr
 ## 1. Auth & User — `simon-backend/src/routes/authRoutes.ts`
 
 ### POST `/api/login` (publik, rate-limited)
-Login dan mendapatkan JWT token. Dibatasi maksimal **10 percobaan gagal per 15 menit per IP** (`express-rate-limit`); percobaan yang berhasil tidak dihitung ke kuota.
+Login dan mendapatkan sesi. Dibatasi maksimal **10 percobaan gagal per 15 menit per IP** (`express-rate-limit`); percobaan yang berhasil tidak dihitung ke kuota.
 
 * **Payload**:
 ```json
 { "username": "admin.inskal", "password": "..." }
 ```
-* **Response 200 OK**:
+* **Response 200 OK** (token JWT dikirim lewat header `Set-Cookie: simon_jwt=...; HttpOnly`, **bukan** di body — `expiresAt` di body hanya timestamp non-rahasia untuk keperluan UI):
 ```json
 {
   "success": true,
-  "token": "<JWT>",
+  "message": "Login berhasil.",
+  "expiresAt": 1755950400000,
   "user": {
     "id": "USR-ADMIN-001",
     "username": "admin.inskal",
     "name": "Ir. Fajar Nur, M.T.",
     "role": "ADMIN",
     "title": "Admin INSKAL & Kalibrasi BBMKG V",
-    "uptStation": "BBMKG Wilayah V Papua"
+    "nip": "19850412 201012 1 001",
+    "email": "fajar.nur@bmkg.go.id",
+    "uptStation": "BBMKG Wilayah V Papua",
+    "avatarUrl": "..."
   }
 }
 ```
 * **Response 401** (password salah): `{ "success": false, "message": "Kata sandi salah. Silakan periksa kembali kata sandi Anda." }`
 * **Response 429** (kena rate-limit): `{ "success": false, "message": "Terlalu banyak percobaan login gagal. Silakan coba lagi dalam beberapa menit." }`
 
+### POST `/api/logout` (tidak wajib token — lihat catatan)
+Menghapus cookie `simon_jwt` di browser lewat `Set-Cookie` dengan masa berlaku sudah lewat. **Sengaja tidak dipasangi `verifyToken`**: kalau token sudah invalid/kedaluwarsa, `verifyToken` akan menolak dengan 401 sebelum sempat mengirim instruksi hapus cookie — cookie basi jadi nyangkut terus. Controller mencoba baca identitas user (best-effort, untuk audit log) tapi cookie **selalu** dibersihkan apa pun kondisi tokennya.
+
 ### GET `/api/users` — wajib login
 Daftar semua user. **Field `passwordHash` tidak pernah disertakan** dalam response.
 
 ### POST `/api/users` — wajib login + ADMIN
-Buat user baru. Password otomatis di-hash (bcrypt) sebelum disimpan.
+Buat user baru. Password otomatis di-hash (bcrypt) sebelum disimpan. Kalau field `password` tidak diisi, sistem generate password acak dan mengembalikannya **sekali** di response (`generatedPassword`) — client tidak pernah boleh mengirim hash siap pakai.
 
 ### PUT `/api/users/:id` — wajib login + ADMIN
 Update user. Jika field `password` disertakan, otomatis di-hash ulang.
 
 ### DELETE `/api/users/:id` — wajib login + ADMIN
+Menolak dengan `400` jika mencoba hapus akun sendiri, atau menghapus admin terakhir yang tersisa.
 
 ---
 
-## 2. Devices — `deviceRoutes.ts` (alias: `/api/master/devices`)
+## 2. Devices — `deviceRoutes.ts`
 
 | Method | Path | Akses |
 | :--- | :--- | :--- |
@@ -78,7 +87,7 @@ Update user. Jika field `password` disertakan, otomatis di-hash ulang.
 
 ---
 
-## 3. Stations — `stationRoutes.ts` (alias: `/api/master/stations`)
+## 3. Stations — `stationRoutes.ts`
 
 | Method | Path | Akses |
 | :--- | :--- | :--- |
@@ -89,7 +98,7 @@ Update user. Jika field `password` disertakan, otomatis di-hash ulang.
 
 ---
 
-## 4. Petugas — `petugasRoutes.ts` (alias: `/api/master/petugas`)
+## 4. Petugas — `petugasRoutes.ts`
 
 | Method | Path | Akses |
 | :--- | :--- | :--- |
@@ -100,16 +109,18 @@ Update user. Jika field `password` disertakan, otomatis di-hash ulang.
 
 ---
 
-## 5. SLA/OLA — `slaOlaRoutes.ts` (alias: `/api/operational/sla-ola`)
+## 5. SLA/OLA — `slaOlaRoutes.ts`
 
-Diisi rutin oleh operator UPT (bukan cuma admin), jadi cukup wajib login — tidak perlu role ADMIN.
+Entry harian diisi rutin oleh operator UPT (bukan cuma admin), jadi cukup wajib login. Rekap **bulanan** (dipakai khusus di Admin Master View) dibatasi ADMIN saja.
 
 | Method | Path | Akses |
 | :--- | :--- | :--- |
 | GET | `/api/sla-ola/logs` | Login |
 | POST | `/api/sla-ola` (atau `/api/sla-ola/save`) | Login |
+| GET | `/api/sla-ola/monthly` | Login + ADMIN |
+| POST | `/api/sla-ola/monthly` | Login + ADMIN |
 
-* **Payload POST**:
+* **Payload POST** (`/api/sla-ola` atau `/api/sla-ola/save`):
 ```json
 {
   "uptStation": "Stasiun Meteorologi Dok II Jayapura",
@@ -123,12 +134,14 @@ Diisi rutin oleh operator UPT (bukan cuma admin), jadi cukup wajib login — tid
 
 ---
 
-## 6. Kalibrasi — `calibrationRoutes.ts` (alias: `/api/operational/calibration`)
+## 6. Kalibrasi — `calibrationRoutes.ts`
+
+Perubahan data kalibrasi adalah data master; **hanya Admin INSKAL** yang boleh menulis.
 
 | Method | Path | Akses |
 | :--- | :--- | :--- |
 | GET | `/api/calibration` (atau `/api/calibration/records`) | Login |
-| POST | `/api/calibration` (atau `/api/calibration/save`) | Login |
+| POST | `/api/calibration` (atau `/api/calibration/save`) | Login + ADMIN |
 
 * **Payload POST**:
 ```json
@@ -145,12 +158,12 @@ Diisi rutin oleh operator UPT (bukan cuma admin), jadi cukup wajib login — tid
 
 ---
 
-## 7. Audit Log — `auditLogRoutes.ts` (alias: `/api/system/audit-logs`)
+## 7. Audit Log — `auditLogRoutes.ts`
 
 | Method | Path | Akses |
 | :--- | :--- | :--- |
 | GET | `/api/audit-logs` | Login |
-| POST | `/api/audit-logs` | Login |
+| POST | `/api/audit-logs` | Login + ADMIN |
 | DELETE | `/api/audit-logs/clear` | Login + ADMIN |
 
 * **Payload POST** (`recordId` wajib diisi — akan ditolak Prisma jika kosong):

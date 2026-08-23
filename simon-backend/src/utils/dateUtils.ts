@@ -36,6 +36,24 @@ export function formatDateOnly(value: Date | null | undefined): string | null {
 }
 
 /**
+ * Tanggal "hari ini" (YYYY-MM-DD) menurut zona waktu BBMKG V, Asia/Jayapura
+ * (WIT, UTC+9). Dipakai sebagai patokan validasi pengisian SLA/OLA susulan
+ * (backdate) supaya konsisten dengan jam operasional UPT, bukan UTC server.
+ */
+export function getTodayDateOnlyWIT(): string {
+  // en-CA locale menghasilkan format YYYY-MM-DD secara native.
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jayapura' });
+}
+
+/** Selisih hari (bulat) antara dua string "YYYY-MM-DD". Positif jika `to` < `from`. */
+export function diffDaysDateOnly(from: string, to: string): number {
+  const fromDate = parseDateOnly(from);
+  const toDate = parseDateOnly(to);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.round((fromDate.getTime() - toDate.getTime()) / msPerDay);
+}
+
+/**
  * Ubah objek Device dari Prisma (lastCalibrated/calibrationValidUntil/lastReportedDate
  * sebagai Date) balik ke bentuk string "YYYY-MM-DD" untuk response API, supaya
  * frontend yang mengonsumsi field ini sebagai string tidak perlu berubah.

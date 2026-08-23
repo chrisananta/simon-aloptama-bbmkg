@@ -71,7 +71,7 @@ Setiap modul fitur di `src/features/` wajib menggunakan akhiran nama berkas beri
 | :--- | :--- |
 | `LoginPage.tsx` | Form login & tampilan pesan error |
 | `AuthContext.tsx` | State global sesi, token, RBAC permissions, `login()`/`logout()` |
-| `authService.ts` | Panggilan `fetch('/api/login')`, penyimpanan token di `localStorage` |
+| `authService.ts` | Panggilan `fetch('/api/login')` (`credentials: 'include'`); token JWT hidup di cookie `httpOnly`, **bukan** `localStorage` — `localStorage` hanya menyimpan metadata sesi non-rahasia (nama user, role, waktu kedaluwarsa) untuk keperluan tampilan UI |
 | `ProtectedRoute.tsx` | Guard halaman: cek `isAuthenticated` & `isMenuAllowed` sebelum render konten |
 
 **Penting soal `isLoading` vs `isInitializing` di `AuthContext`:** `isInitializing` HANYA `true` sekali saat aplikasi pertama kali dibuka (pengecekan sesi awal). `isLoading` dipakai berulang setiap kali `login()` dipanggil (termasuk saat submit gagal). `ProtectedRoute` **harus** memakai `isInitializing` (bukan `isLoading`) untuk memutuskan tampilkan spinner vs `<LoginPage />` — kalau tertukar, `LoginPage` akan ter-*unmount* setiap kali user submit login, menyebabkan state lokalnya (termasuk pesan error) hilang sebelum sempat terlihat.
@@ -128,7 +128,7 @@ const {
 
 Saat menambahkan modul fitur baru di `src/features/nama-fitur/`:
 1. Buat `NamaFiturTypes.ts` untuk tipe data khusus.
-2. Buat `NamaFiturService.ts` untuk memanggil `apiClient` (gunakan `authFetch` dari `src/shared/api/http.ts`, bukan `fetch()` polos, supaya token JWT ikut terkirim).
+2. Buat `NamaFiturService.ts` untuk memanggil `apiClient` (gunakan `authFetch` dari `src/shared/api/http.ts`, bukan `fetch()` polos, supaya cookie sesi `httpOnly` ikut terkirim lewat `credentials: 'include'`).
 3. Buat `NamaFiturPage.tsx` sebagai tampilan utama.
 4. Jika butuh form, definisikan skema Zod di `src/shared/schemas/index.ts` dan buat `NamaFiturModal.tsx`.
 5. **Ambil data list (mis. stasiun/device) selalu lewat props dari komponen induk** (yang sudah sinkron via `apiClient` + `App.tsx`), jangan baca cache module secara langsung di dalam modal — pola ini pernah menyebabkan dropdown kosong karena race condition saat data belum sempat ter-fetch.

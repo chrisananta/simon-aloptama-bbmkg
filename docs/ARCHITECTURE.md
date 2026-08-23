@@ -15,12 +15,10 @@ SIMON BBMKG V adalah aplikasi full-stack dengan **backend nyata** (Express + Pri
 
 Aplikasi ini **tidak** memisahkan frontend dan backend jadi dua server berbeda saat development maupun production standar. `server.ts` di root project menjalankan **satu proses Express** yang:
 
-- Me-mount seluruh REST API di bawah prefix `/api/*` (lihat `simon-backend/src/routes/index.ts`)
+- Me-mount seluruh REST API di bawah prefix `/api/*` dan `/api/v1/*` (lihat `simon-backend/src/routes/index.ts`)
 - **Development**: menjalankan Vite dalam *middleware mode* untuk hot-reload frontend
 - **Production** (`NODE_ENV=production`): menyajikan file statis hasil `vite build` dari folder `dist/`
 - Menjalankan **auto-seed** sekali saat database masih kosong (generate 3 akun awal dengan password acak, hanya ditampilkan sekali di log terminal)
-
-> Catatan: ada juga `simon-backend/src/server.ts` (standalone, port 5000) yang **tidak dipakai** dalam alur normal — hanya alternatif jika backend ingin dipisah dari frontend di masa depan.
 
 ```
 [ Browser ]
@@ -53,19 +51,25 @@ Aplikasi ini **tidak** memisahkan frontend dan backend jadi dua server berbeda s
    - Cek password pakai bcrypt.compare()
    - Jika akun lama masih pakai password teks polos (migrasi dari versi lama),
      dicocokkan dulu lalu OTOMATIS di-hash ulang ke bcrypt & disimpan
-   - Sukses → generate JWT (jsonwebtoken), berisi { id, username, role, name }
+   - Sukses → generate JWT (jsonwebtoken), berisi { id, username, role, name, uptStation }
        │
        ▼
-4. Frontend simpan token di localStorage (authService.ts)
+4. Backend set cookie httpOnly "simon_jwt" lewat header Set-Cookie (userController.ts).
+   Token TIDAK dikirim di body JSON — hanya "expiresAt" (timestamp non-rahasia)
+   yang dikirim di body untuk keperluan UI (mis. hitung mundur sesi).
+   Frontend (authService.ts) menyimpan metadata sesi NON-rahasia (user + expiresAt)
+   di localStorage — token JWT itu sendiri TIDAK PERNAH ada di localStorage.
        │
        ▼
 5. Semua request API berikutnya lewat authFetch() (src/shared/api/http.ts)
-   yang otomatis menyisipkan header: Authorization: Bearer <token>
+   yang menyertakan `credentials: 'include'` — browser otomatis mengikutkan
+   cookie httpOnly "simon_jwt" di setiap request tanpa perlu campur tangan JS.
        │
        ▼
 6. Backend: middleware verifyToken (simon-backend/src/middleware/authMiddleware.ts)
-   memvalidasi token di SETIAP endpoint terproteksi.
-   Jika aksi butuh hak admin → middleware requireAdmin tambahan.
+   membaca token dari cookie (jalur utama) atau header Authorization: Bearer
+   (fallback untuk klien non-browser), lalu memvalidasi di SETIAP endpoint
+   terproteksi. Jika aksi butuh hak admin → middleware requireAdmin tambahan.
        │
        ▼
 7. Jika token invalid/kedaluwarsa → 401 → frontend otomatis logout
@@ -76,11 +80,13 @@ Aplikasi ini **tidak** memisahkan frontend dan backend jadi dua server berbeda s
 
 | Aspek | Implementasi |
 | :--- | :--- |
+| Penyimpanan token | Cookie `httpOnly` + `secure` (production) + `sameSite: lax`, nama `simon_jwt` — tidak bisa dibaca JavaScript sama sekali (beda dengan `localStorage` yang selalu bisa dibaca skrip apa pun). Ini juga meredam risiko CSRF lewat atribut `sameSite`. |
 | Hashing password | `bcrypt` (10 salt rounds), dengan migrasi otomatis dari data lama |
 | Secret JWT | Wajib di-set lewat env var `JWT_SECRET` — server **menolak nyala** jika kosong (`simon-backend/src/config/env.ts`) |
 | Brute-force protection | `express-rate-limit` khusus endpoint `/api/login` |
 | Otorisasi berbasis peran | Middleware `requireAdmin` untuk aksi hapus data & kelola akun |
 | Password di response API | Field `passwordHash` **tidak pernah** dikirim ke frontend (di-strip di `userController.ts`) |
+| CORS | Whitelist berbasis hostname yang di-parse dari `Origin` (bukan pencocokan substring mentah) — `server.ts` |
 | Auto-seed | Password akun awal di-generate **acak** tiap instalasi baru, dicetak sekali ke log terminal — bukan password hardcoded |
 
 ### Kenapa fallback offline TIDAK boleh dipakai saat backend menolak login
@@ -91,19 +97,20 @@ Aplikasi ini **tidak** memisahkan frontend dan backend jadi dua server berbeda s
 
 ## 4. Struktur Endpoint API (ringkas — detail lengkap lihat [API.md](./API.md))
 
-Backend mendaftarkan setiap grup route di **dua bentuk path sekaligus** (root & namespaced) yang mengarah ke controller yang sama:
+Backend mendaftarkan seluruh grup route di root (`/api/...`), tanpa alias namespaced terpisah. Prefix `/api` juga di-mount ulang secara identik di `/api/v1` (lihat `server.ts`).
 
-| Grup | Path utama | Alias namespaced |
+| Grup | Path | Akses tulis (POST/PUT/DELETE) |
 | :--- | :--- | :--- |
-| Auth & User | `/api/login`, `/api/users` | `/api/auth/...` |
-| Devices | `/api/devices` | `/api/master/devices` |
-| Stations | `/api/stations` | `/api/master/stations` |
-| Petugas | `/api/petugas` | `/api/master/petugas` |
-| SLA/OLA | `/api/sla-ola` | `/api/operational/sla-ola` |
-| Kalibrasi | `/api/calibration` | `/api/operational/calibration` |
-| Audit Log | `/api/audit-logs` | `/api/system/audit-logs` |
-| History | `/api/history` | — |
-| Health check | `/api/health` (publik, tanpa token) | — |
+| Auth & User | `/api/login`, `/api/logout`, `/api/users` | ADMIN (kecuali login/logout) |
+| Devices | `/api/devices` | ADMIN |
+| Stations | `/api/stations` | ADMIN |
+| Petugas | `/api/petugas` | ADMIN |
+| SLA/OLA (entry harian) | `/api/sla-ola` | Login (semua role) |
+| SLA/OLA (rekap bulanan) | `/api/sla-ola/monthly` | ADMIN |
+| Kalibrasi | `/api/calibration` | ADMIN |
+| Audit Log | `/api/audit-logs` | ADMIN |
+| History | `/api/history` | — (read-only, wajib login) |
+| Health check | `/api/health` | — (publik, tanpa token) |
 
 ---
 

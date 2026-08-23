@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "../../shared/api";
-import { slaOlaSchema } from "../../shared/schemas";
+import { slaOlaSchema, SLA_OLA_MAX_BACKDATE_DAYS } from "../../shared/schemas";
+import { getTodayIsoWIT, getIsoDaysAgoWIT, formatDateIndo } from "../../shared/utils/dateUtils";
 import { SlaOlaModalProps } from "./SlaOlaTypes";
 import {
   X as XIcon,
@@ -15,6 +16,7 @@ import {
   CheckSquare,
   Square,
   AlertTriangle,
+  CalendarClock,
 } from "lucide-react";
 
 const EQUIPMENT_CATEGORIES: string[] = [
@@ -78,6 +80,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       kondisiSla: true,
       kondisiOla: 100,
       kendala: "",
+      tanggal: getTodayIsoWIT(),
     },
   });
 
@@ -85,6 +88,22 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const watchCategory = watch("category");
   const watchKondisiOla = watch("kondisiOla");
   const watchKondisiSla = watch("kondisiSla");
+  const watchTanggal = watch("tanggal");
+
+  const todayIsoWIT = useMemo(() => getTodayIsoWIT(), []);
+  const minBackdateIsoWIT = useMemo(
+    () => getIsoDaysAgoWIT(SLA_OLA_MAX_BACKDATE_DAYS),
+    []
+  );
+  const isLateEntry = !!watchTanggal && watchTanggal !== todayIsoWIT;
+
+  // Reset ke tanggal hari ini setiap kali modal dibuka, supaya tidak
+  // "nyangkut" di tanggal susulan terakhir yang pernah dipilih user.
+  useEffect(() => {
+    if (isOpen) {
+      setValue("tanggal", getTodayIsoWIT());
+    }
+  }, [isOpen, setValue]);
 
   const [calcLogger, setCalcLogger] = useState<number>(100);
   const [calcPower, setCalcPower] = useState<number>(100);
@@ -339,6 +358,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         kondisiSla: data.kondisiSla,
         kondisiOla: data.kondisiOla,
         kendala: (data.kendala || "").trim(),
+        tanggal: data.tanggal,
       });
 
       setIsSubmitted(true);
@@ -448,9 +468,16 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               Data SLA &amp; OLA Berhasil Disimpan!
             </h4>
             <p className="text-xs text-emerald-700">
-              Kondisi operasional UPT {watchUptStation} ({watchCategory}) telah
+              Kondisi operasional UPT {watchUptStation} ({watchCategory}) untuk{" "}
+              tanggal <strong>{formatDateIndo(watchTanggal)}</strong> telah
               diperbarui dengan Skor OLA <strong>{watchKondisiOla}%</strong>.
             </p>
+            {isLateEntry && (
+              <p className="inline-flex items-center gap-1.5 justify-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-100 text-orange-800 border border-orange-300">
+                <AlertTriangle size={12} />
+                Tercatat sebagai pengisian susulan / terlambat
+              </p>
+            )}
           </div>
         ) : (
           <form
@@ -466,6 +493,35 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 </div>
               </div>
             )}
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <CalendarClock size={14} className="text-[#0052CC]" />
+                TANGGAL KONDISI YANG DILAPORKAN:
+              </label>
+              <input
+                type="date"
+                {...register("tanggal")}
+                disabled={isSubmitting}
+                min={minBackdateIsoWIT}
+                max={todayIsoWIT}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
+              />
+              {errors.tanggal ? (
+                <span className="text-[10px] text-rose-600 font-bold block">
+                  {String(errors.tanggal.message)}
+                </span>
+              ) : isLateEntry ? (
+                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-300">
+                  <AlertTriangle size={11} />
+                  Diisi Terlambat — data susulan untuk {formatDateIndo(watchTanggal)}
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-400 block">
+                  Bisa diisi mundur maks. {SLA_OLA_MAX_BACKDATE_DAYS} hari jika ada data harian yang terlewat.
+                </span>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">

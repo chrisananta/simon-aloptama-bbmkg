@@ -26,7 +26,7 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 | **Frontend Framework** | React 19 + TypeScript + Vite |
 | **Styling** | Tailwind CSS v4 |
 | **Form & Validation** | React Hook Form + Zod Schema Validation |
-| **State & API Layer** | Centralized API Client (`apiClient`) dengan cache memori + `authFetch` (auto-attach JWT) |
+| **State & API Layer** | Centralized API Client (`apiClient`) dengan cache memori + `authFetch` (kirim cookie sesi `httpOnly` via `credentials: 'include'`) |
 | **Backend Server** | Node.js + Express (`server.ts`), digabung dengan Vite middleware (dev) / static files (production) |
 | **Database** | PostgreSQL + **Prisma ORM** (`simon-backend/prisma/schema.prisma`) |
 | **Autentikasi** | JWT (`jsonwebtoken`) + `bcrypt` untuk hashing password |
@@ -38,8 +38,8 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 
 ## 🔐 Autentikasi Singkat
 
-- Login: `POST /api/login` → dapat JWT token
-- Semua endpoint lain wajib header `Authorization: Bearer <token>`
+- Login: `POST /api/login` → backend set cookie `httpOnly` `simon_jwt` (token **tidak** dikirim di body JSON)
+- Semua endpoint lain wajib terautentikasi — cookie httpOnly terkirim otomatis oleh browser (jalur utama), atau header `Authorization: Bearer <token>` (fallback untuk klien non-browser)
 - 2 role: `ADMIN` (Admin INSKAL — akses penuh) dan `UPT_PIMPINAN` (operator UPT — akses terbatas, tanpa hak hapus/kelola akun)
 - Detail lengkap alur login → validasi token → migrasi password otomatis, lihat [ARCHITECTURE.md](./ARCHITECTURE.md#3-alur-autentikasi-login--token--request-terproteksi)
 

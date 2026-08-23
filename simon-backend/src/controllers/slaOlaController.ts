@@ -2,7 +2,18 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-import { serializeDeviceDates } from '../utils/dateUtils.js';
+import {
+  serializeDeviceDates,
+  parseDateOnly,
+  formatDateOnly,
+  getTodayDateOnlyWIT,
+  diffDaysDateOnly,
+} from '../utils/dateUtils.js';
+
+// Batas maksimal mundur untuk pengisian SLA/OLA susulan (hari).
+const MAX_BACKDATE_DAYS = 10;
+
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const saveSlaOlaInput = z.object({
   uptStation: z.string().trim().min(1, 'Stasiun UPT wajib diisi').max(200),
@@ -11,6 +22,9 @@ const saveSlaOlaInput = z.object({
   kondisiSla: z.union([z.boolean(), z.enum(['true', 'false']), z.literal(1), z.literal(0), z.literal('1'), z.literal('0')]),
   kondisiOla: z.coerce.number().finite().min(0, 'Nilai OLA harus antara 0 sampai 100.').max(100, 'Nilai OLA harus antara 0 sampai 100.'),
   kendala: z.string().trim().max(2000).optional(),
+  // Tanggal kondisi yang dilaporkan (opsional; default hari ini jika kosong).
+  // Format "YYYY-MM-DD", dipakai untuk pengisian susulan/backdate.
+  tanggal: z.string().trim().regex(DATE_ONLY_REGEX, 'Format tanggal wajib "YYYY-MM-DD".').optional(),
 });
 
 const saveMonthlySlaOlaInput = z.object({
@@ -35,11 +49,29 @@ export const slaOlaController = {
     const parsed = saveSlaOlaInput.safeParse(req.body);
     if (!parsed.success) return invalidSlaOla(res, parsed.error);
     try {
-      const { uptStation, category, deviceId, kondisiSla, kondisiOla, kendala } = parsed.data;
+      const { uptStation, category, deviceId, kondisiSla, kondisiOla, kendala, tanggal } = parsed.data;
 
       if (!req.user) {
         return res.status(401).json({ success: false, message: 'Sesi tidak valid.' });
       }
+
+      // Validasi & resolusi tanggal laporan (mendukung pengisian susulan/backdate).
+      const todayStr = getTodayDateOnlyWIT();
+      const reportDateStr = tanggal || todayStr;
+
+      if (reportDateStr > todayStr) {
+        return res.status(400).json({ success: false, message: 'Tanggal laporan tidak boleh di masa depan.' });
+      }
+      const daysBack = diffDaysDateOnly(todayStr, reportDateStr);
+      if (daysBack > MAX_BACKDATE_DAYS) {
+        return res.status(400).json({
+          success: false,
+          message: `Tanggal laporan hanya boleh mundur maksimal ${MAX_BACKDATE_DAYS} hari dari hari ini.`,
+        });
+      }
+
+      const reportDateObj = parseDateOnly(reportDateStr);
+      const isLate = reportDateStr !== todayStr;
 
       const slaOn = kondisiSla === true || kondisiSla === 'true' || kondisiSla === 1 || kondisiSla === '1';
       const ola = kondisiOla;
@@ -71,9 +103,21 @@ export const slaOlaController = {
 
       const actorName = req.user.name || 'System';
 
+      // Perangkat hanya boleh diperbarui statusnya "hari ini" (live status)
+      // oleh laporan yang tanggalnya sama atau lebih baru dari data yang
+      // sudah tersimpan. Kalau ini pengisian susulan untuk tanggal lampau
+      // sementara perangkat sudah punya laporan yang lebih baru, log historis
+      // tetap dicatat tapi status live perangkat TIDAK ditimpa mundur.
+      const shouldUpdateLiveStatus = (dev: { lastReportedDate: Date | null }) => {
+        if (!dev.lastReportedDate) return true;
+        const existingStr = formatDateOnly(dev.lastReportedDate)!;
+        return reportDateStr >= existingStr;
+      };
+
       // Eksekusi Transaksi Atomik Database
       const { log } = await prisma.$transaction(async (tx) => {
-        // 1. Buat Log SLA/OLA
+        // 1. Buat Log SLA/OLA (selalu tercatat sebagai riwayat per tanggal,
+        //    terlepas dari apakah status live perangkat ikut diperbarui).
         const createdLog = await tx.slaOlaLog.create({
           data: {
             uptStation,
@@ -84,27 +128,35 @@ export const slaOlaController = {
             kendala: kendala || '',
             status: newStatus,
             actor: actorName,
+            reportDate: reportDateObj,
+            isLate,
           },
         });
 
         let updatedDeviceName = '';
+        let liveStatusSkipped = false;
 
-        // 2. Perbarui Status Perangkat Terkait
+        // 2. Perbarui Status Perangkat Terkait (hanya jika laporan ini bukan
+        //    laporan yang lebih lama dari data terakhir yang sudah tersimpan).
         if (deviceId) {
           const dev = await tx.device.findUnique({ where: { devicesId: deviceId } });
           if (dev) {
             updatedDeviceName = dev.site;
-            await tx.device.update({
-              where: { devicesId: deviceId },
-              data: {
-                conditionStatus: newStatus,
-                slaScore: slaOn ? 100 : 0,
-                olaScore: ola,
-                issueDescription: kendala || (newStatus === 'NORMAL' ? null : 'Kendala operasional dilaporkan UPT'),
-                downtimeDuration: newStatus === 'NORMAL' ? null : newStatus === 'MATI' ? 'Mati Total (0%)' : 'Dalam Penanganan UPT',
-                lastReportedDate: new Date(),
-              },
-            });
+            if (shouldUpdateLiveStatus(dev)) {
+              await tx.device.update({
+                where: { devicesId: deviceId },
+                data: {
+                  conditionStatus: newStatus,
+                  slaScore: slaOn ? 100 : 0,
+                  olaScore: ola,
+                  issueDescription: kendala || (newStatus === 'NORMAL' ? null : 'Kendala operasional dilaporkan UPT'),
+                  downtimeDuration: newStatus === 'NORMAL' ? null : newStatus === 'MATI' ? 'Mati Total (0%)' : 'Dalam Penanganan UPT',
+                  lastReportedDate: reportDateObj,
+                },
+              });
+            } else {
+              liveStatusSkipped = true;
+            }
           }
         } else {
           const matchingDevices = await tx.device.findMany({
@@ -113,21 +165,33 @@ export const slaOlaController = {
 
           for (const dev of matchingDevices) {
             updatedDeviceName = dev.site;
-            await tx.device.update({
-              where: { devicesId: dev.devicesId },
-              data: {
-                conditionStatus: newStatus,
-                slaScore: slaOn ? 100 : 0,
-                olaScore: ola,
-                issueDescription: kendala || (newStatus === 'NORMAL' ? null : 'Kendala operasional dilaporkan UPT'),
-                downtimeDuration: newStatus === 'NORMAL' ? null : newStatus === 'MATI' ? 'Mati Total (0%)' : 'Dalam Penanganan UPT',
-                lastReportedDate: new Date(),
-              },
-            });
+            if (shouldUpdateLiveStatus(dev)) {
+              await tx.device.update({
+                where: { devicesId: dev.devicesId },
+                data: {
+                  conditionStatus: newStatus,
+                  slaScore: slaOn ? 100 : 0,
+                  olaScore: ola,
+                  issueDescription: kendala || (newStatus === 'NORMAL' ? null : 'Kendala operasional dilaporkan UPT'),
+                  downtimeDuration: newStatus === 'NORMAL' ? null : newStatus === 'MATI' ? 'Mati Total (0%)' : 'Dalam Penanganan UPT',
+                  lastReportedDate: reportDateObj,
+                },
+              });
+            } else {
+              liveStatusSkipped = true;
+            }
           }
         }
 
-        // 3. Catat Log Aktivitas (Audit Log)
+        // 3. Catat Log Aktivitas (Audit Log), termasuk penanda susulan/terlambat.
+        const tanggalIndo = formatDateOnly(reportDateObj);
+        const lateNote = isLate
+          ? ` [DIISI TERLAMBAT / SUSULAN — data untuk tanggal ${tanggalIndo}, dikirim pada ${todayStr}]`
+          : '';
+        const skippedNote = liveStatusSkipped
+          ? ' Status terkini perangkat tidak diubah karena sudah ada laporan yang lebih baru.'
+          : '';
+
         await tx.auditLog.create({
           data: {
             table: 'master_sla_ola',
@@ -135,7 +199,7 @@ export const slaOlaController = {
             recordId: deviceId || uptStation,
             recordName: updatedDeviceName || `${category} - ${uptStation}`,
             actor: actorName,
-            details: `Pengisian SLA/OLA: SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA=${ola}%. Kendala: "${kendala || '-'}"`,
+            details: `Pengisian SLA/OLA (tanggal ${tanggalIndo}): SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA=${ola}%. Kendala: "${kendala || '-'}"${lateNote}${skippedNote}`,
           },
         });
 
@@ -147,8 +211,12 @@ export const slaOlaController = {
 
       return res.json({
         success: true,
-        message: 'Data SLA/OLA berhasil disimpan ke database.',
-        data: log,
+        message: isLate
+          ? `Data SLA/OLA susulan untuk tanggal ${formatDateOnly(reportDateObj)} berhasil disimpan.`
+          : 'Data SLA/OLA berhasil disimpan ke database.',
+        data: { ...log, reportDate: formatDateOnly(log.reportDate) },
+        isLate,
+        tanggal: formatDateOnly(reportDateObj),
         devices: allDevices.map(serializeDeviceDates),
         lastSync: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jayapura' }),
       });
@@ -197,6 +265,11 @@ export const slaOlaController = {
             status: newStatus,
             actor: actorName,
             timestamp: targetTimestamp,
+            // Rekap bulanan tidak punya tanggal harian spesifik; pakai
+            // tanggal 15 bulan tsb sebagai representasi (sama seperti timestamp),
+            // dan bukan bagian dari alur pengisian susulan harian.
+            reportDate: targetTimestamp,
+            isLate: false,
           },
         });
 

@@ -15,5 +15,6 @@ export interface SlaOlaModalProps {
     kondisiSla: boolean;
     kondisiOla: number;
     kendala: string;
+    tanggal: string;
   }) => void;
 }

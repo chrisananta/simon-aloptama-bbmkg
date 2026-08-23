@@ -26,3 +26,21 @@ export function getWitTimeString(): string {
     second: '2-digit',
   }) + ' WIT';
 }
+
+/**
+ * Tanggal "hari ini" (YYYY-MM-DD) menurut zona waktu BBMKG V, Asia/Jayapura
+ * (WIT). Dipakai sebagai patokan default & batas maksimal/minimal pada field
+ * tanggal pengisian SLA/OLA (termasuk pengisian susulan/backdate), supaya
+ * konsisten dengan validasi yang sama di backend.
+ */
+export function getTodayIsoWIT(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jayapura' });
+}
+
+/** Tanggal ISO (YYYY-MM-DD) mundur `daysBack` hari dari hari ini (WIT). */
+export function getIsoDaysAgoWIT(daysBack: number): string {
+  const todayWitStr = getTodayIsoWIT();
+  const d = new Date(`${todayWitStr}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() - daysBack);
+  return d.toISOString().slice(0, 10);
+}

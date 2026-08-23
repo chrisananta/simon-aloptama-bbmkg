@@ -8,6 +8,7 @@ export const SlaOlaService = {
     kondisiSla: boolean;
     kondisiOla: number;
     kendala: string;
+    tanggal?: string;
     actor?: string;
   }) => {
     return await apiClient.devices.saveSlaOla({

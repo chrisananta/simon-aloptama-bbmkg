@@ -2272,7 +2272,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       {isUserModalOpen && (
         <div className="fixed inset-0 z-[3000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh]">
-            <div className="bg-[#0052CC] p-3.5 sm:p-4 text-white flex items-center justify-between shrink-0">
+            <div className="bg-[#0A203C] p-3.5 sm:p-4 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Users size={18} />
                 <h3 className="font-bold text-xs sm:text-sm">

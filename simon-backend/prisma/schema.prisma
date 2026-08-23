@@ -84,11 +84,18 @@ model SlaOlaLog {
   status     String   @default("NORMAL")
   actor      String   @default("Operator UPT")
   timestamp  DateTime @default(now())
+  // Tanggal kondisi yang dilaporkan (bisa mundur hingga 10 hari dari hari
+  // pengisian, untuk mengisi data harian yang terlewat). Beda dengan
+  // `timestamp` yang selalu mencatat waktu SUBMIT sebenarnya (untuk audit).
+  reportDate DateTime @db.Date
+  // true jika reportDate bukan hari ini saat data disimpan (pengisian susulan).
+  isLate     Boolean  @default(false)
   device     Device?  @relation(fields: [deviceId], references: [devicesId])
 
   @@index([timestamp])
   @@index([deviceId])
   @@index([uptStation])
+  @@index([reportDate])
   @@map("sla_ola_logs")
 }
 

@@ -91,6 +91,7 @@ function AppContent() {
     kondisiSla: boolean;
     kondisiOla: number;
     kendala: string;
+    tanggal: string;
   }) => {
     const res = await apiClient.devices.saveSlaOla({
       ...data,
