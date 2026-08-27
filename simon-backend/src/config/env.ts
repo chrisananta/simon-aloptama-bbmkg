@@ -58,8 +58,8 @@ if (isProduction && CORS_ORIGINS.length === 0) {
  * JavaScript sama sekali (termasuk skrip jahat lewat XSS) - beda dengan
  * localStorage yang selalu bisa dibaca kode JS apa pun yang berjalan di halaman.
  *
- * - secure: true di production (cookie hanya dikirim lewat HTTPS - app kita
- *   selalu diakses lewat ngrok/HTTPS di production, jadi ini aman diaktifkan).
+ * - secure: true di production (cookie hanya dikirim lewat HTTPS - pastikan
+ *   app selalu diakses lewat HTTPS saat production, jadi ini aman diaktifkan).
  *   false di development supaya tetap jalan di http://localhost biasa.
  * - sameSite: 'lax' cukup karena frontend & backend disajikan dari origin yang
  *   SAMA (satu proses Express yang sama menyajikan API sekaligus aset SPA -

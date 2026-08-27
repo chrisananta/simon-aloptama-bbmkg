@@ -453,6 +453,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     uptStation: string;
     status: string;
     downtimeDuration: string;
+    keterangan: string;
     reportedDate?: string;
   }> = [];
 
@@ -463,6 +464,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     uptStation: string;
     status: string;
     downtimeDuration: string;
+    keterangan: string;
     reportedDate?: string;
   }> = [];
 
@@ -478,6 +480,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         uptStation: d.uptStation,
         status: 'GANGGUAN',
         downtimeDuration: d.downtimeDuration || '2 Jam',
+        keterangan: d.issueDescription || '-',
         reportedDate: d.lastCalibrated || '28 Juli 2026',
       }));
 
@@ -490,6 +493,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         uptStation: d.uptStation,
         status: 'MATI',
         downtimeDuration: d.downtimeDuration || '18 Hari',
+        keterangan: d.issueDescription || '-',
         reportedDate: d.lastCalibrated || '28 Juli 2026',
       }));
   } else {
@@ -509,6 +513,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         uptStation: h.uptStation,
         status: 'GANGGUAN',
         downtimeDuration: h.downtimeDuration,
+        keterangan: h.issue || '-',
         reportedDate: h.reportedDate,
       }));
 
@@ -521,6 +526,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         uptStation: h.uptStation,
         status: 'MATI',
         downtimeDuration: h.downtimeDuration,
+        keterangan: h.issue || '-',
         reportedDate: h.reportedDate,
       }));
   }
@@ -984,7 +990,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                   <th className="p-2.5">Nama Alat</th>
                   <th className="p-2.5">Lokasi / UPT</th>
                   <th className="p-2.5">Status</th>
-                  <th className="p-2.5">Durasi Gangguan</th>
+                  <th className="p-2.5">Keterangan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -1010,7 +1016,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                         </span>
                       </td>
                       <td className="p-2.5 font-medium text-slate-800">
-                        {dev.downtimeDuration}
+                        {dev.keterangan}
                       </td>
                     </tr>
                   ))
@@ -1040,7 +1046,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                   <th className="p-2.5">Nama Alat</th>
                   <th className="p-2.5">Lokasi / UPT</th>
                   <th className="p-2.5">Status</th>
-                  <th className="p-2.5">Durasi Off</th>
+                  <th className="p-2.5">Keterangan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -1066,7 +1072,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                         </span>
                       </td>
                       <td className="p-2.5 font-bold text-rose-600">
-                        {dev.downtimeDuration}
+                        {dev.keterangan}
                       </td>
                     </tr>
                   ))

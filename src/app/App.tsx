@@ -22,7 +22,7 @@ import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 function AppContent() {
   const { user, permissions, isAuthenticated } = useAuth();
   const [activeMenu, setActiveMenu] = useState<ActiveNavMenu>('dashboard');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('28 Juli 2026, 10:30 WIT');
   const [isServerModalOpen, setIsServerModalOpen] = useState(false);
   
