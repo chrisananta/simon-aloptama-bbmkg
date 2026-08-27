@@ -11,7 +11,6 @@ import {
   LogOut
 } from 'lucide-react';
 import { ActiveNavMenu, AloptamaDevice } from '../shared/types';
-import { SimonLogo } from '../shared/components/ui/SimonLogo';
 import { useAuth } from '../features/auth/AuthContext';
 import sidebarLogoImg from '../assets/images/Logosidebar.png';
 
@@ -199,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span>Keluar</span>
               </button>
               <p className="text-[10px] font-medium text-slate-400 text-center mt-0.5">
-                chr$ © 2026 BBMKG V
+                ©2026 BBMKG V | chrs | v1.0
               </p>
             </>
           ) : (

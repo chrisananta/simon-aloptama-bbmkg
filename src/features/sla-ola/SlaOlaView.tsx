@@ -162,12 +162,14 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const olaByCategoryData = useMemo(() => {
     const CATEGORIES = [
-      { key: 'AWOS', name: 'AWOS' },
+      { key: 'AWOS Kat.I', name: 'AWOS I' },
+      { key: 'AWOS Kat.II', name: 'AWOS II' },
+      { key: 'AWOS Kat.III', name: 'AWOS III' },
+      { key: 'Radar Cuaca', name: 'Radar' },
       { key: 'AWS', name: 'AWS' },
       { key: 'ARG', name: 'ARG' },
-      { key: 'Radar Cuaca', name: 'Radar Cuaca' },
-      { key: 'Lightning Detector', name: 'Lightning' },
       { key: 'Seismometer', name: 'Seismometer' },
+      { key: 'Lightning Detector', name: 'Lightning' },
       { key: 'Accelerograph', name: 'Accelerograph' },
       { key: 'WRS NG', name: 'WRS NG' },
       { key: 'Sirene', name: 'Sirene' },
@@ -178,12 +180,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
     return CATEGORIES.map((catObj) => {
-      const catDevs = targetDevs.filter((d) =>
-        (d.category || '').toLowerCase().includes(catObj.key.toLowerCase()) ||
-        (catObj.key === 'Radar Cuaca' && (d.category || '').toLowerCase().includes('radar')) ||
-        (catObj.key === 'WRS NG' && (d.category || '').toLowerCase().includes('wrs')) ||
-        (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
-      );
+      const catDevs = targetDevs.filter((d) => (d.category || '').toLowerCase() === catObj.key.toLowerCase());
 
       const jumlahLokasi = catDevs.length;
 
@@ -219,113 +216,23 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const balaiKondisiKalibrasiPercent = Math.round((balaiTidakTerlambatCount / balaiTotalDevs) * 100);
 
   const rekapTableData = useMemo(() => {
+    const matchCat = (devCategory?: string, target?: string) => {
+      if (!devCategory || !target) return false;
+      return devCategory.toLowerCase() === target.toLowerCase();
+    };
+
     const CATEGORIES = [
-      {
-        no: 1,
-        key: 'AWOS KAT. I',
-        name: 'AWOS KAT. I',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return (
-            c.includes('awos') &&
-            !c.includes('kat ii') &&
-            !c.includes('kat. ii') &&
-            !c.includes('kat iii') &&
-            !c.includes('kat. iii') &&
-            !c.includes('kat 2') &&
-            !c.includes('kat 3')
-          );
-        },
-      },
-      {
-        no: 2,
-        key: 'AWOS KAT II & III',
-        name: 'AWOS KAT II & III',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return (
-            c.includes('awos') &&
-            (c.includes('kat ii') ||
-              c.includes('kat. ii') ||
-              c.includes('kat iii') ||
-              c.includes('kat. iii') ||
-              c.includes('kat 2') ||
-              c.includes('kat 3'))
-          );
-        },
-      },
-      {
-        no: 3,
-        key: 'RADAR CUACA',
-        name: 'RADAR CUACA',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('radar');
-        },
-      },
-      {
-        no: 4,
-        key: 'AWS',
-        name: 'AWS',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return (c.includes('aws') || c.includes('automatic weather')) && !c.includes('awos');
-        },
-      },
-      {
-        no: 5,
-        key: 'ARG',
-        name: 'ARG',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('arg') || c.includes('automatic rain');
-        },
-      },
-      {
-        no: 6,
-        key: 'SEISMOMETER',
-        name: 'SEISMOMETER',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('seismo');
-        },
-      },
-      {
-        no: 7,
-        key: 'LIGHTNING DETECTOR',
-        name: 'LIGHTNING DETECTOR',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('lightning') || c.includes('petir');
-        },
-      },
-      {
-        no: 8,
-        key: 'ACCELEROGRAPH NC',
-        name: 'ACCELEROGRAPH NC',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('accelerograph') || c.includes('akselero') || c.includes('strong motion');
-        },
-      },
-      {
-        no: 9,
-        key: 'WRS NEW GENERATION',
-        name: 'WRS NEW GENERATION',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('wrs') || c.includes('warning receiver');
-        },
-      },
-      {
-        no: 10,
-        key: 'SIRENE',
-        name: 'SIRENE',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('sirene') || c.includes('siren');
-        },
-      },
+      { no: 1, key: 'AWOS KAT. I', name: 'AWOS Kat.I', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'AWOS Kat.I') },
+      { no: 2, key: 'AWOS KAT. II', name: 'AWOS Kat.II', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'AWOS Kat.II') },
+      { no: 3, key: 'AWOS KAT. III', name: 'AWOS Kat.III', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'AWOS Kat.III') },
+      { no: 4, key: 'RADAR CUACA', name: 'Radar Cuaca', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Radar Cuaca') },
+      { no: 5, key: 'AWS', name: 'AWS', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'AWS') },
+      { no: 6, key: 'ARG', name: 'ARG', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'ARG') },
+      { no: 7, key: 'SEISMOMETER', name: 'Seismometer', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Seismometer') },
+      { no: 8, key: 'LIGHTNING DETECTOR', name: 'Lightning Detector', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Lightning Detector') },
+      { no: 9, key: 'ACCELEROGRAPH', name: 'Accelerograph', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Accelerograph') },
+      { no: 10, key: 'WRS NG', name: 'WRS NG', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'WRS NG') },
+      { no: 11, key: 'SIRENE', name: 'Sirene', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Sirene') },
     ];
 
     const targetMonthNum = monthIdx + 1;
@@ -375,13 +282,15 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   }, [selectedYear, selectedMonth, monthIdx, selectedUpt, uptFilteredDevices]);
 
   const monthlySlaValue = useMemo(() => {
+    if (!rekapTableData.length) return 0;
     const sumSla = rekapTableData.reduce((acc, curr) => acc + curr.sla, 0);
-    return Number((sumSla / 10).toFixed(1));
+    return Number((sumSla / rekapTableData.length).toFixed(1));
   }, [rekapTableData]);
 
   const monthlyOlaValue = useMemo(() => {
+    if (!rekapTableData.length) return 0;
     const sumOla = rekapTableData.reduce((acc, curr) => acc + curr.ola, 0);
-    return Number((sumOla / 10).toFixed(1));
+    return Number((sumOla / rekapTableData.length).toFixed(1));
   }, [rekapTableData]);
 
   const totalLokasiSum = useMemo(
@@ -1097,7 +1006,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Peralatan yang belum diisi SLA OLA oleh teknisi UPT. Saat ini <strong>{reportedCount} dari {totalDevicesCount} unit alat ({Math.round((reportedCount/totalDevicesCount)*100)}%)</strong> telah melaporkan status hari ini.
+              Peralatan yang belum diisi SLA OLA oleh teknisi UPT. Saat ini <strong>{reportedCount} dari {totalDevicesCount} unit alat ({totalDevicesCount > 0 ? Math.round((reportedCount/totalDevicesCount)*100) : 0}%)</strong> telah melaporkan status hari ini.
             </p>
           </div>
 
