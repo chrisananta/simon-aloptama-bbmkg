@@ -162,14 +162,12 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const olaByCategoryData = useMemo(() => {
     const CATEGORIES = [
-      { key: 'AWOS Kat.I', name: 'AWOS I' },
-      { key: 'AWOS Kat.II', name: 'AWOS II' },
-      { key: 'AWOS Kat.III', name: 'AWOS III' },
-      { key: 'Radar Cuaca', name: 'Radar' },
+      { key: 'AWOS', name: 'AWOS' },
       { key: 'AWS', name: 'AWS' },
       { key: 'ARG', name: 'ARG' },
-      { key: 'Seismometer', name: 'Seismometer' },
+      { key: 'Radar Cuaca', name: 'Radar Cuaca' },
       { key: 'Lightning Detector', name: 'Lightning' },
+      { key: 'Seismometer', name: 'Seismometer' },
       { key: 'Accelerograph', name: 'Accelerograph' },
       { key: 'WRS NG', name: 'WRS NG' },
       { key: 'Sirene', name: 'Sirene' },
@@ -180,7 +178,12 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
     return CATEGORIES.map((catObj) => {
-      const catDevs = targetDevs.filter((d) => (d.category || '').toLowerCase() === catObj.key.toLowerCase());
+      const catDevs = targetDevs.filter((d) =>
+        (d.category || '').toLowerCase().includes(catObj.key.toLowerCase()) ||
+        (catObj.key === 'Radar Cuaca' && (d.category || '').toLowerCase().includes('radar')) ||
+        (catObj.key === 'WRS NG' && (d.category || '').toLowerCase().includes('wrs')) ||
+        (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
+      );
 
       const jumlahLokasi = catDevs.length;
 
@@ -216,23 +219,85 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const balaiKondisiKalibrasiPercent = Math.round((balaiTidakTerlambatCount / balaiTotalDevs) * 100);
 
   const rekapTableData = useMemo(() => {
-    const matchCat = (devCategory?: string, target?: string) => {
-      if (!devCategory || !target) return false;
-      return devCategory.toLowerCase() === target.toLowerCase();
+    // Kategori resmi sesuai field `category` di database (lihat dropdown di
+    // AdminMasterView.tsx). Pencocokan dilakukan exact-match (bukan substring)
+    // supaya "AWOS Kat.II" dan "AWOS Kat.III" tidak pernah saling tertukar,
+    // dan device dengan kategori lain tidak ikut kehitung secara tidak sengaja.
+    const normalizeCategory = (s: string) =>
+      (s || '').toLowerCase().replace(/[.\s]/g, '');
+
+    const makeExactMatcher = (canonicalCategory: string) => {
+      const target = normalizeCategory(canonicalCategory);
+      return (d: AloptamaDevice) => normalizeCategory(d.category) === target;
     };
 
     const CATEGORIES = [
-      { no: 1, key: 'AWOS KAT. I', name: 'AWOS Kat.I', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'AWOS Kat.I') },
-      { no: 2, key: 'AWOS KAT. II', name: 'AWOS Kat.II', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'AWOS Kat.II') },
-      { no: 3, key: 'AWOS KAT. III', name: 'AWOS Kat.III', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'AWOS Kat.III') },
-      { no: 4, key: 'RADAR CUACA', name: 'Radar Cuaca', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Radar Cuaca') },
-      { no: 5, key: 'AWS', name: 'AWS', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'AWS') },
-      { no: 6, key: 'ARG', name: 'ARG', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'ARG') },
-      { no: 7, key: 'SEISMOMETER', name: 'Seismometer', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Seismometer') },
-      { no: 8, key: 'LIGHTNING DETECTOR', name: 'Lightning Detector', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Lightning Detector') },
-      { no: 9, key: 'ACCELEROGRAPH', name: 'Accelerograph', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Accelerograph') },
-      { no: 10, key: 'WRS NG', name: 'WRS NG', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'WRS NG') },
-      { no: 11, key: 'SIRENE', name: 'Sirene', matchFn: (d: AloptamaDevice) => matchCat(d.category, 'Sirene') },
+      {
+        no: 1,
+        key: 'AWOS Kat.I',
+        name: 'AWOS KAT. I',
+        matchFn: makeExactMatcher('AWOS Kat.I'),
+      },
+      {
+        no: 2,
+        key: 'AWOS Kat.II',
+        name: 'AWOS KAT II',
+        matchFn: makeExactMatcher('AWOS Kat.II'),
+      },
+      {
+        no: 3,
+        key: 'AWOS Kat.III',
+        name: 'AWOS KAT III',
+        matchFn: makeExactMatcher('AWOS Kat.III'),
+      },
+      {
+        no: 4,
+        key: 'Radar Cuaca',
+        name: 'RADAR CUACA',
+        matchFn: makeExactMatcher('Radar Cuaca'),
+      },
+      {
+        no: 5,
+        key: 'AWS',
+        name: 'AWS',
+        matchFn: makeExactMatcher('AWS'),
+      },
+      {
+        no: 6,
+        key: 'ARG',
+        name: 'ARG',
+        matchFn: makeExactMatcher('ARG'),
+      },
+      {
+        no: 7,
+        key: 'Seismometer',
+        name: 'SEISMOMETER',
+        matchFn: makeExactMatcher('Seismometer'),
+      },
+      {
+        no: 8,
+        key: 'Lightning Detector',
+        name: 'LIGHTNING DETECTOR',
+        matchFn: makeExactMatcher('Lightning Detector'),
+      },
+      {
+        no: 9,
+        key: 'Accelerograph',
+        name: 'ACCELEROGRAPH NC',
+        matchFn: makeExactMatcher('Accelerograph'),
+      },
+      {
+        no: 10,
+        key: 'WRS NG',
+        name: 'WRS NEW GENERATION',
+        matchFn: makeExactMatcher('WRS NG'),
+      },
+      {
+        no: 11,
+        key: 'Sirene',
+        name: 'SIRENE',
+        matchFn: makeExactMatcher('Sirene'),
+      },
     ];
 
     const targetMonthNum = monthIdx + 1;
@@ -282,15 +347,13 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   }, [selectedYear, selectedMonth, monthIdx, selectedUpt, uptFilteredDevices]);
 
   const monthlySlaValue = useMemo(() => {
-    if (!rekapTableData.length) return 0;
     const sumSla = rekapTableData.reduce((acc, curr) => acc + curr.sla, 0);
-    return Number((sumSla / rekapTableData.length).toFixed(1));
+    return Number((sumSla / 10).toFixed(1));
   }, [rekapTableData]);
 
   const monthlyOlaValue = useMemo(() => {
-    if (!rekapTableData.length) return 0;
     const sumOla = rekapTableData.reduce((acc, curr) => acc + curr.ola, 0);
-    return Number((sumOla / rekapTableData.length).toFixed(1));
+    return Number((sumOla / 10).toFixed(1));
   }, [rekapTableData]);
 
   const totalLokasiSum = useMemo(
@@ -1006,7 +1069,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Peralatan yang belum diisi SLA OLA oleh teknisi UPT. Saat ini <strong>{reportedCount} dari {totalDevicesCount} unit alat ({totalDevicesCount > 0 ? Math.round((reportedCount/totalDevicesCount)*100) : 0}%)</strong> telah melaporkan status hari ini.
+              Peralatan yang belum diisi SLA OLA oleh teknisi UPT. Saat ini <strong>{reportedCount} dari {totalDevicesCount} unit alat ({Math.round((reportedCount/totalDevicesCount)*100)}%)</strong> telah melaporkan status hari ini.
             </p>
           </div>
 
