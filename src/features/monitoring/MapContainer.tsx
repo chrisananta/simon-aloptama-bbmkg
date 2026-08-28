@@ -241,7 +241,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <div ref={mapContainerRef} className="w-full h-full" />
 
     {isFullscreen && (
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md px-8 py-3.5 rounded-2xl shadow-lg border border-slate-200 text-center">
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md px-8 py-3.5 rounded-2xl shadow-lg border border-slate-200 text-center">
         <p className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-wide leading-tight">
           DASHBOARD MONITORING ALOPTAMA
         </p>

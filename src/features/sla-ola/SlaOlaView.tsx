@@ -397,8 +397,16 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   });
 
   const sortedDevices = [...filteredDevices].sort((a, b) => {
-    const timeA = a.lastCalibrated ? new Date(a.lastCalibrated).getTime() : 0;
-    const timeB = b.lastCalibrated ? new Date(b.lastCalibrated).getTime() : 0;
+    // Urutkan dari yang paling lama belum update.
+    // Prioritaskan lastReportedDate (tanggal lapor terakhir); jika kosong, gunakan
+    // lastCalibrated sebagai fallback. Alat yang belum pernah lapor sama sekali
+    // dianggap paling lama (ditempatkan paling atas).
+    const rawA = a.lastReportedDate || a.lastCalibrated;
+    const rawB = b.lastReportedDate || b.lastCalibrated;
+
+    const timeA = rawA ? new Date(rawA).getTime() : -Infinity;
+    const timeB = rawB ? new Date(rawB).getTime() : -Infinity;
+
     return timeA - timeB;
   });
 
@@ -1167,7 +1175,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                       <div className="flex items-center gap-1.5">
                         <Clock size={13} className="text-[#0052CC] shrink-0" />
                         <span className="text-[11px] font-semibold text-slate-800">
-                          {dev.lastCalibrated ? `${dev.lastCalibrated}` : '27 Juli 2026'}
+                          {dev.lastReportedDate || dev.lastCalibrated || '27 Juli 2026'}
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-400 block ml-4">Belum Lapor Hari Ini</span>
