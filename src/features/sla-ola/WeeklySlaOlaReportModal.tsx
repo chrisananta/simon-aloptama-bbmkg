@@ -219,96 +219,83 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   };
 
   const rekapData = useMemo(() => {
+    // Kategori resmi sesuai field `category` di database. Pencocokan
+    // exact-match (bukan substring) supaya "AWOS Kat.II" dan "AWOS Kat.III"
+    // tidak pernah saling tertukar, konsisten dengan SlaOlaView.tsx.
+    const normalizeCategory = (s: string) =>
+      (s || '').toLowerCase().replace(/[.\s]/g, '');
+
+    const makeExactMatcher = (canonicalCategory: string) => {
+      const target = normalizeCategory(canonicalCategory);
+      return (d: AloptamaDevice) => normalizeCategory(d.category) === target;
+    };
+
     const CATEGORIES = [
       {
         no: 1,
-        key: 'AWOS KAT. I',
+        key: 'AWOS Kat.I',
         name: 'AWOS KAT. I',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('awos') && !c.includes('kat ii') && !c.includes('kat. ii') && !c.includes('kat iii') && !c.includes('kat. iii') && !c.includes('kat 2') && !c.includes('kat 3');
-        },
+        matchFn: makeExactMatcher('AWOS Kat.I'),
       },
       {
         no: 2,
-        key: 'AWOS KAT II & III',
-        name: 'AWOS KAT II & III',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('awos') && (c.includes('kat ii') || c.includes('kat. ii') || c.includes('kat iii') || c.includes('kat. iii') || c.includes('kat 2') || c.includes('kat 3'));
-        },
+        key: 'AWOS Kat.II',
+        name: 'AWOS KAT II',
+        matchFn: makeExactMatcher('AWOS Kat.II'),
       },
       {
         no: 3,
-        key: 'RADAR CUACA',
-        name: 'RADAR CUACA',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('radar');
-        },
+        key: 'AWOS Kat.III',
+        name: 'AWOS KAT III',
+        matchFn: makeExactMatcher('AWOS Kat.III'),
       },
       {
         no: 4,
-        key: 'AWS',
-        name: 'AWS',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return (c.includes('aws') || c.includes('automatic weather')) && !c.includes('awos');
-        },
+        key: 'Radar Cuaca',
+        name: 'RADAR CUACA',
+        matchFn: makeExactMatcher('Radar Cuaca'),
       },
       {
         no: 5,
-        key: 'ARG',
-        name: 'ARG',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('arg') || c.includes('automatic rain');
-        },
+        key: 'AWS',
+        name: 'AWS',
+        matchFn: makeExactMatcher('AWS'),
       },
       {
         no: 6,
-        key: 'SEISMOMETER',
-        name: 'SEISMOMETER',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('seismo');
-        },
+        key: 'ARG',
+        name: 'ARG',
+        matchFn: makeExactMatcher('ARG'),
       },
       {
         no: 7,
-        key: 'LIGHTNING DETECTOR',
-        name: 'LIGHTNING DETECTOR',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('lightning') || c.includes('petir');
-        },
+        key: 'Seismometer',
+        name: 'SEISMOMETER',
+        matchFn: makeExactMatcher('Seismometer'),
       },
       {
         no: 8,
-        key: 'ACCELEROGRAPH NC',
-        name: 'ACCELEROGRAPH NC',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('accelerograph') || c.includes('akselero') || c.includes('strong motion');
-        },
+        key: 'Lightning Detector',
+        name: 'LIGHTNING DETECTOR',
+        matchFn: makeExactMatcher('Lightning Detector'),
       },
       {
         no: 9,
-        key: 'WRS NEW GENERATION',
-        name: 'WRS NEW GENERATION',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('wrs') || c.includes('warning receiver');
-        },
+        key: 'Accelerograph',
+        name: 'ACCELEROGRAPH NC',
+        matchFn: makeExactMatcher('Accelerograph'),
       },
       {
         no: 10,
-        key: 'SIRENE',
+        key: 'WRS NG',
+        name: 'WRS NEW GENERATION',
+        matchFn: makeExactMatcher('WRS NG'),
+      },
+      {
+        no: 11,
+        key: 'Sirene',
         name: 'SIRENE',
-        matchFn: (d: AloptamaDevice) => {
-          const c = `${d.category || ''} ${d.merk || ''} ${d.site || ''}`.toLowerCase();
-          return c.includes('sirene') || c.includes('siren');
-        },
+        matchFn: makeExactMatcher('Sirene'),
       }
     ];
 

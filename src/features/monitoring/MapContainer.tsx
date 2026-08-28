@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import { formatDateIndo } from '../../shared/utils/dateUtils';
 
@@ -7,16 +8,44 @@ interface MapContainerProps {
   devices: AloptamaDevice[];
   onSelectDevice?: (device: AloptamaDevice) => void;
   selectedDeviceId?: string | null;
+  uptLabel?: string;
 }
 
 export const MapContainer: React.FC<MapContainerProps> = ({
   devices,
   onSelectDevice,
   selectedDeviceId,
+  uptLabel = 'BALAI BESAR MKG WILAYAH V JAYAPURA',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
+  const mapWrapperRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const active = document.fullscreenElement === mapWrapperRef.current;
+      setIsFullscreen(active);
+      // Leaflet perlu tahu ukuran container berubah setelah masuk/keluar fullscreen
+      setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize();
+      }, 100);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!mapWrapperRef.current) return;
+    if (!document.fullscreenElement) {
+      mapWrapperRef.current.requestFullscreen().catch(() => {
+        // Browser menolak permintaan fullscreen (mis. tidak didukung) - abaikan secara diam-diam
+      });
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -196,23 +225,59 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [devices, selectedDeviceId, onSelectDevice]);
 
+  const statusCounts = {
+    normal: devices.filter((d) => d.conditionStatus === 'NORMAL').length,
+    gangguan: devices.filter((d) => d.conditionStatus === 'GANGGUAN').length,
+    mati: devices.filter((d) => d.conditionStatus === 'MATI').length,
+  };
+
   return (
-    <div className="relative w-full h-full min-h-[460px] rounded-xl overflow-hidden shadow-md border border-slate-200">
+    <div
+      ref={mapWrapperRef}
+      className={`relative w-full h-full min-h-[460px] rounded-xl overflow-hidden shadow-md border border-slate-200 ${
+        isFullscreen ? 'bg-white' : ''
+      }`}
+    >
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      <div className="absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-slate-200 text-xs font-semibold text-slate-800">
+    {isFullscreen && (
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md px-8 py-3.5 rounded-2xl shadow-lg border border-slate-200 text-center">
+        <p className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-wide leading-tight">
+          DASHBOARD MONITORING ALOPTAMA
+        </p>
+        <p className="text-sm sm:text-base md:text-lg font-bold text-slate-600 leading-tight mt-0.5">
+          {uptLabel.toUpperCase()}
+        </p>
+      </div>
+    )}
+
+      <button
+        onClick={toggleFullscreen}
+        title={isFullscreen ? 'Keluar dari tampilan penuh' : 'Tampilan penuh'}
+        className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md p-2 rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+      >
+        {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+      </button>
+
+      <div
+        className={`absolute z-[1000] bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200 text-xs font-semibold text-slate-800 transition-all ${
+          isFullscreen
+            ? 'bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 text-lg sm:text-xl rounded-2xl shadow-lg'
+            : 'bottom-4 right-4 px-3.5 py-2 text-xs'
+        }`}
+      >
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-emerald-600 shadow-sm inline-block"></span>
-            <span>Normal</span>
+            <span>Normal{isFullscreen && <span className="text-emerald-600 font-bold"> ({statusCounts.normal})</span>}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-amber-500 shadow-sm inline-block"></span>
-            <span>Gangguan</span>
+            <span>Gangguan{isFullscreen && <span className="text-amber-600 font-bold"> ({statusCounts.gangguan})</span>}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-rose-600 shadow-sm inline-block"></span>
-            <span>Mati</span>
+            <span>Mati{isFullscreen && <span className="text-rose-600 font-bold"> ({statusCounts.mati})</span>}</span>
           </div>
         </div>
       </div>

@@ -161,6 +161,11 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
             devices={filteredDevices}
             onSelectDevice={(device) => setSelectedDeviceId(device.devicesId)}
             selectedDeviceId={selectedDeviceId}
+            uptLabel={
+              selectedUpt === 'ALL'
+                ? 'BALAI BESAR MKG WILAYAH V JAYAPURA'
+                : (uptOptions.find((u) => u.id === selectedUpt)?.name || selectedUpt)
+            }
           />
         </div>
       </div>

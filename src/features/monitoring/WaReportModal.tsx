@@ -96,63 +96,31 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
       return [];
     };
 
-    const isAwos = (dev: AloptamaDevice) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('awos');
-    };
+    // Pencocokan exact-match ke field `category`, konsisten dengan SlaOlaView.tsx
+    const normalizeCategory = (s: string) =>
+      (s || '').toLowerCase().replace(/[.\s]/g, '');
+    const isCategory = (dev: AloptamaDevice, canonical: string) =>
+      normalizeCategory(dev.category) === normalizeCategory(canonical);
 
-    const awosKat1 = getUptsForCategory((dev) => {
-      if (!isAwos(dev)) return false;
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      const isKat23 = cat.includes('kat ii') || cat.includes('kat iii') || cat.includes('kat 2') || cat.includes('kat 3') || cat.includes('kategori 2') || cat.includes('kategori 3') || cat.includes('kategori ii') || cat.includes('kategori iii');
-      return !isKat23;
-    });
+    const awosKat1 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.I'));
+    const awosKat2 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.II'));
+    const awosKat3 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.III'));
 
-    const awosKat23 = getUptsForCategory((dev) => {
-      if (!isAwos(dev)) return false;
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('kat ii') || cat.includes('kat iii') || cat.includes('kat 2') || cat.includes('kat 3') || cat.includes('kategori 2') || cat.includes('kategori 3') || cat.includes('kategori ii') || cat.includes('kategori iii');
-    });
+    const radar = getUptsForCategory((dev) => isCategory(dev, 'Radar Cuaca'));
 
-    const radar = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('radar');
-    });
+    const aws = getUptsForCategory((dev) => isCategory(dev, 'AWS'));
 
-    const aws = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return (cat.includes('aws') || cat.includes('automatic weather')) && !isAwos(dev);
-    });
+    const arg = getUptsForCategory((dev) => isCategory(dev, 'ARG'));
 
-    const arg = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('arg') || cat.includes('automatic rain');
-    });
+    const seismo = getUptsForCategory((dev) => isCategory(dev, 'Seismometer'));
 
-    const seismo = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('seismo');
-    });
+    const lightning = getUptsForCategory((dev) => isCategory(dev, 'Lightning Detector'));
 
-    const lightning = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('lightning') || cat.includes('petir');
-    });
+    const accel = getUptsForCategory((dev) => isCategory(dev, 'Accelerograph'));
 
-    const accel = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('accelerograph') || cat.includes('akselero') || cat.includes('strong motion');
-    });
+    const wrs = getUptsForCategory((dev) => isCategory(dev, 'WRS NG'));
 
-    const wrs = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('wrs') || cat.includes('warning receiver');
-    });
-
-    const sirene = getUptsForCategory((dev) => {
-      const cat = `${dev.category || ''} ${dev.merk || ''} ${dev.site || ''}`.toLowerCase();
-      return cat.includes('sirene') || cat.includes('siren');
-    });
+    const sirene = getUptsForCategory((dev) => isCategory(dev, 'Sirene'));
 
     const formatSection = (title: string, list: string[]) => {
       let res = `${title}:\n`;
@@ -171,7 +139,8 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
     text += `Reminder\n\n`;
     text += `SERVICE LEVEL AGREEMENT (SLA)\n`;
     text += formatSection('AWOS KAT I', awosKat1);
-    text += formatSection('AWOS KAT II & III', awosKat23);
+    text += formatSection('AWOS KAT II', awosKat2);
+    text += formatSection('AWOS KAT III', awosKat3);
     text += formatSection('RADAR CUACA', radar);
     text += formatSection('AWS', aws);
     text += formatSection('ARG', arg);
