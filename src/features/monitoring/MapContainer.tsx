@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2, Layers } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import { formatDateIndo } from '../../shared/utils/dateUtils';
 
@@ -21,13 +21,30 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
   const mapWrapperRef = useRef<HTMLDivElement>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mapTheme, setMapTheme] = useState<'osm' | 'satellite'>('osm');
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+
+  const BASEMAPS: Record<'osm' | 'satellite', { label: string; url: string; attribution: string; maxZoom: number }> = {
+    osm: {
+      label: 'OpenStreetMap',
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; OpenStreetMap contributors | BMKG Wilayah V Papua',
+      maxZoom: 18,
+    },
+    satellite: {
+      label: 'Satelit',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: 'Tiles &copy; Esri | BMKG Wilayah V Papua',
+      maxZoom: 19,
+    },
+  };
 
   useEffect(() => {
     const handleFullscreenChange = () => {
       const active = document.fullscreenElement === mapWrapperRef.current;
       setIsFullscreen(active);
-      // Leaflet perlu tahu ukuran container berubah setelah masuk/keluar fullscreen
       setTimeout(() => {
         mapInstanceRef.current?.invalidateSize();
       }, 100);
@@ -35,6 +52,22 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const config = BASEMAPS[mapTheme];
+
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+    }
+
+    tileLayerRef.current = L.tileLayer(config.url, {
+      maxZoom: config.maxZoom,
+      attribution: config.attribution,
+    }).addTo(map);
+  }, [mapTheme]);
 
   const toggleFullscreen = () => {
     if (!mapWrapperRef.current) return;
@@ -58,12 +91,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         attributionControl: false,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors | BMKG Wilayah V Papua',
+      tileLayerRef.current = L.tileLayer(BASEMAPS.osm.url, {
+        maxZoom: BASEMAPS.osm.maxZoom,
+        attribution: BASEMAPS.osm.attribution,
       }).addTo(map);
 
-      L.control.zoom({ position: 'topright' }).addTo(map);
+      L.control.zoom({ position: 'bottomleft' }).addTo(map);
       mapInstanceRef.current = map;
     }
 
@@ -241,7 +274,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <div ref={mapContainerRef} className="w-full h-full" />
 
     {isFullscreen && (
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md px-8 py-3.5 rounded-2xl shadow-lg border border-slate-200 text-center">
+      <div className="absolute top-12 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md px-8 py-3.5 rounded-2xl shadow-lg border border-slate-200 text-center">
         <p className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-wide leading-tight">
           DASHBOARD MONITORING ALOPTAMA
         </p>
@@ -254,15 +287,44 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <button
         onClick={toggleFullscreen}
         title={isFullscreen ? 'Keluar dari tampilan penuh' : 'Tampilan penuh'}
-        className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md p-2 rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+        className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-md p-2 rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
       >
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
+      <div className="absolute left-3 bottom-24 z-[1100]">
+        <button
+          onClick={() => setIsThemeMenuOpen((prev) => !prev)}
+          title="Pilih tema peta"
+          className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-2 rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+        >
+          <Layers size={16} />
+        </button>
+
+        {isThemeMenuOpen && (
+          <div className="absolute left-full bottom-0 ml-1.5 w-40 bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 overflow-hidden text-xs font-semibold text-slate-700">
+            {(Object.keys(BASEMAPS) as Array<'osm' | 'satellite'>).map((key) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setMapTheme(key);
+                  setIsThemeMenuOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 transition-colors cursor-pointer ${
+                  mapTheme === key ? 'bg-[#0052CC]/10 text-[#0052CC]' : 'hover:bg-slate-100'
+                }`}
+              >
+                {BASEMAPS[key].label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div
         className={`absolute z-[1000] bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200 text-xs font-semibold text-slate-800 transition-all ${
           isFullscreen
-            ? 'bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 text-lg sm:text-xl rounded-2xl shadow-lg'
+            ? 'bottom-6 left-1/2 -translate-x-1/2 px-5 py-2.5 text-sm sm:text-base rounded-xl shadow-lg'
             : 'bottom-4 right-4 px-3.5 py-2 text-xs'
         }`}
       >
