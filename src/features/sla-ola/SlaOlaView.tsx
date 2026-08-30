@@ -348,12 +348,12 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const monthlySlaValue = useMemo(() => {
     const sumSla = rekapTableData.reduce((acc, curr) => acc + curr.sla, 0);
-    return Number((sumSla / 10).toFixed(1));
+    return Number((sumSla / 11).toFixed(1));
   }, [rekapTableData]);
 
   const monthlyOlaValue = useMemo(() => {
     const sumOla = rekapTableData.reduce((acc, curr) => acc + curr.ola, 0);
-    return Number((sumOla / 10).toFixed(1));
+    return Number((sumOla / 11).toFixed(1));
   }, [rekapTableData]);
 
   const totalLokasiSum = useMemo(

@@ -131,22 +131,22 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       case 'VALID':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            <CheckCircle2 size={13} />
-            🟢 Valid
+            <CheckCircle2 size={15} />
+            Valid
           </span>
         );
       case 'SEGERA_DIKALIBRASI':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
-            <AlertTriangle size={13} />
-            🟡 Segera Dikalibrasi
+            <AlertTriangle size={15} />
+            Segera Dikalibrasi
           </span>
         );
       case 'KADALUWARSA':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
-            <XCircle size={13} />
-            🔴 Kadaluwarsa
+            <XCircle size={15} />
+            Kadaluwarsa
           </span>
         );
     }
@@ -224,7 +224,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
               onChange={(e) => setSelectedYear(e.target.value)}
               className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
             >
-              <option value="ALL">Semua Tahun Kalibrasi (≥ 2026)</option>
+              <option value="ALL">Semua Tahun Kalibrasi</option>
               <option value="2026">Tahun 2026</option>
             </select>
           </div>
@@ -250,7 +250,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
               onChange={(e) => setSelectedAgency(e.target.value)}
               className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
             >
-              <option value="ALL">Semua Instansi Kalibrasi</option>
+              <option value="ALL">Semua PIC Kalibrasi</option>
               <option value="Balai">🏢 Balai (BBMKG Wilayah V)</option>
               <option value="Pusat">🏛️ Pusat (BMKG Pusat)</option>
             </select>
@@ -268,8 +268,8 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
           {permissions.canAddCalibration ? (
             <button
               onClick={onOpenAddCalibrationModal}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
-              title="Tambah record kalibrasi baru (Hak Akses Admin INSKAL)"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-[#003a99] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
+              title="Tambah record kalibrasi"
             >
               <Plus size={15} />
               <span>Tambah Data Kalibrasi</span>
