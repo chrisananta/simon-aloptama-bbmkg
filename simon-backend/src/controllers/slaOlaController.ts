@@ -37,6 +37,12 @@ const saveMonthlySlaOlaInput = z.object({
   tahun: z.coerce.number().int().min(2000, 'tahun wajib diisi').max(2100, 'tahun tidak valid'),
 });
 
+const updateSlaOlaLogInput = z.object({
+  kondisiSla: z.union([z.boolean(), z.enum(['true', 'false']), z.literal(1), z.literal(0)]),
+  kondisiOla: z.coerce.number().finite().min(0, 'Nilai OLA harus antara 0 sampai 100.').max(100, 'Nilai OLA harus antara 0 sampai 100.'),
+  actor: z.string().trim().max(200).optional(),
+});
+
 function invalidSlaOla(res: Response, error: z.ZodError) {
   return res.status(400).json({ success: false, message: 'Data SLA/OLA tidak valid.', errors: z.flattenError(error).fieldErrors });
 }
@@ -366,18 +372,219 @@ export const slaOlaController = {
   },
 
   /**
-   * Mengambil Riwayat Log SLA/OLA.
+   * Mengambil Riwayat Log SLA/OLA — untuk tabel monitoring pengisian di Admin.
+   * Mendukung filter opsional bulan & tahun (berdasarkan reportDate), dan
+   * menyertakan nama alat (site) hasil join ke tabel Device.
    */
-  getSlaOlaLogs: async (_req: AuthRequest, res: Response) => {
+  getSlaOlaLogs: async (req: AuthRequest, res: Response) => {
+    const parsedQuery = z
+      .object({
+        bulan: z.coerce.number().int().min(1).max(12).optional(),
+        tahun: z.coerce.number().int().min(2000).max(2100).optional(),
+      })
+      .safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({ success: false, message: 'Query bulan/tahun tidak valid.' });
+    }
     try {
+      const { bulan, tahun } = parsedQuery.data;
+      const where: any = {};
+
+      if (bulan && tahun) {
+        const start = new Date(tahun, bulan - 1, 1, 0, 0, 0);
+        const end = new Date(tahun, bulan, 1, 0, 0, 0);
+        where.reportDate = { gte: start, lt: end };
+      }
+
       const logs = await prisma.slaOlaLog.findMany({
-        orderBy: { timestamp: 'desc' },
-        take: 100,
+        where,
+        orderBy: { reportDate: 'desc' },
+        take: bulan && tahun ? undefined : 100,
+        include: {
+          device: { select: { devicesId: true, site: true } },
+        },
       });
-      return res.json({ success: true, count: logs.length, data: logs });
+
+      const data = logs.map((log) => ({
+        id: log.id,
+        deviceId: log.deviceId,
+        kodeAlat: log.device?.devicesId || log.deviceId || '-',
+        namaAlat: log.device?.site || `${log.category} - ${log.uptStation}`,
+        uptStation: log.uptStation,
+        category: log.category,
+        kondisiSla: log.kondisiSla,
+        kondisiOla: log.kondisiOla,
+        status: log.status,
+        actor: log.actor,
+        reportDate: formatDateOnly(log.reportDate),
+        timestamp: log.timestamp,
+        isLate: log.isLate,
+      }));
+
+      return res.json({ success: true, count: data.length, data });
     } catch (error) {
       console.warn('getSlaOlaLogs PostgreSQL note:', (error as any)?.message || error);
       return res.json({ success: true, count: 0, data: [], source: 'FALLBACK' });
+    }
+  },
+
+  /**
+   * Mengoreksi nilai SLA/OLA pada satu entri log (Admin, untuk memperbaiki
+   * salah input UPT). Jika entri yang diedit adalah entri TERBARU untuk alat
+   * tersebut, status live perangkat (Device) ikut disesuaikan.
+   */
+  updateSlaOlaLog: async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const parsed = updateSlaOlaLogInput.safeParse(req.body);
+    if (!parsed.success) return invalidSlaOla(res, parsed.error);
+
+    try {
+      const existingLog = await prisma.slaOlaLog.findUnique({ where: { id } });
+      if (!existingLog) {
+        return res.status(404).json({ success: false, message: 'Entri log SLA/OLA tidak ditemukan.' });
+      }
+
+      const { kondisiSla, kondisiOla, actor } = parsed.data;
+      const slaOn = kondisiSla === true || kondisiSla === 'true' || kondisiSla === 1;
+      const ola = kondisiOla;
+      const actorName = actor || req.user?.name || 'Admin INSKAL';
+
+      let newStatus: 'NORMAL' | 'GANGGUAN' | 'MATI' = 'NORMAL';
+      if (!slaOn || ola === 0) {
+        newStatus = 'MATI';
+      } else if (ola >= 100) {
+        newStatus = 'NORMAL';
+      } else {
+        newStatus = 'GANGGUAN';
+      }
+
+      await prisma.$transaction(async (tx) => {
+        const updatedLog = await tx.slaOlaLog.update({
+          where: { id },
+          data: { kondisiSla: slaOn, kondisiOla: ola, status: newStatus },
+        });
+
+        // Jika ini entri PALING BARU untuk alat ini, sinkronkan status live Device.
+        if (updatedLog.deviceId) {
+          const latestLog = await tx.slaOlaLog.findFirst({
+            where: { deviceId: updatedLog.deviceId },
+            orderBy: [{ reportDate: 'desc' }, { timestamp: 'desc' }],
+          });
+
+          if (latestLog?.id === updatedLog.id) {
+            await tx.device.update({
+              where: { devicesId: updatedLog.deviceId },
+              data: {
+                conditionStatus: newStatus,
+                slaScore: slaOn ? 100 : 0,
+                olaScore: ola,
+              },
+            });
+          }
+        }
+
+        await tx.auditLog.create({
+          data: {
+            table: 'master_sla_ola',
+            action: 'EDIT',
+            recordId: updatedLog.deviceId || updatedLog.id,
+            recordName: `${updatedLog.category} - ${updatedLog.uptStation}`,
+            actor: actorName,
+            details: `Koreksi entri SLA/OLA tanggal ${formatDateOnly(updatedLog.reportDate)}: SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA=${ola}%.`,
+          },
+        });
+      });
+
+      const allDevices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
+      return res.json({
+        success: true,
+        message: 'Entri SLA/OLA berhasil diperbarui.',
+        devices: allDevices.map(serializeDeviceDates),
+      });
+    } catch (error) {
+      console.error('Error updateSlaOlaLog:', error);
+      return res.status(500).json({ success: false, message: 'Gagal memperbarui entri SLA/OLA.' });
+    }
+  },
+
+  /**
+   * Menghapus satu entri log SLA/OLA yang salah input (Admin). Setelah
+   * dihapus, status live Device dihitung ulang dari entri terbaru yang
+   * TERSISA — atau direset ke kondisi 'belum pernah lapor' jika tidak ada
+   * entri tersisa sama sekali untuk alat itu.
+   */
+  deleteSlaOlaLog: async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const actorName = (req.body?.actor as string) || req.user?.name || 'Admin INSKAL';
+
+    try {
+      const existingLog = await prisma.slaOlaLog.findUnique({ where: { id } });
+      if (!existingLog) {
+        return res.status(404).json({ success: false, message: 'Entri log SLA/OLA tidak ditemukan.' });
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.slaOlaLog.delete({ where: { id } });
+
+        if (existingLog.deviceId) {
+          const remainingLatest = await tx.slaOlaLog.findFirst({
+            where: { deviceId: existingLog.deviceId },
+            orderBy: [{ reportDate: 'desc' }, { timestamp: 'desc' }],
+          });
+
+          if (remainingLatest) {
+            const slaOn = remainingLatest.kondisiSla;
+            const ola = remainingLatest.kondisiOla;
+            let status: 'NORMAL' | 'GANGGUAN' | 'MATI' = 'NORMAL';
+            if (!slaOn || ola === 0) status = 'MATI';
+            else if (ola < 100) status = 'GANGGUAN';
+
+            await tx.device.update({
+              where: { devicesId: existingLog.deviceId },
+              data: {
+                conditionStatus: status,
+                slaScore: slaOn ? 100 : 0,
+                olaScore: ola,
+                lastReportedDate: remainingLatest.reportDate,
+              },
+            });
+          } else {
+            // Tidak ada entri tersisa sama sekali — reset ke kondisi belum pernah lapor.
+            await tx.device.update({
+              where: { devicesId: existingLog.deviceId },
+              data: {
+                conditionStatus: 'NORMAL',
+                slaScore: null,
+                olaScore: null,
+                lastReportedDate: null,
+                issueDescription: null,
+                downtimeDuration: null,
+              },
+            });
+          }
+        }
+
+        await tx.auditLog.create({
+          data: {
+            table: 'master_sla_ola',
+            action: 'HAPUS',
+            recordId: existingLog.deviceId || existingLog.id,
+            recordName: `${existingLog.category} - ${existingLog.uptStation}`,
+            actor: actorName,
+            details: `Hapus entri SLA/OLA salah input tanggal ${formatDateOnly(existingLog.reportDate)} (SLA=${existingLog.kondisiSla ? 'ON' : 'OFF'}, OLA=${existingLog.kondisiOla}%).`,
+          },
+        });
+      });
+
+      const allDevices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
+      return res.json({
+        success: true,
+        message: 'Entri SLA/OLA berhasil dihapus.',
+        devices: allDevices.map(serializeDeviceDates),
+      });
+    } catch (error) {
+      console.error('Error deleteSlaOlaLog:', error);
+      return res.status(500).json({ success: false, message: 'Gagal menghapus entri SLA/OLA.' });
     }
   },
 };

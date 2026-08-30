@@ -23,10 +23,12 @@ import { AuthUser, UserRole } from '../auth/authTypes';
 import { useAuth } from '../auth/AuthContext';
 import { apiClient } from '../../shared/api';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
+import { SlaOlaLogRow } from './types';
 
 import { MasterStasiunTab } from './tabs/MasterStasiunTab';
 import { MasterAlatTab } from './tabs/MasterAlatTab';
 import { MasterSlaOlaTab } from './tabs/MasterSlaOlaTab';
+import { MonitoringSlaOlaTab } from './tabs/MonitoringSlaOlaTab';
 import { MasterPetugasTab } from './tabs/MasterPetugasTab';
 import { MasterAkunTab } from './tabs/MasterAkunTab';
 import { LogPerubahanTab } from './tabs/LogPerubahanTab';
@@ -35,6 +37,8 @@ import { StationFormModal } from './modals/StationFormModal';
 import { DeviceFormModal } from './modals/DeviceFormModal';
 import { DeleteConfirmModal } from './modals/DeleteConfirmModal';
 import { SlaOlaEditModal } from './modals/SlaOlaEditModal';
+import { EditSlaOlaLogModal } from './modals/EditSlaOlaLogModal';
+import { DeleteSlaOlaLogModal } from './modals/DeleteSlaOlaLogModal';
 import { UserFormModal } from './modals/UserFormModal';
 import { DeleteUserModal } from './modals/DeleteUserModal';
 import { PetugasFormModal } from './modals/PetugasFormModal';
@@ -55,7 +59,7 @@ interface AdminMasterViewProps {
   onSyncDevicesFromServer?: (devices: AloptamaDevice[]) => void;
 }
 
-type TabType = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'master_petugas' | 'master_akun' | 'Log_Perubahan';
+type TabType = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'monitoring_sla_ola' | 'master_petugas' | 'master_akun' | 'Log_Perubahan';
 
 export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   stations,
@@ -408,6 +412,89 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       setEditingSlaDevice(null);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal menyimpan data SLA/OLA.');
+    }
+  };
+
+  // ================= TAB MONITORING PENGISIAN SLA/OLA (per-entri log) =================
+  const currentMonthNum1to12 = new Date().getMonth() + 1;
+  const [monitoringMonth, setMonitoringMonth] = useState<number>(currentMonthNum1to12);
+  const [monitoringYear, setMonitoringYear] = useState<number>(currentYearNum);
+  const [monitoringLogs, setMonitoringLogs] = useState<SlaOlaLogRow[]>([]);
+  const [isLoadingMonitoringLogs, setIsLoadingMonitoringLogs] = useState(false);
+  const [monitoringSearch, setMonitoringSearch] = useState('');
+  const [editingLog, setEditingLog] = useState<SlaOlaLogRow | null>(null);
+  const [editLogSlaVal, setEditLogSlaVal] = useState<number>(0);
+  const [editLogOlaVal, setEditLogOlaVal] = useState<number>(0);
+  const [isEditLogModalOpen, setIsEditLogModalOpen] = useState(false);
+  const [deleteConfirmLog, setDeleteConfirmLog] = useState<SlaOlaLogRow | null>(null);
+
+  const fetchMonitoringLogs = async (bulan: number, tahun: number) => {
+    setIsLoadingMonitoringLogs(true);
+    try {
+      const logs = await apiClient.slaOlaLogs.fetch(bulan, tahun);
+      setMonitoringLogs(logs);
+    } catch {
+      setMonitoringLogs([]);
+    } finally {
+      setIsLoadingMonitoringLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'monitoring_sla_ola') {
+      fetchMonitoringLogs(monitoringMonth, monitoringYear);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, monitoringMonth, monitoringYear]);
+
+  const filteredMonitoringLogs = monitoringLogs.filter((log) => {
+    const q = monitoringSearch.toLowerCase();
+    return (
+      log.kodeAlat.toLowerCase().includes(q) ||
+      log.namaAlat.toLowerCase().includes(q)
+    );
+  });
+
+  const handleOpenEditLog = (log: SlaOlaLogRow) => {
+    setEditingLog(log);
+    setEditLogSlaVal(log.kondisiSla ? 100 : 0);
+    setEditLogOlaVal(log.kondisiOla);
+    setIsEditLogModalOpen(true);
+  };
+
+  const handleSaveEditLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLog) return;
+    const sla = Math.min(100, Math.max(0, Math.round(Number(editLogSlaVal))));
+    const ola = Math.min(100, Math.max(0, Math.round(Number(editLogOlaVal))));
+    try {
+      const { devices: updatedDevices } = await apiClient.slaOlaLogs.update(
+        editingLog.id,
+        { kondisiSla: sla >= 100, kondisiOla: ola },
+        adminActor
+      );
+      if (updatedDevices?.length) {
+        onSyncDevicesFromServer?.(updatedDevices);
+      }
+      setIsEditLogModalOpen(false);
+      setEditingLog(null);
+      await fetchMonitoringLogs(monitoringMonth, monitoringYear);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal memperbarui entri SLA/OLA.');
+    }
+  };
+
+  const handleConfirmDeleteLog = async () => {
+    if (!deleteConfirmLog) return;
+    try {
+      const { devices: updatedDevices } = await apiClient.slaOlaLogs.delete(deleteConfirmLog.id, adminActor);
+      if (updatedDevices?.length) {
+        onSyncDevicesFromServer?.(updatedDevices);
+      }
+      setDeleteConfirmLog(null);
+      await fetchMonitoringLogs(monitoringMonth, monitoringYear);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus entri SLA/OLA.');
     }
   };
 
@@ -817,6 +904,23 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab('monitoring_sla_ola')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            activeTab === 'monitoring_sla_ola'
+              ? 'bg-[#0052CC] text-white shadow-md shadow-blue-500/20'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Radio size={16} />
+          <span>monitoring_sla_ola</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+            activeTab === 'monitoring_sla_ola' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+          }`}>
+            Harian
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('master_petugas')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
             activeTab === 'master_petugas'
@@ -921,6 +1025,22 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         />
       )}
 
+      {activeTab === 'monitoring_sla_ola' && (
+        <MonitoringSlaOlaTab
+          filteredMonitoringLogs={filteredMonitoringLogs}
+          isLoadingMonitoringLogs={isLoadingMonitoringLogs}
+          monitoringMonth={monitoringMonth}
+          setMonitoringMonth={setMonitoringMonth}
+          monitoringYear={monitoringYear}
+          setMonitoringYear={setMonitoringYear}
+          monitoringSearch={monitoringSearch}
+          setMonitoringSearch={setMonitoringSearch}
+          dynamicYears={dynamicYears}
+          handleOpenEditLog={handleOpenEditLog}
+          setDeleteConfirmLog={setDeleteConfirmLog}
+        />
+      )}
+
       {activeTab === 'master_petugas' && (
         <MasterPetugasTab
           filteredPetugas={filteredPetugas}
@@ -1000,6 +1120,26 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           setEditOlaVal={setEditOlaVal}
           setIsSlaOlaEditModalOpen={setIsSlaOlaEditModalOpen}
           handleSaveSlaOla={handleSaveSlaOla}
+        />
+      )}
+
+      {isEditLogModalOpen && editingLog && (
+        <EditSlaOlaLogModal
+          editingLog={editingLog}
+          editLogSlaVal={editLogSlaVal}
+          setEditLogSlaVal={setEditLogSlaVal}
+          editLogOlaVal={editLogOlaVal}
+          setEditLogOlaVal={setEditLogOlaVal}
+          setIsEditLogModalOpen={setIsEditLogModalOpen}
+          handleSaveEditLog={handleSaveEditLog}
+        />
+      )}
+
+      {deleteConfirmLog && (
+        <DeleteSlaOlaLogModal
+          deleteConfirmLog={deleteConfirmLog}
+          setDeleteConfirmLog={setDeleteConfirmLog}
+          handleConfirmDeleteLog={handleConfirmDeleteLog}
         />
       )}
 

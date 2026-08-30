@@ -422,6 +422,81 @@ export const apiClient = {
   },
 
   // ----------------------------------------------------
+  // SLA/OLA LOG MONITORING API (tabel monitoring pengisian — Admin)
+  // ----------------------------------------------------
+  slaOlaLogs: {
+    fetch: async (bulan?: number, tahun?: number): Promise<Array<{
+      id: string;
+      deviceId: string | null;
+      kodeAlat: string;
+      namaAlat: string;
+      uptStation: string;
+      category: string;
+      kondisiSla: boolean;
+      kondisiOla: number;
+      status: string;
+      actor: string;
+      reportDate: string | null;
+      timestamp: string;
+      isLate: boolean;
+    }>> => {
+      try {
+        const query = bulan && tahun ? `?bulan=${bulan}&tahun=${tahun}` : '';
+        const res = await authFetch(`/api/sla-ola/logs${query}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success) return json.data || [];
+        }
+      } catch (e) {
+        console.warn("apiClient.slaOlaLogs.fetch failed:", e);
+      }
+      return [];
+    },
+
+    update: async (
+      id: string,
+      data: { kondisiSla: boolean; kondisiOla: number },
+      actor = "Admin INSKAL"
+    ): Promise<{ devices: AloptamaDevice[] }> => {
+      const res = await authFetch(`/api/sla-ola/logs/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, actor }),
+      });
+      if (!res.ok) {
+        let message = "Gagal memperbarui entri SLA/OLA.";
+        try {
+          const errData = await res.json();
+          if (errData?.message) message = errData.message;
+        } catch { /* ignore */ }
+        throw new Error(message);
+      }
+      const json = await res.json();
+      if (json?.devices) memoryCache.devices = json.devices;
+      return { devices: json.devices || memoryCache.devices };
+    },
+
+    delete: async (id: string, actor = "Admin INSKAL"): Promise<{ devices: AloptamaDevice[] }> => {
+      const res = await authFetch(`/api/sla-ola/logs/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actor }),
+      });
+      if (!res.ok) {
+        let message = "Gagal menghapus entri SLA/OLA.";
+        try {
+          const errData = await res.json();
+          if (errData?.message) message = errData.message;
+        } catch { /* ignore */ }
+        throw new Error(message);
+      }
+      const json = await res.json();
+      if (json?.devices) memoryCache.devices = json.devices;
+      return { devices: json.devices || memoryCache.devices };
+    },
+  },
+
+  // ----------------------------------------------------
   // CALIBRATION API
   // ----------------------------------------------------
   calibration: {
