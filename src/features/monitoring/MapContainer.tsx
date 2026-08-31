@@ -26,11 +26,18 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const [mapTheme, setMapTheme] = useState<'osm' | 'satellite'>('osm');
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
+  const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
+  const osmTileUrl = MAPTILER_KEY
+    ? `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; // fallback darurat kalau key belum diisi - AKAN sering diblokir
+
   const BASEMAPS: Record<'osm' | 'satellite', { label: string; url: string; attribution: string; maxZoom: number }> = {
     osm: {
       label: 'OpenStreetMap',
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; OpenStreetMap contributors | BMKG Wilayah V Papua',
+      url: osmTileUrl,
+      attribution: MAPTILER_KEY
+        ? '&copy; MapTiler &copy; OpenStreetMap contributors | BMKG Wilayah V Papua'
+        : '&copy; OpenStreetMap contributors | BMKG Wilayah V Papua',
       maxZoom: 18,
     },
     satellite: {
@@ -159,6 +166,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       }
       if (cat.includes('wrs') || cat.includes('warning')) {
         return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+      }
+      if (cat.includes('sirene') || cat.includes('siren')) {
+        return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18v-6a5 5 0 0 1 10 0v6"/><path d="M4 18h16"/><path d="M12 2v3"/><path d="M4.2 21h15.6"/></svg>`;
       }
 
       return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`;

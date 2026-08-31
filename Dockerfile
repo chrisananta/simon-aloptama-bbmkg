@@ -28,6 +28,13 @@ RUN npm ci
 # Copy seluruh source code
 COPY . .
 
+# VITE_MAPTILER_KEY dibutuhkan Vite SAAT BUILD (bukan runtime) - dia dibakar
+# langsung ke dalam bundle JS frontend. Diteruskan lewat --build-arg, BUKAN
+# environment variable biasa di docker-compose "app" (yang cuma berlaku di
+# runtime container, sudah kelewat telat untuk Vite).
+ARG VITE_MAPTILER_KEY
+ENV VITE_MAPTILER_KEY=${VITE_MAPTILER_KEY}
+
 # Build frontend (vite) + bundle server (esbuild) -> ./dist
 RUN npm run build
 

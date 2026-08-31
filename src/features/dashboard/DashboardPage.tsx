@@ -76,6 +76,7 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
     'Seismometer',
     'Accelerograph',
     'WRS NG',
+    'Sirene',
   ];
 
   return (
@@ -123,7 +124,7 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-[#0052CC] cursor-pointer"
               >
-                <option value="ALL">Semua Jenis Alat (10 Kategori)</option>
+                <option value="ALL">Semua Jenis Alat (11 Kategori)</option>
                 {categoriesList.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}

@@ -551,7 +551,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   });
 
   const regions = Array.from(new Set(stations.map((s) => s.regionGroup).filter(Boolean)));
-  const categories: EquipmentCategory[] = ['AWOS Kat.I', 'AWOS Kat.II', 'AWOS Kat.III', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG'];
+  const categories: EquipmentCategory[] = ['AWOS Kat.I', 'AWOS Kat.II', 'AWOS Kat.III', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG', 'Sirene'];
 
   const filteredStations = stations.filter((s) => {
     const matchesSearch = 

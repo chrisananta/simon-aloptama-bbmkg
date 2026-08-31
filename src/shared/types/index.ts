@@ -10,13 +10,14 @@ export type EquipmentCategory =
   | 'Seismometer' 
   | 'Accelerograph' 
   | 'WRS NG'
+  | 'Sirene'
   | string;
 
 export interface AloptamaDevice {
-  devicesId: string;       // Sebelumnya: id
-  site: string;            // Sebelumnya: name
+  devicesId: string;      
+  site: string;            
   category: EquipmentCategory;
-  merk?: string;           // Sebelumnya: subCategory
+  merk?: string;           
   uptStation: string;
   locationName: string;
   latitude: number;
@@ -27,7 +28,7 @@ export interface AloptamaDevice {
   lastCalibrated: string;
   lastReportedDate?: string;
   calibrationValidUntil: string;
-  timkalibrasi: string;    // Sebelumnya: calibrationAgency
+  timkalibrasi: string;    
   downtimeDuration?: string;
   issueDescription?: string;
   slaScore?: number;
@@ -35,7 +36,7 @@ export interface AloptamaDevice {
 }
 export interface UPTStation {
   id: string;
-  stationid: string;       // Sebelumnya: code
+  stationid: string;       
   name: string;
   regionGroup: string;
   location: string;

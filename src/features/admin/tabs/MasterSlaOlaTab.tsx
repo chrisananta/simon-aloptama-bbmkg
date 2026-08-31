@@ -116,7 +116,7 @@ export const MasterSlaOlaTab: React.FC<MasterSlaOlaTabProps> = ({
                 >
                   <option value="ALL">Semua Kategori Peralatan</option>
                   {Array.from(new Set([
-                    'AWOS', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG',
+                    'AWOS', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG', 'Sirene',
                     ...devices.map((d) => d.category)
                   ].filter(Boolean))).map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
