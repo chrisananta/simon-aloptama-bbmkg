@@ -20,6 +20,8 @@ Aplikasi ini **tidak** memisahkan frontend dan backend jadi dua server berbeda s
 - **Production** (`NODE_ENV=production`): menyajikan file statis hasil `vite build` dari folder `dist/`
 - Menjalankan **auto-seed** sekali saat database masih kosong (generate 3 akun awal dengan password acak, hanya ditampilkan sekali di log terminal)
 
+**Static assets (`public/`)**: berkas apa pun di `public/` (mis. `public/geo/provinsi-indonesia.geojson`) di-serve Vite apa adanya di URL root — **dev**: langsung dari disk lewat Vite middleware; **build**: otomatis ikut ter-copy ke `dist/` sehingga tetap bisa diakses di production tanpa konfigurasi tambahan. Frontend mengambilnya lewat `fetch()` biasa di runtime (bukan `import` statis), sehingga file besar (mis. GeoJSON ~850KB) tidak ikut membengkakkan bundle JS utama dan hanya di-load saat komponen peta benar-benar dibuka.
+
 ```
 [ Browser ]
      │  fetch('/api/...')  ← satu origin, port sama (3000)
@@ -116,7 +118,7 @@ Backend mendaftarkan seluruh grup route di root (`/api/...`), tanpa alias namesp
 
 ## 5. Fitur Utama SIMON BBMKG V
 
-1. **Dashboard Monitoring**: Visualisasi status ALOPTAMA (Normal, Gangguan, Mati Total), skor SLA/OLA, serta peta sebaran stasiun UPT Wilayah V (Leaflet).
+1. **Dashboard Monitoring**: Visualisasi status ALOPTAMA (Normal, Gangguan, Mati Total), skor SLA/OLA, serta peta sebaran stasiun UPT Wilayah V (`src/features/monitoring/MapContainer.tsx`, Leaflet native — bukan `react-leaflet`), dilengkapi overlay garis batas 38 provinsi (GeoJSON statis dari `public/geo/`, di-toggle lewat menu Layers pada peta) dan pilihan basemap OpenStreetMap / Satelit.
 2. **Kalkulator & Pengisian SLA/OLA**: Perhitungan otomatis skor OLA berdasarkan bobot komponen (Logger, Kelistrikan, Komunikasi, Sensor Aktif).
 3. **Repository Kalibrasi INSKAL**: Pencatatan riwayat kalibrasi, masa berlaku sertifikat, dan penanggung jawab tim.
 4. **Master Database Admin**: CRUD stasiun UPT, peralatan, dan petugas — dibatasi role `ADMIN`, dengan log audit otomatis.

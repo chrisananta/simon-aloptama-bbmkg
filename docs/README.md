@@ -32,7 +32,7 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 | **Autentikasi** | JWT (`jsonwebtoken`) + `bcrypt` untuk hashing password |
 | **Keamanan Tambahan** | `express-rate-limit` (brute-force protection pada login) |
 | **Icons & Visuals** | Lucide React Icons |
-| **Peta** | React Leaflet — sebaran stasiun UPT BMKG Wilayah V |
+| **Peta** | Leaflet (native, dikendalikan imperatif via `useRef`/`useEffect` — **bukan** wrapper `react-leaflet`) — sebaran stasiun UPT BMKG Wilayah V + overlay garis batas provinsi (GeoJSON statis) |
 
 ---
 
@@ -49,6 +49,11 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 
 ```
 ├── server.ts                      # Entry point backend gabungan (Express + Vite middleware / static)
+├── public/                         # Static assets — di-serve APA ADANYA di root URL oleh Vite
+│   │                                # (TIDAK melalui bundler, TIDAK di-import di kode React)
+│   └── geo/
+│       └── provinsi-indonesia.geojson  # Batas 38 provinsi RI, di-fetch runtime oleh MapContainer
+│                                        # via fetch('/geo/provinsi-indonesia.geojson')
 ├── src/                            # Frontend React + Vite
 │   ├── app/App.tsx                 # Entry point aplikasi utama (routing menu internal)
 │   ├── features/                   # Modular feature domains
@@ -58,7 +63,10 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 │   │   ├── calibration/             # Repository Kalibrasi INSKAL & Sertifikat
 │   │   ├── admin/                   # Master Data Management (Stasiun, Alat, Petugas, Akun)
 │   │   ├── audit-log/               # Log Aktivitas & Perubahan Sistem
-│   │   ├── monitoring/              # Komponen monitoring tambahan
+│   │   ├── monitoring/              # Peta sebaran ALOPTAMA (Leaflet) — MapContainer.tsx
+│   │   │                            # (marker status, popup detail, basemap OSM/Satelit,
+│   │   │                            # overlay garis batas provinsi via public/geo/*.geojson)
+│   │   │                            # + WaReportModal.tsx (laporan via WhatsApp)
 │   │   └── certificates/            # Halaman sertifikat
 │   ├── shared/
 │   │   ├── api/                     # apiClient.ts (data layer) + http.ts (authFetch)
@@ -67,7 +75,8 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 │   │   ├── types/                   # Global TypeScript definitions
 │   │   └── components/              # UI Modals & Error Boundary
 │   ├── layouts/                     # Navbar & Sidebar
-│   └── assets/                      # Logo & gambar statis
+│   └── assets/                      # Logo & gambar statis YANG di-bundle (di-import via kode,
+│                                     # beda dengan public/ yang di-fetch runtime tanpa bundling)
 └── simon-backend/                  # Backend API
     ├── prisma/schema.prisma         # Model data (User, UptStation, Device, SlaOlaLog,
     │                                 # CalibrationRecord, AuditLog)
@@ -79,6 +88,8 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
         ├── routes/                   # Definisi endpoint per entitas + routes/index.ts (gabungan)
         └── db/prisma.ts              # Prisma Client singleton
 ```
+
+> 📌 **`public/` vs `src/assets/`:** `public/` di-serve Vite apa adanya ke URL root (`/geo/...`) tanpa lewat bundler — cocok untuk file besar yang di-`fetch()` saat runtime (mis. GeoJSON) supaya tidak menggembungkan bundle JS utama. `src/assets/` sebaliknya di-`import` langsung di kode React dan ikut diproses/di-hash oleh bundler. Folder `scripts/` (script import CSV) **bukan** static asset dan tidak pernah di-serve lewat HTTP — jangan taruh file yang perlu diakses browser di sana.
 
 ---
 

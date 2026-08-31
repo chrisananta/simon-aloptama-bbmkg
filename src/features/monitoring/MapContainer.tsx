@@ -22,9 +22,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
   const mapWrapperRef = useRef<HTMLDivElement>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const provinceLayerRef = useRef<L.GeoJSON | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapTheme, setMapTheme] = useState<'osm' | 'satellite'>('osm');
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const [showProvinceBorders, setShowProvinceBorders] = useState(true);
+  const [isMapReady, setIsMapReady] = useState(false);
 
   const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
   const osmTileUrl = MAPTILER_KEY
@@ -76,6 +79,65 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     }).addTo(map);
   }, [mapTheme]);
 
+  // Muat garis batas provinsi (GeoJSON) sekali saat peta pertama kali dibuat
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || provinceLayerRef.current) return;
+
+    let isCancelled = false;
+
+    fetch('/geo/provinsi-indonesia.geojson')
+      .then((res) => {
+        if (!res.ok) throw new Error('Gagal memuat data batas provinsi');
+        return res.json();
+      })
+      .then((geojson: GeoJSON.FeatureCollection) => {
+        if (isCancelled || !mapInstanceRef.current) return;
+
+        const layer = L.geoJSON(geojson, {
+          style: {
+            color: '#475569', // slate-600 - warna garis batas
+            weight: 1.2,
+            opacity: 0.8,
+            fillOpacity: 0, // tanpa isi warna, hanya garis
+            dashArray: '4 3',
+          },
+          onEachFeature: (feature, layer) => {
+            const name = feature.properties?.PROVINSI;
+            if (name) {
+              layer.bindTooltip(name, { sticky: true, className: 'text-xs font-semibold' });
+            }
+          },
+        });
+
+        provinceLayerRef.current = layer;
+        if (showProvinceBorders) {
+          layer.addTo(mapInstanceRef.current);
+        }
+      })
+      .catch((err) => {
+        console.error('Gagal memuat batas provinsi:', err);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMapReady]);
+
+  // Tampilkan / sembunyikan layer batas provinsi
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const layer = provinceLayerRef.current;
+    if (!map || !layer) return;
+
+    if (showProvinceBorders) {
+      if (!map.hasLayer(layer)) layer.addTo(map);
+    } else {
+      if (map.hasLayer(layer)) map.removeLayer(layer);
+    }
+  }, [showProvinceBorders]);
+
   const toggleFullscreen = () => {
     if (!mapWrapperRef.current) return;
     if (!document.fullscreenElement) {
@@ -105,6 +167,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
       mapInstanceRef.current = map;
+      setIsMapReady(true);
     }
 
     const map = mapInstanceRef.current;
@@ -142,7 +205,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
     const getCategorySvg = (categoryStr: string) => {
       const cat = categoryStr.toLowerCase();
-      
+
       if (cat.includes('radar')) {
         return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M12 12l5-5"/></svg>`;
       }
@@ -327,6 +390,21 @@ export const MapContainer: React.FC<MapContainerProps> = ({
                 {BASEMAPS[key].label}
               </button>
             ))}
+            <div className="border-t border-slate-200">
+              <button
+                onClick={() => setShowProvinceBorders((prev) => !prev)}
+                className={`w-full text-left px-3 py-2 transition-colors cursor-pointer flex items-center justify-between ${
+                  showProvinceBorders ? 'bg-[#0052CC]/10 text-[#0052CC]' : 'hover:bg-slate-100'
+                }`}
+              >
+                <span>Batas Provinsi</span>
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    showProvinceBorders ? 'bg-[#0052CC]' : 'bg-slate-300'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         )}
       </div>

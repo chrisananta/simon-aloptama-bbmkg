@@ -136,7 +136,23 @@ Saat menambahkan modul fitur baru di `src/features/nama-fitur/`:
 
 ---
 
-## 6. Checklist Sebelum Deploy
+## 6. Menambahkan Static Asset (GeoJSON, file besar, dsb.)
+
+Kalau butuh menambahkan file yang akan diakses browser lewat `fetch()` saat runtime (bukan di-`import` di kode React), **wajib** taruh di `public/`, bukan di `src/assets/` maupun `scripts/`:
+
+| Kebutuhan | Taruh di | Cara akses di kode |
+| :--- | :--- | :--- |
+| File di-`fetch()` runtime (GeoJSON, file besar, dokumen publik) | `public/nama-folder/file.ext` | `fetch('/nama-folder/file.ext')` — path **selalu** dari root, tanpa prefix `public/` |
+| Gambar/logo yang di-`import` langsung di komponen | `src/assets/` | `import logo from '../../assets/logo.png'` |
+| Script Node/ts-node untuk migrasi/import data sekali jalan (dijalankan manual di terminal) | `scripts/` | **tidak** diakses browser sama sekali — jangan pernah `fetch()` isi folder ini |
+
+Contoh yang sudah dipakai: `public/geo/provinsi-indonesia.geojson`, diambil di `MapContainer.tsx` lewat `fetch('/geo/provinsi-indonesia.geojson')` untuk overlay garis batas provinsi di peta.
+
+> ⚠️ File di `public/` **tidak** diproses/di-hash oleh bundler dan **tidak** boleh di-`import` seperti modul JS biasa — kalau butuh optimasi (compress, tree-shaking, cache-busting hash), pakai `src/assets/` + `import` sebagai gantinya.
+
+---
+
+## 7. Checklist Sebelum Deploy
 
 - [ ] `JWT_SECRET` production **beda** dari yang dipakai saat development/testing
 - [ ] Auto-seed sudah pernah jalan sekali & password awal sudah dicatat aman (bukan di chat/dokumen yang mudah bocor)
