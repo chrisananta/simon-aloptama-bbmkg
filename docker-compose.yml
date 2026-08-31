@@ -1,35 +1,54 @@
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    ports:
-      - "5433:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: simon_bmkg
-    volumes:
-      - simon_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+  # db-aloptama:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   # ports:
+  #   #   - "5433:5432"
+  #   environment:
+  #     # POSTGRES_USER: postgres
+  #     POSTGRES_USER: Simon_Admn
+  #     POSTGRES_PASSWORD: Simon123$
+  #     POSTGRES_DB: simon_bmkg
+  #   volumes:
+  #     - simon_db_data:/var/lib/postgresql/data
+  #   networks:
+  #     smn-alptma-net:
+  #       ipv4_address: 10.101.29.2
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
 
   app:
     image: chrisananta/simon-aloptama-bbmkg:v1.0.4
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
+    # depends_on:
+    #   db-aloptama:
+    #     condition: service_healthy
     environment:
       NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@db:5432/simon_bmkg?schema=public
-      JWT_SECRET: ${JWT_SECRET}
-      CORS_ORIGIN: "http://localhost:3000"
+      PORT: 8769
+      DATABASE_URL: postgresql://Simon_Admn:Simon123AdmN12@10.101.0.1:5434/simon_bmkg?schema=public
+      JWT_SECRET: 4c41502136bf4047b6718f8d5a972ff2e42eb37e9e204fc69e3f61e3fbefc561
+      CORS_ORIGIN: "https://sla-ola.balai5.my.id"
+    networks:
+      smn-alptma-net:
+        ipv4_address: 10.101.29.3
     ports:
-      - "3000:3000"
+      - "8769:8769"
 
-volumes:
-  simon_db_data:
+# volumes:
+#   simon_db_data:
+
+
+networks:
+  smn-alptma-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: smn-alptma-net
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.101.29.0/24
+          gateway: 10.101.29.1

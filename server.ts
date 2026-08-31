@@ -36,7 +36,7 @@ const PORT = Number(process.env.PORT) || 3000;
 //      untuk forensik/investigasi.
 // "1" berarti percaya SATU hop proxy di depan app. Express lalu membaca
 // IP asli dari header X-Forwarded-For yang disuntik oleh proxy tepercaya tsb.
-app.set('trust proxy', 1);
+app.set('trust proxy', 2);
 
 // 1. Header keamanan standar (CSP dimatikan agar aset inline Vite/dist tidak terblokir)
 app.use(helmet({ contentSecurityPolicy: false }));
