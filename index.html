@@ -4,14 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>SIMON BMKG</title>
+    <meta name="description" content="Sistem Informasi Monitoring Peralatan Operasional dan Utama BBMKG" />
 
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="50x50"
-      href="/src/assets/images/simonlogo.png"
-    />
-    <link rel="apple-touch-icon" href="/src/assets/images/simonlogo.png" />
+    <!-- PWA manifest: syarat utama agar web bisa di-"Install" (bukan cuma "Add to Home Screen")
+         sehingga Android tidak menempelkan badge browser di ikonnya -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#003366" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+
+    <!-- iOS: ikon home screen + mode standalone (tanpa address bar Safari) -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SIMON BMKG" />
 
     <!-- Google Fonts: Poppins & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
