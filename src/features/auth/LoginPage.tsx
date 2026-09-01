@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { KeyRound, Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "./AuthContext";
+import { InstallAppBanner } from "../../shared/components/InstallAppBanner";
 
 // 1. Import Logo BMKG untuk Header Atas
 import bmkgLogo from "../../assets/images/BMKGLogo.png";
@@ -65,7 +66,10 @@ export const LoginPage: React.FC = () => {
       </header>
 
       {/* Main Single Centered Card */}
-      <div className="flex-1 flex items-center justify-center py-4 sm:py-6 px-2 sm:px-0 min-h-0">
+      <div className="flex-1 flex flex-col items-center justify-center py-4 sm:py-6 px-2 sm:px-0 min-h-0">
+        {/* Banner ajakan install PWA - hanya tampil kalau browser mendukung & belum ditutup */}
+        <InstallAppBanner />
+
         <div className="max-w-md w-full bg-white rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-xl border border-slate-200 overflow-hidden p-4 sm:p-10 space-y-3 sm:space-y-6 my-auto max-h-full overflow-y-auto">
           {/* Header Section */}
           <div className="text-center space-y-1 sm:space-y-2">

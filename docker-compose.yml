@@ -21,7 +21,7 @@ services:
   #     retries: 10
 
   app:
-    image: chrisananta/simon-aloptama-bbmkg:v1.0.6
+    image: chrisananta/simon-aloptama-bbmkg:v1.0.8
     restart: unless-stopped
     # depends_on:
     #   db-aloptama:
