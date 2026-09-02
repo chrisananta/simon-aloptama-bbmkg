@@ -74,10 +74,10 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   onClearLogs,
   onSyncDevicesFromServer,
 }) => {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const { user, permissions } = useAuth();
+  const isFullMasterAccess = permissions.masterDataScope === 'FULL';
 
-  const [activeTab, setActiveTab] = useState<TabType>('master_stasiun');
+  const [activeTab, setActiveTab] = useState<TabType>(isFullMasterAccess ? 'master_stasiun' : 'monitoring_sla_ola');
   const [adminActor, setAdminActor] = useState<string>('Admin INSKAL BBMKG V');
 
   // --- MASTER PETUGAS MONITORING STATES ---
@@ -199,7 +199,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       username: '',
       password: '',
       name: '',
-      role: 'UPT_PIMPINAN',
+      role: 'TEKNISI_UPT',
       title: 'Operator UPT BMKG',
       nip: '',
       email: '',
@@ -223,7 +223,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
     const cleanUsername = userForm.username.trim().toLowerCase();
 
-    if (editingUser) {
+    try {    if (editingUser) {
       const existing = users.find((u) => u.id !== editingUser.id && (u.username || '').toLowerCase() === cleanUsername);
       if (existing) {
         alert(`Username "@${cleanUsername}" sudah digunakan oleh akun lain.`);
@@ -235,7 +235,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         username: cleanUsername,
         password: userForm.password ? userForm.password.trim() : editingUser.password,
         name: userForm.name.trim(),
-        role: (userForm.role as UserRole) || 'UPT_PIMPINAN',
+        role: (userForm.role as UserRole) || 'TEKNISI_UPT',
         title: userForm.title?.trim() || 'Operator / Pimpinan UPT',
         nip: userForm.nip?.trim() || '',
         email: userForm.email?.trim() || '',
@@ -265,7 +265,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         username: cleanUsername,
         password: userForm.password?.trim() || undefined,
         name: userForm.name.trim(),
-        role: (userForm.role as UserRole) || 'UPT_PIMPINAN',
+        role: (userForm.role as UserRole) || 'TEKNISI_UPT',
         title: userForm.title?.trim() || 'Operator UPT BMKG',
         nip: userForm.nip?.trim() || '',
         email: userForm.email?.trim() || '',
@@ -284,6 +284,13 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     }
 
     setIsUserModalOpen(false);
+    } catch (err: any) {
+      // Tampilkan pesan error ASLI dari server (mis. hak akses tidak
+      // cukup, username sudah dipakai) - modal TETAP terbuka supaya data
+      // yang sudah diisi tidak hilang dan user bisa langsung perbaiki.
+      console.error('Gagal menyimpan akun pengguna:', err);
+      alert(err?.message || 'Gagal menyimpan akun pengguna. Silakan coba lagi.');
+    }
   };
 
   const handleConfirmDeleteUser = async () => {
@@ -852,6 +859,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* 2. NAVIGATION TABS */}
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 border-b border-slate-200 pb-2">
+        {isFullMasterAccess && (
+        <>
         <button
           onClick={() => setActiveTab('master_stasiun')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
@@ -902,6 +911,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
             Bulanan
           </span>
         </button>
+        </>
+        )}
 
         <button
           onClick={() => setActiveTab('monitoring_sla_ola')}
@@ -920,6 +931,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           </span>
         </button>
 
+        {isFullMasterAccess && (
+        <>
         <button
           onClick={() => setActiveTab('master_petugas')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
@@ -970,9 +983,11 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
             {changeLogs.length} Log
           </span>
         </button>
+        </>
+        )}
       </div>
 
-      {activeTab === 'master_stasiun' && (
+      {activeTab === 'master_stasiun' && isFullMasterAccess && (
         <MasterStasiunTab
           devices={devices}
           filteredStations={filteredStations}
@@ -987,7 +1002,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         />
       )}
 
-      {activeTab === 'master_alat' && (
+      {activeTab === 'master_alat' && isFullMasterAccess && (
         <MasterAlatTab
           stations={stations}
           categories={categories}
@@ -1004,7 +1019,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         />
       )}
 
-      {activeTab === 'master_sla_ola' && (
+      {activeTab === 'master_sla_ola' && isFullMasterAccess && (
         <MasterSlaOlaTab
           stations={stations}
           devices={devices}
@@ -1041,7 +1056,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         />
       )}
 
-      {activeTab === 'master_petugas' && (
+      {activeTab === 'master_petugas' && isFullMasterAccess && (
         <MasterPetugasTab
           filteredPetugas={filteredPetugas}
           petugasSearch={petugasSearch}
@@ -1052,20 +1067,21 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         />
       )}
 
-      {activeTab === 'master_akun' && (
+      {activeTab === 'master_akun' && isFullMasterAccess && (
         <MasterAkunTab
           filteredUsers={filteredUsers}
           userSearch={userSearch}
           setUserSearch={setUserSearch}
           userRoleFilter={userRoleFilter}
           setUserRoleFilter={setUserRoleFilter}
+          stations={stations}
           handleOpenAddUser={handleOpenAddUser}
           handleOpenEditUser={handleOpenEditUser}
           setDeleteConfirmUser={setDeleteConfirmUser}
         />
       )}
 
-      {activeTab === 'Log_Perubahan' && (
+      {activeTab === 'Log_Perubahan' && isFullMasterAccess && (
         <LogPerubahanTab
           filteredLogs={filteredLogs}
           logSearch={logSearch}

@@ -37,8 +37,7 @@ interface SlaOlaViewProps {
 }
 
 export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const { user, permissions } = useAuth();
 
   const [selectedUpt, setSelectedUpt] = useState<string>('ALL');
   const [selectedMonth, setSelectedMonth] = useState('Agustus');
@@ -615,7 +614,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             </select>
           </div>
 
-          {isAdmin && (
+          {permissions.canViewWeeklyReport && (
             <button
               onClick={() => setIsWeeklyReportModalOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
@@ -1063,6 +1062,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
       </div>
 
+      {permissions.canViewUnreportedList && (
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
@@ -1187,6 +1187,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           </table>
         </div>
       </div>
+      )}
 
       <WaReportModal
         isOpen={isWaModalOpen}

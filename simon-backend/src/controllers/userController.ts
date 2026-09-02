@@ -48,8 +48,8 @@ const createUserInput = z.object({
     .max(50)
     .regex(/^[a-zA-Z0-9._-]+$/, 'Username hanya boleh huruf, angka, titik, garis bawah, atau strip'),
   name: z.string().trim().min(3, 'Nama minimal 3 karakter').max(150),
-  password: z.string().min(8, 'Kata sandi minimal 8 karakter').max(200).optional(),
-  role: z.enum(['ADMIN', 'UPT_PIMPINAN']).optional(),
+  password: z.string().min(6, 'Kata sandi minimal 6 karakter').max(200).optional(),
+  role: z.enum(['TEKNISI_UPT', 'KAUPT_KABBMKG', 'ADMIN_INSKAL', 'SUPER_ADMIN']).optional(),
   title: z.string().trim().max(150).optional(),
   nip: z.string().trim().max(50).nullable().optional(),
   email: z.string().trim().email('Format email tidak valid').max(150).nullable().optional().or(z.literal('')),
@@ -266,7 +266,7 @@ export const userController = {
             username: body.username.toLowerCase(),
             passwordHash: hashedPassword,
             name: body.name,
-            role: body.role || 'UPT_PIMPINAN',
+            role: body.role || 'TEKNISI_UPT',
             title: body.title || 'Operator UPT',
             nip: body.nip || null,
             email: body.email || null,
@@ -340,9 +340,9 @@ export const userController = {
       }
 
       if (req.user?.id === id) return res.status(400).json({ success: false, message: 'Anda tidak dapat menghapus akun sendiri.' });
-      if (user.role === 'ADMIN') {
-        const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
-        if (adminCount <= 1) return res.status(400).json({ success: false, message: 'Admin terakhir tidak boleh dihapus.' });
+      if (user.role === 'SUPER_ADMIN') {
+        const superAdminCount = await prisma.user.count({ where: { role: 'SUPER_ADMIN' } });
+        if (superAdminCount <= 1) return res.status(400).json({ success: false, message: 'Super Admin terakhir tidak boleh dihapus.' });
       }
 
       await prisma.$transaction(async (tx) => {

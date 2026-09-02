@@ -815,43 +815,63 @@ export const apiClient = {
 
     add: async (user: AuthUser, actor = "Admin INSKAL"): Promise<AuthUser> => {
       let createdUser = user;
-      try {
-        const res = await authFetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: user.username,
-            password: user.password || undefined,
-            name: user.name,
-            role: user.role,
-            title: user.title,
-            nip: user.nip,
-            email: user.email,
-            uptStation: user.uptStation,
-            avatarUrl: user.avatarUrl,
-            actor,
-          }),
-        });
+      const res = await authFetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.username,
+          password: user.password || undefined,
+          name: user.name,
+          role: user.role,
+          title: user.title,
+          nip: user.nip,
+          email: user.email,
+          uptStation: user.uptStation,
+          avatarUrl: user.avatarUrl,
+          actor,
+        }),
+      });
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json && json.data) {
-            createdUser = {
-              id: json.data.id,
-              username: json.data.username,
-              name: json.data.name,
-              role: json.data.role,
-              title: json.data.title || user.title,
-              nip: json.data.nip || user.nip,
-              email: json.data.email || user.email,
-              uptStation: json.data.uptStation || user.uptStation,
-              avatarUrl: json.data.avatarUrl || user.avatarUrl,
-              password: user.password || json.generatedPassword,
-            };
+      if (!res.ok) {
+        // Sebelumnya error di sini didiamkan (silent fail) sehingga akun
+        // terlihat "berhasil" dibuat di layar padahal tidak tersimpan di
+        // database. Sekarang pesan error ASLI dari server dilempar supaya
+        // pengguna tahu penyebab sebenarnya (mis. hak akses tidak cukup,
+        // username sudah dipakai, dll).
+        let serverMessage = `Gagal menyimpan akun ke server (HTTP ${res.status}).`;
+        try {
+          const errJson = await res.json();
+          if (errJson?.message) serverMessage = errJson.message;
+          // Backend Zod mengembalikan detail per-field di errJson.errors
+          // (mis. { password: ["Kata sandi minimal 6 karakter"] }) - detail
+          // ini digabung ke pesan supaya user tahu PERSIS field mana yang
+          // salah, bukan cuma "Data akun tidak valid" yang generik.
+          if (errJson?.errors && typeof errJson.errors === "object") {
+            const details = Object.entries(errJson.errors as Record<string, string[]>)
+              .map(([field, msgs]) => `${field}: ${msgs.join(", ")}`)
+              .join("\n");
+            if (details) serverMessage += `\n\n${details}`;
           }
+        } catch {
+          /* respons bukan JSON, pakai pesan default di atas */
         }
-      } catch (e) {
-        console.warn("Backend createUser API error:", e);
+        throw new Error(serverMessage);
+      }
+
+      const json = await res.json();
+      if (json && json.data) {
+        createdUser = {
+          id: json.data.id,
+          username: json.data.username,
+          name: json.data.name,
+          role: json.data.role,
+          title: json.data.title || user.title,
+          nip: json.data.nip || user.nip,
+          email: json.data.email || user.email,
+          uptStation: json.data.uptStation || user.uptStation,
+          avatarUrl: json.data.avatarUrl || user.avatarUrl,
+          password: user.password || json.generatedPassword,
+        };
       }
 
       memoryCache.users = [...memoryCache.users.filter((u) => u.id !== createdUser.id), createdUser];
@@ -874,44 +894,55 @@ export const apiClient = {
       actor = "Admin INSKAL"
     ): Promise<AuthUser> => {
       let updatedUser = user;
-      try {
-        const res = await authFetch(`/api/users/${user.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: user.username,
-            password: user.password,
-            name: user.name,
-            role: user.role,
-            title: user.title,
-            nip: user.nip,
-            email: user.email,
-            uptStation: user.uptStation,
-            avatarUrl: user.avatarUrl,
-            actor,
-            details,
-          }),
-        });
+      const res = await authFetch(`/api/users/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.username,
+          password: user.password,
+          name: user.name,
+          role: user.role,
+          title: user.title,
+          nip: user.nip,
+          email: user.email,
+          uptStation: user.uptStation,
+          avatarUrl: user.avatarUrl,
+          actor,
+          details,
+        }),
+      });
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json && json.data) {
-            updatedUser = {
-              id: json.data.id,
-              username: json.data.username,
-              name: json.data.name,
-              role: json.data.role,
-              title: json.data.title || user.title,
-              nip: json.data.nip || user.nip,
-              email: json.data.email || user.email,
-              uptStation: json.data.uptStation || user.uptStation,
-              avatarUrl: json.data.avatarUrl || user.avatarUrl,
-              password: user.password || json.data.passwordHash,
-            };
+      if (!res.ok) {
+        let serverMessage = `Gagal memperbarui akun di server (HTTP ${res.status}).`;
+        try {
+          const errJson = await res.json();
+          if (errJson?.message) serverMessage = errJson.message;
+          if (errJson?.errors && typeof errJson.errors === "object") {
+            const details = Object.entries(errJson.errors as Record<string, string[]>)
+              .map(([field, msgs]) => `${field}: ${msgs.join(", ")}`)
+              .join("\n");
+            if (details) serverMessage += `\n\n${details}`;
           }
+        } catch {
+          /* respons bukan JSON, pakai pesan default di atas */
         }
-      } catch (e) {
-        console.warn("Backend updateUser API error:", e);
+        throw new Error(serverMessage);
+      }
+
+      const json = await res.json();
+      if (json && json.data) {
+        updatedUser = {
+          id: json.data.id,
+          username: json.data.username,
+          name: json.data.name,
+          role: json.data.role,
+          title: json.data.title || user.title,
+          nip: json.data.nip || user.nip,
+          email: json.data.email || user.email,
+          uptStation: json.data.uptStation || user.uptStation,
+          avatarUrl: json.data.avatarUrl || user.avatarUrl,
+          password: user.password || json.data.passwordHash,
+        };
       }
 
       memoryCache.users = memoryCache.users.map((u) => (u.id === updatedUser.id ? updatedUser : u));

@@ -12,7 +12,7 @@ model User {
   username     String   @unique
   passwordHash String?
   name         String
-  role         Role     @default(UPT_PIMPINAN)
+  role         Role     @default(TEKNISI_UPT)
   title        String
   nip          String?
   email        String?
@@ -165,8 +165,10 @@ model AuditLog {
 }
 
 enum Role {
-  ADMIN
-  UPT_PIMPINAN
+  TEKNISI_UPT
+  KAUPT_KABBMKG
+  ADMIN_INSKAL
+  SUPER_ADMIN
 }
 
 enum EquipmentStatus {

@@ -83,7 +83,14 @@ export const slaOlaController = {
       const ola = kondisiOla;
 
       // Pemeriksaan Hak Akses (Otorisasi)
-      if (req.user.role !== 'ADMIN' && req.user.uptStation !== uptStation) {
+      // KaUPT/KaBBMKG tidak berwenang mengisi SLA/OLA sama sekali (read-only).
+      if (req.user.role === 'KAUPT_KABBMKG') {
+        return res.status(403).json({ success: false, message: 'Peran KaUPT/KaBBMKG tidak memiliki akses untuk mengisi SLA/OLA.' });
+      }
+      // Teknisi UPT hanya boleh mengisi untuk UPT sendiri. Admin Inskal &
+      // Super Admin boleh mengisi untuk UPT mana pun.
+      const isFullAccessRole = req.user.role === 'ADMIN_INSKAL' || req.user.role === 'SUPER_ADMIN';
+      if (!isFullAccessRole && req.user.uptStation !== uptStation) {
         return res.status(403).json({ success: false, message: 'Anda hanya dapat mengisi SLA/OLA untuk UPT sendiri.' });
       }
 
@@ -92,7 +99,7 @@ export const slaOlaController = {
         if (!targetDevice) {
           return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
         }
-        if (req.user.role !== 'ADMIN' && targetDevice.uptStation !== req.user.uptStation) {
+        if (!isFullAccessRole && targetDevice.uptStation !== req.user.uptStation) {
           return res.status(403).json({ success: false, message: 'Perangkat bukan milik UPT Anda.' });
         }
       }

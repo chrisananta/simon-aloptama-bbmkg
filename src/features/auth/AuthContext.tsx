@@ -28,6 +28,10 @@ const DEFAULT_PERMISSIONS: RBACPermissions = {
   canViewAuditLogs: false,
   canClearAuditLogs: false,
   canInputSlaOla: true,
+  isScopedToOwnUpt: true,
+  canViewUnreportedList: false,
+  canViewWeeklyReport: false,
+  masterDataScope: 'FULL',
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

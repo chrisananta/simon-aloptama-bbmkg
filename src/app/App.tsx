@@ -50,14 +50,25 @@ function AppContent() {
     lastSync: '28 Juli 2026, 10:30 WIT',
   });
 
-  // Calculate high-level totals
+  // Alat yang boleh DIISI (form SLA OLA) oleh Teknisi UPT/KaUPT - dibatasi
+  // ke UPT mereka sendiri. Ini HANYA dipakai di form input SLA OLA;
+  // Dashboard, daftar SLA OLA, dan Kalibrasi tetap menampilkan data
+  // nasional (semua UPT) untuk semua role, sesuai arahan pimpinan.
+  const ownUptInputDevices = React.useMemo(() => {
+    if (permissions.isScopedToOwnUpt && user?.uptStation) {
+      return devicesData.filter((d) => d.uptStation === user.uptStation);
+    }
+    return devicesData;
+  }, [devicesData, permissions.isScopedToOwnUpt, user?.uptStation]);
+
+  // Calculate high-level totals (data NASIONAL - semua UPT, untuk semua role)
   const totalDevices = devicesData.length;
   const normalCount = devicesData.filter((d) => d.conditionStatus === 'NORMAL').length;
   const gangguanCount = devicesData.filter((d) => d.conditionStatus === 'GANGGUAN').length;
   const matiCount = devicesData.filter((d) => d.conditionStatus === 'MATI').length;
 
   // Current actor identifier for audit log tracking
-  const currentActor = user ? `${user.name} (${user.role === 'ADMIN' ? 'Admin INSKAL' : 'UPT/Pimpinan'})` : 'Operator SIMON';
+  const currentActor = user ? `${user.name} (${user.role})` : 'Operator SIMON';
 
   // Handle Server API Data Fetch & Sync via Centralized API
   const handleSyncServer = async () => {
@@ -212,7 +223,7 @@ function AppContent() {
           collapsed={sidebarCollapsed}
           lastUpdate={lastUpdate}
           onOpenServerModal={() => setIsServerModalOpen(true)}
-          onOpenSlaOlaModal={() => setIsSlaOlaModalOpen(true)}
+          onOpenSlaOlaModal={permissions.canInputSlaOla ? () => setIsSlaOlaModalOpen(true) : undefined}
           syncSource={syncResult.source}
           isSyncing={isSyncing}
         />
@@ -276,11 +287,14 @@ function AppContent() {
           isSyncing={isSyncing}
         />
 
-        {/* Form Modal Pengisian SLA & OLA UPT */}
+        {/* Form Modal Pengisian SLA & OLA UPT — satu-satunya bagian yang
+            dibatasi ke alat UPT sendiri untuk Teknisi/KaUPT. Dashboard,
+            daftar SLA OLA, dan Kalibrasi tetap nasional (lihat devicesData
+            di atas). */}
         <SlaOlaInputModal
           isOpen={isSlaOlaModalOpen}
           onClose={() => setIsSlaOlaModalOpen(false)}
-          devices={devicesData}
+          devices={ownUptInputDevices}
           onSaveSlaOla={handleSaveSlaOla}
         />
 
@@ -294,7 +308,10 @@ function AppContent() {
           />
         )}
 
-        {/* Floating Action Button for PENGISIAN SLA OLA (Bottom Right Corner) */}
+        {/* Floating Action Button for PENGISIAN SLA OLA (Bottom Right Corner)
+            Disembunyikan untuk KaUPT/KaBBMKG - role ini tidak berwenang
+            mengisi SLA OLA, hanya memantau. */}
+        {permissions.canInputSlaOla && (
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100]">
           <button
             onClick={() => setIsSlaOlaModalOpen(true)}
@@ -310,6 +327,7 @@ function AppContent() {
             </span>
           </button>
         </div>
+        )}
       </div>
     </ProtectedRoute>
   );

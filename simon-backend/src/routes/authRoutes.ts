@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { userController } from '../controllers/userController.js';
-import { verifyToken, requireAdmin } from '../middleware/authMiddleware.js';
+import { verifyToken, requireSuperAdmin } from '../middleware/authMiddleware.js';
 import { loginRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
@@ -20,9 +20,11 @@ router.post('/logout', userController.logout);
 // Melihat daftar user: wajib login (siapa saja yang sudah login boleh lihat)
 router.get('/users', verifyToken, userController.getAllUsers);
 
-// Kelola akun (buat/ubah/hapus): wajib login DAN wajib role ADMIN
-router.post('/users', verifyToken, requireAdmin, userController.createUser);
-router.put('/users/:id', verifyToken, requireAdmin, userController.updateUser);
-router.delete('/users/:id', verifyToken, requireAdmin, userController.deleteUser);
+// Kelola akun (buat/ubah/hapus): wajib login DAN wajib role SUPER_ADMIN
+// (sejak perluasan role Sept 2026, Admin Inskal tidak lagi berwenang
+// mengelola akun pengguna - hanya monitoring SLA/OLA harian).
+router.post('/users', verifyToken, requireSuperAdmin, userController.createUser);
+router.put('/users/:id', verifyToken, requireSuperAdmin, userController.updateUser);
+router.delete('/users/:id', verifyToken, requireSuperAdmin, userController.deleteUser);
 
 export default router;

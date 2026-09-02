@@ -1,6 +1,30 @@
 import React from 'react';
-import { Plus, Edit2, Trash2, Search, Filter, ShieldCheck, Users, User } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Filter, ShieldCheck, Users, User, UserCog } from 'lucide-react';
 import { AuthUser, UserRole } from '../../auth/authTypes';
+import { UPTStation } from '../../../shared/types';
+
+const ROLE_BADGE: Record<UserRole, React.ReactNode> = {
+  TEKNISI_UPT: (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+      <User size={12} /> Teknisi UPT
+    </span>
+  ),
+  KAUPT_KABBMKG: (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200">
+      <UserCog size={12} /> KaUPT / KaBBMKG
+    </span>
+  ),
+  ADMIN_INSKAL: (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+      <ShieldCheck size={12} /> Admin Inskal
+    </span>
+  ),
+  SUPER_ADMIN: (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+      <ShieldCheck size={12} /> Super Admin
+    </span>
+  ),
+};
 
 interface MasterAkunTabProps {
   filteredUsers: AuthUser[];
@@ -11,6 +35,7 @@ interface MasterAkunTabProps {
   handleOpenAddUser: () => void;
   handleOpenEditUser: (u: AuthUser) => void;
   setDeleteConfirmUser: (u: AuthUser | null) => void;
+  stations?: UPTStation[];
 }
 
 export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
@@ -19,10 +44,23 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
   setUserSearch,
   userRoleFilter,
   setUserRoleFilter,
+  stations = [],
   handleOpenAddUser,
   handleOpenEditUser,
   setDeleteConfirmUser,
 }) => {
+  // Akun yang dibuat lewat script seed menyimpan uptStation sebagai KODE
+  // (mis. "GEO001"), sama seperti field uptStation pada tabel Device -
+  // supaya filter alat per-UPT jalan benar. Fungsi ini cuma buat TAMPILAN,
+  // menerjemahkan kode itu jadi nama stasiun yang mudah dibaca di tabel.
+  const resolveStationLabel = (value?: string) => {
+    if (!value) return '-';
+    const match = stations.find(
+      (s) => s.stationid === value || s.id === value || s.name === value
+    );
+    return match ? match.name : value;
+  };
+
   return (
         <div className="space-y-4">
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col md:flex-row gap-3 justify-between items-center shadow-2xs">
@@ -46,8 +84,10 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
                   className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0052CC]"
                 >
                   <option value="ALL">Semua Peran Access Level</option>
-                  <option value="ADMIN">ADMIN (Inskal &amp; Balai)</option>
-                  <option value="UPT_PIMPINAN">UPT &amp; Pimpinan</option>
+                  <option value="TEKNISI_UPT">Teknisi UPT</option>
+                  <option value="KAUPT_KABBMKG">KaUPT / KaBBMKG</option>
+                  <option value="ADMIN_INSKAL">Admin Inskal</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
                 </select>
               </div>
             </div>
@@ -119,22 +159,14 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
                           </span>
                         </td>
                         <td className="p-3.5 text-center whitespace-nowrap">
-                          {u.role === 'ADMIN' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                              <ShieldCheck size={12} /> ADMIN INSKAL
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                              <User size={12} /> UPT &amp; PIMPINAN
-                            </span>
-                          )}
+                          {ROLE_BADGE[u.role]}
                         </td>
                         <td className="p-3.5">
                           <div className="font-semibold text-slate-800">{u.title}</div>
                           {u.nip && <div className="text-[10px] text-slate-400 font-mono">NIP: {u.nip}</div>}
                         </td>
                         <td className="p-3.5 font-medium text-slate-700">
-                          {u.uptStation || '-'}
+                          {resolveStationLabel(u.uptStation)}
                         </td>
                         <td className="p-3.5 text-slate-600">
                           {u.email || '-'}

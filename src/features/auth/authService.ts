@@ -188,29 +188,70 @@ export const authService = {
   },
 
   /**
-   *Pembagian Hak Akses RBAC
+   *Pembagian Hak Akses RBAC - 4 Role (Sept 2026)
    */
   getRBACPermissions: (role: UserRole): RBACPermissions => {
-    if (role === 'ADMIN') {
-      return {
-        allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'audit-log'],
-        canAddCalibration: true,
-        canManageMasterData: true,
-        canViewAuditLogs: true,
-        canClearAuditLogs: true,
-        canInputSlaOla: true,
-      };
-    }
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return {
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'audit-log'],
+          canAddCalibration: true,
+          canManageMasterData: true,
+          canViewAuditLogs: true,
+          canClearAuditLogs: true,
+          canInputSlaOla: true,
+          isScopedToOwnUpt: false,
+          canViewUnreportedList: true,
+          canViewWeeklyReport: true,
+          masterDataScope: 'FULL',
+        };
 
-    // Role UPT Dan Pimpinan
-    return {
-      allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat'],
-      canAddCalibration: false,
-      canManageMasterData: false,
-      canViewAuditLogs: false,
-      canClearAuditLogs: false,
-      canInputSlaOla: true,
-    };
+      case 'ADMIN_INSKAL':
+        return {
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master'],
+          canAddCalibration: true,
+          canManageMasterData: true,
+          canViewAuditLogs: false,
+          canClearAuditLogs: false,
+          canInputSlaOla: true,
+          isScopedToOwnUpt: false,
+          canViewUnreportedList: true,
+          canViewWeeklyReport: true,
+          // Database Master dipersempit: hanya monitoring SLA OLA harian,
+          // tanpa akses tab master data lain (alat, stasiun, akun, dst).
+          masterDataScope: 'SLA_OLA_HARIAN_ONLY',
+        };
+
+      case 'KAUPT_KABBMKG':
+        return {
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat'],
+          canAddCalibration: false,
+          canManageMasterData: false,
+          canViewAuditLogs: false,
+          canClearAuditLogs: false,
+          // Sama seperti Teknisi UPT, tapi TANPA tombol pengisian SLA OLA.
+          canInputSlaOla: false,
+          isScopedToOwnUpt: true,
+          canViewUnreportedList: false,
+          canViewWeeklyReport: false,
+          masterDataScope: 'FULL',
+        };
+
+      case 'TEKNISI_UPT':
+      default:
+        return {
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat'],
+          canAddCalibration: false,
+          canManageMasterData: false,
+          canViewAuditLogs: false,
+          canClearAuditLogs: false,
+          canInputSlaOla: true,
+          isScopedToOwnUpt: true,
+          canViewUnreportedList: false,
+          canViewWeeklyReport: false,
+          masterDataScope: 'FULL',
+        };
+    }
   },
 
   /**

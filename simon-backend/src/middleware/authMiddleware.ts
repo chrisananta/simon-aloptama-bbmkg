@@ -84,14 +84,33 @@ export function verifyToken(req: AuthRequest, res: Response, next: NextFunction)
 }
 
 /**
- * Dipasang SETELAH verifyToken. Menolak request dengan 403 jika role user bukan ADMIN.
- * Dipakai untuk membatasi aksi sensitif (hapus data, kelola akun pengguna, dll).
+ * Dipasang SETELAH verifyToken. Menolak request dengan 403 jika role user
+ * BUKAN Admin Inskal maupun Super Admin. Dipakai untuk aksi yang masih
+ * boleh dilakukan Admin Inskal: menyimpan data kalibrasi, mengelola
+ * monitoring SLA/OLA harian.
  */
 export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
-  if (!req.user || req.user.role !== 'ADMIN') {
+  if (!req.user || (req.user.role !== 'ADMIN_INSKAL' && req.user.role !== 'SUPER_ADMIN')) {
     return res.status(403).json({
       success: false,
-      message: 'Akses ditolak. Aksi ini hanya diizinkan untuk Admin INSKAL.',
+      message: 'Akses ditolak. Aksi ini hanya diizinkan untuk Admin Inskal atau Super Admin.',
+    });
+  }
+  next();
+}
+
+/**
+ * Dipasang SETELAH verifyToken. Menolak request dengan 403 jika role user
+ * bukan SUPER_ADMIN. Dipakai untuk aksi paling sensitif yang TIDAK lagi
+ * boleh dilakukan Admin Inskal sejak perluasan role Sept 2026: kelola
+ * master stasiun, master alat, master petugas, kelola akun pengguna, dan
+ * audit log aktivitas & perubahan sistem.
+ */
+export function requireSuperAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user || req.user.role !== 'SUPER_ADMIN') {
+    return res.status(403).json({
+      success: false,
+      message: 'Akses ditolak. Aksi ini hanya diizinkan untuk Super Admin.',
     });
   }
   next();

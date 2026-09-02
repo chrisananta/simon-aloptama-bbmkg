@@ -64,12 +64,16 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   </label>
                   <input
                     type="password"
-                    placeholder={editingUser ? 'Kosongkan jika tidak diubah' : 'Sandi baru'}
+                    placeholder={editingUser ? 'Kosongkan jika tidak diubah' : 'Minimal 6 karakter'}
                     value={userForm.password || ''}
                     onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-[#0052CC] focus:bg-white"
                     required={!editingUser}
+                    minLength={editingUser ? undefined : 6}
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Wajib minimal 6 karakter{editingUser ? ' jika ingin mengganti sandi' : ''}.
+                  </p>
                 </div>
               </div>
 
@@ -93,12 +97,14 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                     Peran Access Level (RBAC) <span className="text-rose-500">*</span>
                   </label>
                   <select
-                    value={userForm.role || 'UPT_PIMPINAN'}
+                    value={userForm.role || 'TEKNISI_UPT'}
                     onChange={(e) => setUserForm({ ...userForm, role: e.target.value as UserRole })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#0052CC] focus:bg-white"
                   >
-                    <option value="ADMIN">ADMIN (Inskal Full Access)</option>
-                    <option value="UPT_PIMPINAN">UPT &amp; PIMPINAN (Read-Only)</option>
+                    <option value="TEKNISI_UPT">Teknisi UPT</option>
+                    <option value="KAUPT_KABBMKG">KaUPT / KaBBMKG</option>
+                    <option value="ADMIN_INSKAL">Admin Inskal</option>
+                    <option value="SUPER_ADMIN">Super Admin</option>
                   </select>
                 </div>
 

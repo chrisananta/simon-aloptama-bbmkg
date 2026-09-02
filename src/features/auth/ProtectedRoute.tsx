@@ -3,6 +3,14 @@ import { useAuth } from './AuthContext';
 import { ActiveNavMenu } from '../../shared/types';
 import { LoginPage } from './LoginPage';
 import { ShieldAlert, ArrowLeft, Lock } from 'lucide-react';
+import { UserRole } from './authTypes';
+
+const ROLE_LABEL: Record<UserRole, string> = {
+  TEKNISI_UPT: 'Teknisi UPT',
+  KAUPT_KABBMKG: 'KaUPT / KaBBMKG',
+  ADMIN_INSKAL: 'Admin Inskal',
+  SUPER_ADMIN: 'Super Admin',
+};
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -53,7 +61,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               Anda Tidak Memiliki Hak Akses Halaman Ini
             </h3>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Peran Anda saat ini adalah <strong className="text-slate-900">[{user.role === 'ADMIN' ? 'ADMIN INSKAL' : 'UPT & PIMPINAN'}]</strong>. Halaman ini diproteksi dan hanya dapat diakses oleh Admin INSKAL.
+              Peran Anda saat ini adalah <strong className="text-slate-900">[{ROLE_LABEL[user.role]}]</strong>. Halaman ini diproteksi dan hanya dapat diakses oleh Admin Inskal / Super Admin.
             </p>
           </div>
 

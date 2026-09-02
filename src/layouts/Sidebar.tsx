@@ -13,6 +13,21 @@ import {
 import { ActiveNavMenu, AloptamaDevice } from '../shared/types';
 import { useAuth } from '../features/auth/AuthContext';
 import sidebarLogoImg from '../assets/images/Logosidebar.png';
+import { UserRole } from '../features/auth/authTypes';
+
+const ROLE_LABEL: Record<UserRole, string> = {
+  TEKNISI_UPT: 'Teknisi UPT',
+  KAUPT_KABBMKG: 'KaUPT / KaBBMKG',
+  ADMIN_INSKAL: 'Admin Inskal',
+  SUPER_ADMIN: 'Super Admin',
+};
+
+const ROLE_BADGE_STYLE: Record<UserRole, string> = {
+  TEKNISI_UPT: 'bg-blue-100 text-blue-800 border border-blue-200',
+  KAUPT_KABBMKG: 'bg-cyan-100 text-cyan-800 border border-cyan-200',
+  ADMIN_INSKAL: 'bg-purple-100 text-purple-800 border border-purple-200',
+  SUPER_ADMIN: 'bg-rose-100 text-rose-800 border border-rose-200',
+};
 
 interface SidebarProps {
   activeMenu: ActiveNavMenu;
@@ -183,9 +198,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-900 truncate leading-tight">{user.name}</p>
                     <span className={`inline-block text-[9px] font-bold px-1.5 py-0.2 rounded mt-0.5 ${
-                      user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
+                      ROLE_BADGE_STYLE[user.role]
                     }`}>
-                      {user.role === 'ADMIN' ? 'ADMIN INSKAL' : 'UPT & PIMPINAN'}
+                      {ROLE_LABEL[user.role]}
                     </span>
                   </div>
                 </div>
@@ -206,7 +221,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {user && (
                 <div 
                   className="w-8 h-8 rounded-lg bg-[#0052CC] text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs"
-                  title={`${user.name} (${user.role === 'ADMIN' ? 'Admin INSKAL' : 'UPT & Pimpinan'})`}
+                  title={`${user.name} (${ROLE_LABEL[user.role]})`}
                 >
                   {user.name.charAt(0)}
                 </div>

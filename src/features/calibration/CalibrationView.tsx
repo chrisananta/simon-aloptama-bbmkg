@@ -14,6 +14,14 @@ import { AloptamaDevice, CalibrationStatus, UPTStation } from '../../shared/type
 import { apiClient } from '../../shared/api';
 import { CalibrationRecord } from './CalibrationTypes';
 import { useAuth } from '../auth/AuthContext';
+import { UserRole } from '../auth/authTypes';
+
+const ROLE_LABEL: Record<UserRole, string> = {
+  TEKNISI_UPT: 'Teknisi UPT',
+  KAUPT_KABBMKG: 'KaUPT / KaBBMKG',
+  ADMIN_INSKAL: 'Admin Inskal',
+  SUPER_ADMIN: 'Super Admin',
+};
 
 interface CalibrationViewProps {
   devices: AloptamaDevice[];
@@ -277,7 +285,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
           ) : (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-[11px] font-bold">
               <ShieldCheck size={14} className="text-[#0052CC]" />
-              <span>Informasi Kalibrasi Mode Read-Only ({user?.role === 'ADMIN' ? 'Admin' : 'UPT & Pimpinan'})</span>
+              <span>Informasi Kalibrasi Mode Read-Only ({user ? ROLE_LABEL[user.role] : ''})</span>
             </div>
           )}
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "../../shared/api";
+import { useAuth } from "../auth/AuthContext";
 import { slaOlaSchema, SLA_OLA_MAX_BACKDATE_DAYS } from "../../shared/schemas";
 import { getTodayIsoWIT, getIsoDaysAgoWIT, formatDateIndo } from "../../shared/utils/dateUtils";
 import { SlaOlaModalProps } from "./SlaOlaTypes";
@@ -39,6 +40,18 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   devices,
   onSaveSlaOla,
 }) => {
+  const { user, permissions } = useAuth();
+  // Teknisi UPT & KaUPT hanya mengisi untuk UPT mereka sendiri - dropdown
+  // stasiun disembunyikan untuk mereka (lihat isScopedToOwnUpt).
+  const isScopedToOwnUpt = permissions.isScopedToOwnUpt;
+
+  // Melacak alat mana saja yang SUDAH diisi dalam sesi buka-modal ini.
+  const [filledDeviceIds, setFilledDeviceIds] = useState<Set<string>>(new Set());
+  // Alat-alat yang SEDANG dicentang untuk diisi nilai yang SAMA sekaligus
+  // (mis. 20 unit AWS yang semuanya NORMAL 100% - cukup centang semua,
+  // isi kalkulator sekali, submit sekali untuk semuanya).
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<Set<string>>(new Set());
+
   const [awosCategory, setAwosCategory] = useState<
     "AWOS_I" | "AWOS_II" | "AWOS_III"
   >("AWOS_III");
@@ -49,6 +62,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [lastBatchCount, setLastBatchCount] = useState<number>(0);
 
   const [stationsList, setStationsList] = useState<any[]>(() =>
     apiClient.stations.getAll()
@@ -102,8 +116,19 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setValue("tanggal", getTodayIsoWIT());
+      setFilledDeviceIds(new Set());
+      setSelectedDeviceIds(new Set());
     }
   }, [isOpen, setValue]);
+
+  // Untuk Teknisi UPT/KaUPT: paksa nilai uptStation mengikuti UPT alat
+  // yang mereka lihat (devices sudah difilter di App.tsx), karena dropdown
+  // pemilihan stasiun disembunyikan untuk role ini.
+  useEffect(() => {
+    if (isOpen && isScopedToOwnUpt && devices.length > 0) {
+      setValue("uptStation", devices[0].uptStation);
+    }
+  }, [isOpen, isScopedToOwnUpt, devices, setValue]);
 
   const [calcLogger, setCalcLogger] = useState<number>(100);
   const [calcPower, setCalcPower] = useState<number>(100);
@@ -211,12 +236,17 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
   useEffect(() => {
     setErrorMessage(null);
+    // Filter (kategori/stasiun) berubah -> reset centang alat yang lama,
+    // supaya tidak nyangkut alat dari kategori sebelumnya.
+    setSelectedDeviceIds(new Set());
     if (matchingDevices.length > 0) {
-      const dev = matchingDevices[0];
-      setValue("deviceId", dev.devicesId);
-      setValue("kondisiSla", dev.conditionStatus === "NORMAL");
-      setValue("kondisiOla", dev.olaScore ?? 100);
-      setValue("kendala", dev.issueDescription || "");
+      // deviceId di sini hanya "placeholder" teknis supaya validasi form
+      // tidak error - nilai kondisi SEBENARNYA ditentukan dari kalkulator
+      // di bawah dan diterapkan ke SEMUA alat yang dicentang saat submit.
+      setValue("deviceId", matchingDevices[0].devicesId);
+      setValue("kondisiSla", true);
+      setValue("kondisiOla", 100);
+      setValue("kendala", "");
     } else {
       setValue("deviceId", "");
     }
@@ -348,23 +378,54 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
   const onSubmit = async (data: any) => {
     setErrorMessage(null);
+
+    // Validasi manual: minimal harus ada 1 alat yang dicentang, karena
+    // deviceId di form cuma placeholder teknis (nilai kondisi diterapkan
+    // ke SEMUA alat yang dicentang, bukan cuma 1 deviceId di form).
+    const targetIds = Array.from(selectedDeviceIds).filter(
+      (id) => !filledDeviceIds.has(id)
+    );
+    if (targetIds.length === 0) {
+      setErrorMessage("Pilih (centang) minimal satu alat terlebih dahulu sebelum menyimpan.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      await onSaveSlaOla({
-        uptStation: data.uptStation,
-        category: data.category.startsWith("AWOS") ? "AWOS" : data.category,
-        deviceId: data.deviceId,
-        kondisiSla: data.kondisiSla,
-        kondisiOla: data.kondisiOla,
-        kendala: (data.kendala || "").trim(),
-        tanggal: data.tanggal,
-      });
+      // Terapkan nilai kondisi/OLA/kendala yang SAMA ke semua alat yang
+      // dicentang, satu per satu ke backend (biar tiap alat tetap tercatat
+      // sebagai baris histori tersendiri).
+      for (const deviceId of targetIds) {
+        await onSaveSlaOla({
+          uptStation: data.uptStation,
+          category: data.category.startsWith("AWOS") ? "AWOS" : data.category,
+          deviceId,
+          kondisiSla: data.kondisiSla,
+          kondisiOla: data.kondisiOla,
+          kendala: (data.kendala || "").trim(),
+          tanggal: data.tanggal,
+        });
+      }
+
+      // Tandai semua alat yang barusan disimpan sebagai "sudah diisi".
+      const updatedFilled = new Set(filledDeviceIds);
+      targetIds.forEach((id) => updatedFilled.add(id));
+      setFilledDeviceIds(updatedFilled);
+      setSelectedDeviceIds(new Set());
+      setLastBatchCount(targetIds.length);
 
       setIsSubmitted(true);
       setTimeout(() => {
         setIsSubmitted(false);
-        onClose();
+        // Reset kalkulator ke default netral untuk batch berikutnya
+        // (alat dengan nilai kondisi yang berbeda).
+        setValue("kondisiSla", true);
+        setValue("kondisiOla", 100);
+        setValue("kendala", "");
+        // Modal TETAP terbuka - user tinggal centang alat berikutnya
+        // yang nilainya berbeda, atau ganti filter jenis peralatan,
+        // atau tutup manual kalau semua sudah selesai.
       }, 1200);
     } catch (err: any) {
       console.error("Gagal menyimpan SLA/OLA:", err);
@@ -465,12 +526,15 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               <Check size={24} />
             </div>
             <h4 className="font-heading font-bold text-base sm:text-lg text-emerald-900">
-              Data SLA &amp; OLA Berhasil Disimpan!
+              {lastBatchCount > 1
+                ? `Data ${lastBatchCount} Alat Berhasil Disimpan Sekaligus!`
+                : "Data SLA & OLA Berhasil Disimpan!"}
             </h4>
             <p className="text-xs text-emerald-700">
               Kondisi operasional UPT {watchUptStation} ({watchCategory}) untuk{" "}
               tanggal <strong>{formatDateIndo(watchTanggal)}</strong> telah
-              diperbarui dengan Skor OLA <strong>{watchKondisiOla}%</strong>.
+              diperbarui dengan Skor OLA <strong>{watchKondisiOla}%</strong>
+              {lastBatchCount > 1 ? ` untuk ${lastBatchCount} unit alat.` : "."}
             </p>
             {isLateEntry && (
               <p className="inline-flex items-center gap-1.5 justify-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-100 text-orange-800 border border-orange-300">
@@ -523,7 +587,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className={`grid grid-cols-1 ${isScopedToOwnUpt ? '' : 'sm:grid-cols-2'} gap-3`}>
+              {!isScopedToOwnUpt && (
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <BuildingIcon size={14} className="text-[#0052CC]" />
@@ -546,6 +611,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   </span>
                 )}
               </div>
+              )}
 
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -571,32 +637,91 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            {/* Field Pemilihan Unit Alat Spesifik */}
+            {/* Field Pemilihan Unit Alat Spesifik - List + Tombol Checklist,
+                supaya UPT bisa mengisi banyak alat sekaligus dalam satu
+                sesi buka modal, tanpa perlu buka-tutup berulang kali. */}
             {matchingDevices.length > 0 ? (
-              <div className="space-y-1 bg-blue-50/60 p-3 rounded-xl border border-blue-200 animate-fade-in">
-                <label className="block text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
-                  <WrenchIcon size={13} className="text-[#0052CC]" />
-                  PILIH SPESIFIK UNIT PERALATAN ({matchingDevices.length} Unit Terdeteksi):
-                </label>
-                <select
-                  {...register("deviceId")}
-                  disabled={isSubmitting}
-                  className="w-full bg-white border border-blue-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC] disabled:opacity-50"
-                >
-                  {matchingDevices.map((d) => (
-                    <option key={d.devicesId} value={d.devicesId}>
-                      {d.site} ({d.devicesId})
-                    </option>
-                  ))}
-                </select>
-                {errors.deviceId && (
-                  <span className="text-[10px] text-rose-600 font-bold block mt-0.5">
-                    {String(errors.deviceId.message)}
+              <div className="space-y-1.5 bg-blue-50/60 p-3 rounded-xl border border-blue-200 animate-fade-in">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="block text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
+                    <WrenchIcon size={13} className="text-[#0052CC]" />
+                    CENTANG ALAT DENGAN KONDISI SAMA ({matchingDevices.length} Unit):
+                  </label>
+                  {matchingDevices.some((d) => !filledDeviceIds.has(d.devicesId)) && (
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => {
+                        const remainingIds = matchingDevices
+                          .filter((d) => !filledDeviceIds.has(d.devicesId))
+                          .map((d) => d.devicesId);
+                        const allSelected = remainingIds.every((id) => selectedDeviceIds.has(id));
+                        setSelectedDeviceIds(allSelected ? new Set() : new Set(remainingIds));
+                      }}
+                      className="text-[10px] font-bold text-[#0052CC] hover:underline cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      Pilih Semua Sisa
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-blue-800/80 -mt-0.5">
+                  Centang semua unit yang nilainya SAMA, isi kalkulator/manual di bawah sekali,
+                  lalu Simpan. Alat dengan nilai berbeda bisa dicentang & disimpan terpisah setelahnya.
+                </p>
+                <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+                  {matchingDevices.map((d) => {
+                    const isFilled = filledDeviceIds.has(d.devicesId);
+                    const isChecked = selectedDeviceIds.has(d.devicesId);
+                    return (
+                      <button
+                        key={d.devicesId}
+                        type="button"
+                        disabled={isSubmitting || isFilled}
+                        onClick={() => {
+                          setSelectedDeviceIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(d.devicesId)) next.delete(d.devicesId);
+                            else next.add(d.devicesId);
+                            return next;
+                          });
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed ${
+                          isFilled
+                            ? "bg-emerald-50 border-emerald-300 text-emerald-800 opacity-70"
+                            : isChecked
+                            ? "bg-[#0052CC] border-[#0052CC] text-white shadow-sm"
+                            : "bg-white border-blue-200 text-slate-700 hover:bg-blue-50"
+                        }`}
+                      >
+                        {isFilled ? (
+                          <CheckSquare size={16} className="text-emerald-600" />
+                        ) : isChecked ? (
+                          <CheckSquare size={16} className="text-white" />
+                        ) : (
+                          <Square size={16} className="text-slate-400" />
+                        )}
+                        <span className="flex-1 truncate">{d.site} ({d.devicesId})</span>
+                        {isFilled && (
+                          <span className="text-[9px] font-bold text-emerald-700 shrink-0">SUDAH DIISI</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedDeviceIds.size > 0 && (
+                  <span className="text-[10px] text-blue-700 font-bold block mt-0.5">
+                    {selectedDeviceIds.size} alat dipilih - nilai di bawah akan diterapkan ke semuanya.
                   </span>
+                )}
+                {matchingDevices.length > 0 && matchingDevices.every((d) => filledDeviceIds.has(d.devicesId)) && (
+                  <div className="flex items-center gap-1.5 mt-1 px-2 py-1.5 bg-emerald-100 border border-emerald-300 rounded-lg text-[10px] font-bold text-emerald-800">
+                    <Check size={12} /> Semua alat di kategori ini sudah diisi hari ini. Anda bisa ganti filter jenis peralatan atau tutup form ini.
+                  </div>
                 )}
               </div>
             ) : (
               <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-medium flex items-center gap-2">
+
                 <span>⚠️</span>
                 <span>
                   Tidak ada unit spesifik <strong>{watchCategory}</strong> yang terdaftar di <strong>{targetStationName}</strong>.
@@ -1396,11 +1521,15 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || selectedDeviceIds.size === 0}
                 className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-bold bg-[#0052CC] hover:bg-blue-700 text-white shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Check size={15} />
-                {isSubmitting ? "Menyimpan..." : "Simpan & Perbarui Data"}
+                {isSubmitting
+                  ? "Menyimpan..."
+                  : selectedDeviceIds.size > 0
+                  ? `Simpan untuk ${selectedDeviceIds.size} Alat Terpilih`
+                  : "Pilih Alat Terlebih Dahulu"}
               </button>
             </div>
           </form>

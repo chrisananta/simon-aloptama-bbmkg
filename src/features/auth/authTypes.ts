@@ -1,6 +1,6 @@
 import { ActiveNavMenu } from '../../shared/types';
 
-export type UserRole = 'ADMIN' | 'UPT_PIMPINAN';
+export type UserRole = 'TEKNISI_UPT' | 'KAUPT_KABBMKG' | 'ADMIN_INSKAL' | 'SUPER_ADMIN';
 
 export interface AuthUser {
   id: string;
@@ -48,4 +48,13 @@ export interface RBACPermissions {
   canViewAuditLogs: boolean;
   canClearAuditLogs: boolean;
   canInputSlaOla: boolean;
+  // Teknisi UPT & KaUPT hanya boleh melihat alat milik UPT mereka sendiri.
+  isScopedToOwnUpt: boolean;
+  // Sembunyikan panel "Daftar Aloptama Belum Dilaporkan" & laporan mingguan
+  // di halaman SLA OLA untuk role non-admin.
+  canViewUnreportedList: boolean;
+  canViewWeeklyReport: boolean;
+  // Admin Inskal: menu Database Master dipersempit hanya ke monitoring
+  // SLA OLA harian (tab master data lain disembunyikan).
+  masterDataScope: 'FULL' | 'SLA_OLA_HARIAN_ONLY';
 }
