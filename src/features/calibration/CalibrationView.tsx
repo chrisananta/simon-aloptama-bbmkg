@@ -273,23 +273,18 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
             ({filteredRecords.length} DATA)
           </span>
           
-          {permissions.canAddCalibration ? (
-            <button
-              onClick={onOpenAddCalibrationModal}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-[#003a99] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
-              title="Tambah record kalibrasi"
-            >
-              <Plus size={15} />
-              <span>Tambah Data Kalibrasi</span>
-            </button>
-          ) : (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-[11px] font-bold">
-              <ShieldCheck size={14} className="text-[#0052CC]" />
-              <span>Informasi Kalibrasi Mode Read-Only ({user ? ROLE_LABEL[user.role] : ''})</span>
-            </div>
-          )}
+        {permissions.canAddCalibration && (
+          <button
+            onClick={onOpenAddCalibrationModal}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-[#003a99] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
+            title="Tambah record kalibrasi"
+          >
+            <Plus size={15} />
+            <span>Tambah Data Kalibrasi</span>
+          </button>
+        )}
         </div>
-
+        
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs text-slate-700">
             <thead className="bg-slate-100/80 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">

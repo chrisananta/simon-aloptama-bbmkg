@@ -365,7 +365,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      <div className="absolute left-3 bottom-24 z-[1100]">
+      <div className="absolute left-4.5 bottom-28 z-[1100]">
         <button
           onClick={() => setIsThemeMenuOpen((prev) => !prev)}
           title="Pilih tema peta"

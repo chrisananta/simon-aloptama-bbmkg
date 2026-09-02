@@ -40,8 +40,20 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const { user, permissions } = useAuth();
 
   const [selectedUpt, setSelectedUpt] = useState<string>('ALL');
-  const [selectedMonth, setSelectedMonth] = useState('Agustus');
-  const [selectedYear, setSelectedYear] = useState('2026');
+
+  // Otomatis memilih bulan saat ini (Bahasa Indonesia)
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return months[new Date().getMonth()];
+  });
+
+  // Otomatis memilih tahun saat ini
+  const [selectedYear, setSelectedYear] = useState<string>(() => {
+    return new Date().getFullYear().toString();
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'NORMAL' | 'GANGGUAN' | 'MATI'>('ALL');

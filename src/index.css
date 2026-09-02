@@ -110,3 +110,9 @@
 .leaflet-control-zoom a:last-child {
   border-radius: 8px !important;
 }
+
+/* Jarak aman kontrol Leaflet agar tidak terpotong sudut melengkung (rounded-xl) */
+.leaflet-bottom.leaflet-left {
+  margin-bottom: 18px !important;
+  margin-left: 18px !important;
+}
