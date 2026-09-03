@@ -52,8 +52,7 @@ export interface FilterState {
   month: string;
   year: string;
 }
-
-export type ActiveNavMenu = 'dashboard' | 'sla-ola' | 'kalibrasi' | 'sertifikat' | 'admin-master' | 'audit-log';
+export type ActiveNavMenu = 'dashboard' | 'sla-ola' | 'kalibrasi' | 'sertifikat' | 'admin-master' | 'audit-log' | 'genset';
 
 export type LogAction = 'TAMBAH' | 'EDIT' | 'HAPUS' | 'SIMPAN_SLA_OLA' | 'SIMPAN_KALIBRASI' | 'SYNC_SERVER' | 'RESET_DATA' | 'EXPORT_DATA' | 'LOGIN' | 'LOGOUT' | 'REFRESH_TOKEN';
 export type LogTable = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'master_petugas' | 'master_akun' | 'kalibrasi' | 'sistem' | 'pengaturan' | 'autentikasi';
@@ -84,4 +83,24 @@ export interface CalibrationRecord {
   calibrationStatus: CalibrationStatus;
   notes?: string;
   createdAt: string;
+}
+export interface GensetChecklist {
+  bahanBakar: Record<string, 'Baik' | 'Buruk'>;
+  pelumasan: Record<string, 'Baik' | 'Buruk'>;
+  pendinginan: Record<string, 'Baik' | 'Buruk'>;
+  baterai: Record<string, 'Baik' | 'Buruk'>;
+  pemanasan: Record<string, 'Baik' | 'Buruk'>;
+  ats: Record<string, 'Baik' | 'Buruk'>;
+}
+
+export interface GensetRecord {
+  id: string;
+  tanggal: string;
+  jam: string;
+  gedung: 'Operasional' | 'Administrasi' | string;
+  petugasList: string[];
+  petugas: string;
+  checklistData?: GensetChecklist;
+  kesimpulan: string;
+  catatan?: string;
 }

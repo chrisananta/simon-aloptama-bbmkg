@@ -208,3 +208,19 @@ enum LogTable {
   pengaturan
   autentikasi
 }
+
+model GensetMonitoring {
+  id            String   @id @default(uuid())
+  tanggal       DateTime @db.Date
+  jam           String   @default("08:00 WIT")
+  gedung        String   @default("Operasional") // "Operasional" atau "Administrasi"
+  petugasList   Json     // Menyimpan array nama petugas: ["Yoga", "Agus", "Caesar"]
+  petugas       String   // String gabungan untuk pencarian & display cepat
+  checklistData Json?    // Menyimpan detail checklist (Baik/Buruk) dari 6 sistem pengamatan
+  kesimpulan    String   // "BAIK", "PERLU PERBAIKAN", atau "RUSAK"
+  catatan       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("genset_monitoring")
+}

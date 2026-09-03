@@ -1,21 +1,3 @@
-/**
- * Import data alat ASLI dari file CSV (scripts/data/master-peralatan.csv)
- * ke database, mengikuti stasiun UPT yang SUDAH ADA di database kamu.
- *
- * Jalankan dengan:
- *   npx tsx scripts/import-devices-from-csv.ts
- *
- * Cara kerja:
- * 1. Baca daftar stasiun yang BENERAN ada di database kamu (dicocokkan lewat kode, mis. MET001)
- * 2. Baca setiap baris di CSV, cocokkan ID_STASIUN dengan kode stasiun di database
- * 3. Baris yang kodenya COCOK -> alat dibuat/di-update di database
- * 4. Baris yang kodenya TIDAK ditemukan -> DILEWATI, dicatat di laporan akhir
- *    (supaya kamu tahu persis stasiun mana yang perlu ditambahkan dulu)
- *
- * Aman dijalankan berkali-kali: kalau ID_ALAT sudah ada, datanya di-UPDATE
- * (bukan bikin duplikat).
- */
-
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import fs from 'fs';

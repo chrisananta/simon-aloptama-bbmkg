@@ -57,6 +57,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         return 'Audit Log Aktivitas & Perubahan Sistem';
       default:
         return 'SIMON BBMKG V';
+      case 'genset':
+        return 'Monitoring Operasional Genset';  
     }
   };
 

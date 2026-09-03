@@ -18,6 +18,7 @@ import { apiClient } from '../shared/api';
 import { ServerFetchResult } from '../shared/api/serverDataService';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
+import { GensetPage } from '../features/genset/GensetPage';
 
 function AppContent() {
   const { user, permissions, isAuthenticated } = useAuth();
@@ -274,6 +275,10 @@ function AppContent() {
                 onRefreshLogs={refreshAuditLogs}
                 onClearLogs={handleClearLogs}
               />
+            )}
+
+            {activeMenu === 'genset' && permissions.canManageGenset && (
+              <GensetPage />
             )}
           </div>
         </main>

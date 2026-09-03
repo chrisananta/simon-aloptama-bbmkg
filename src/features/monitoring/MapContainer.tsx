@@ -365,11 +365,11 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      <div className="absolute left-4.5 bottom-28 z-[1100]">
+      <div className="absolute left-[28px] bottom-28 z-[1100]">
         <button
           onClick={() => setIsThemeMenuOpen((prev) => !prev)}
           title="Pilih tema peta"
-          className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-2 rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+          className="flex items-center justify-center w-[34px] h-[34px] bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
         >
           <Layers size={16} />
         </button>

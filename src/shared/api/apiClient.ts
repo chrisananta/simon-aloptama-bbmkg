@@ -6,6 +6,7 @@ import {
   CalibrationRecord,
   LogAction,
   LogTable,
+  GensetRecord,
 } from "../types";
 import { AuthUser } from "../../features/auth/authTypes";
 import {
@@ -594,6 +595,39 @@ export const apiClient = {
       return { record: newRecord, updatedDevices: memoryCache.devices };
     },
   },
+
+  // ----------------------------------------------------
+  //GENSET API
+  // ----------------------------------------------------
+ genset: {
+    getAll: async (): Promise<GensetRecord[]> => {
+      try {
+        const res = await authFetch('/api/genset');
+        if (res.ok) {
+          const json = await res.json();
+          return json.data || [];
+        }
+      } catch (e) { console.warn(e); }
+      return [];
+    },
+    add: async (record: Omit<GensetRecord, 'id'>): Promise<GensetRecord> => {
+      const res = await authFetch('/api/genset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      if (!res.ok) throw new Error('Gagal menyimpan monitoring genset');
+      const json = await res.json();
+      return json.data;
+    }
+  }, 
+    delete: async (id: string): Promise<boolean> => { 
+      const res = await authFetch(`/api/genset/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Gagal menghapus data monitoring genset');
+      return true;
+    },
 
   // ----------------------------------------------------
   // STATIONS API

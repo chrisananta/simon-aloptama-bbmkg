@@ -1,22 +1,3 @@
-/**
- * Import/update data STASIUN dari file CSV (scripts/data/master-stasiun.csv)
- * ke database.
- *
- * Jalankan dengan:
- *   npx tsx scripts/import-stations-from-csv.ts
- *
- * PENTING: CSV ini tidak menyertakan koordinat (latitude/longitude), jadi
- * script ini pakai koordinat perkiraan berdasarkan nama kota (lihat CITY_COORDS
- * di bawah). Sebaiknya cek & sesuaikan koordinat yang lebih presisi nanti lewat
- * form Edit Stasiun di aplikasi, terutama untuk kebutuhan peta yang akurat.
- *
- * Aman dijalankan berkali-kali: kalau kode stasiun sudah ada, datanya di-UPDATE
- * (bukan bikin duplikat).
- *
- * Jalankan script ini SEBELUM scripts/import-devices-from-csv.ts, supaya semua
- * kode stasiun yang dipakai di CSV alat sudah tersedia duluan.
- */
-
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import fs from 'fs';

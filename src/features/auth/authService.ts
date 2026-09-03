@@ -1,16 +1,6 @@
 import { AuthUser, AuthSession, UserRole, RBACPermissions } from './authTypes';
 import { ActiveNavMenu } from '../../shared/types';
 import { SESSION_INFO_KEY, authFetch } from '../../shared/api/http';
-
-// Kunci localStorage untuk METADATA sesi non-rahasia (user + waktu
-// kedaluwarsa). Token JWT itu sendiri TIDAK PERNAH disimpan di sini atau di
-// tempat lain yang bisa dibaca JavaScript - dia hidup di cookie httpOnly
-// "simon_jwt" yang di-set backend saat login (lihat userController.ts) dan
-// otomatis dikirim browser di setiap request lewat `credentials: 'include'`
-// (lihat shared/api/http.ts authFetch). Ini sengaja dipisah dari nama kunci
-// lama "simon_jwt_token" supaya sesi lama (yang masih menyimpan token mentah
-// di localStorage dari sebelum perubahan ini) otomatis diabaikan, bukan
-// disalahartikan sebagai session info baru.
 interface StoredSessionInfo {
   user: AuthUser;
   expiresAt: number; // Unix timestamp ms
@@ -50,23 +40,7 @@ function clearStoredSession(): void {
 // Mockup preset dinonaktifkan - Otentikasi murni via PostgreSQL
 export const PRESET_USERS: Record<string, AuthUser & { defaultPass: string }> = {};
 
-/**
- * Authentication Service (Terhubung Langsung ke PostgreSQL)
- *
- * CATATAN KEAMANAN: Token JWT dikirim & disimpan lewat cookie httpOnly,
- * BUKAN localStorage. JavaScript di aplikasi ini (termasuk skrip jahat yang
- * mungkin berhasil disuntikkan lewat celah XSS di masa depan) sama sekali
- * tidak bisa membaca atau menyalin token tsb, karena cookie httpOnly tidak
- * pernah terekspos ke `document.cookie` maupun API JS apa pun. Yang boleh
- * disimpan di localStorage di sini hanyalah metadata non-rahasia (nama user,
- * role, waktu kedaluwarsa) untuk keperluan tampilan UI semata.
- */
 export const authService = {
-  /**
-   * Login user melalui Backend API PostgreSQL. Backend akan men-set cookie
-   * httpOnly berisi JWT lewat header Set-Cookie pada response ini -
-   * `credentials: 'include'` WAJIB supaya browser menyimpan cookie tsb.
-   */
   login: async (username: string, password?: string): Promise<AuthSession> => {
     const cleanUser = username.trim().toLowerCase();
 
@@ -194,7 +168,7 @@ export const authService = {
     switch (role) {
       case 'SUPER_ADMIN':
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'audit-log'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'audit-log', 'genset'],
           canAddCalibration: true,
           canManageMasterData: true,
           canViewAuditLogs: true,
@@ -204,11 +178,12 @@ export const authService = {
           canViewUnreportedList: true,
           canViewWeeklyReport: true,
           masterDataScope: 'FULL',
+          canManageGenset: true,
         };
 
       case 'ADMIN_INSKAL':
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'genset'],
           canAddCalibration: true,
           canManageMasterData: true,
           canViewAuditLogs: false,
@@ -217,6 +192,7 @@ export const authService = {
           isScopedToOwnUpt: false,
           canViewUnreportedList: true,
           canViewWeeklyReport: true,
+          canManageGenset: true,
           // Database Master dipersempit: hanya monitoring SLA OLA harian,
           // tanpa akses tab master data lain (alat, stasiun, akun, dst).
           masterDataScope: 'SLA_OLA_HARIAN_ONLY',
@@ -229,6 +205,7 @@ export const authService = {
           canManageMasterData: false,
           canViewAuditLogs: false,
           canClearAuditLogs: false,
+          canManageGenset: false,
           // Sama seperti Teknisi UPT, tapi TANPA tombol pengisian SLA OLA.
           canInputSlaOla: false,
           isScopedToOwnUpt: true,
@@ -250,6 +227,7 @@ export const authService = {
           canViewUnreportedList: false,
           canViewWeeklyReport: false,
           masterDataScope: 'FULL',
+          canManageGenset: false,
         };
     }
   },

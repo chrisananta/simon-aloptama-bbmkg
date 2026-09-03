@@ -8,7 +8,8 @@ import {
   ChevronRight, 
   Database,
   ShieldCheck,
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react';
 import { ActiveNavMenu, AloptamaDevice } from '../shared/types';
 import { useAuth } from '../features/auth/AuthContext';
@@ -93,6 +94,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: ShieldCheck,
       badge: 'Audit',
     },
+    {
+      id: 'genset' as ActiveNavMenu,
+      label: 'Monitoring Genset',
+      icon: Zap,
+      badge: 'Admin',
+    },    
   ];
 
   // Filter menus according to logged-in user RBAC
