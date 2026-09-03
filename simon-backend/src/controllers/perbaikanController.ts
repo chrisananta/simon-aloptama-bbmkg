@@ -45,7 +45,11 @@ export const perbaikanController = {
   create: async (req: AuthRequest, res: Response) => {
     const parsed = perbaikanSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ success: false, message: 'Data tidak valid', errors: parsed.error.format() });
+      return res.status(400).json({
+        success: false,
+        message: 'Data laporan perbaikan tidak valid.',
+        errors: z.flattenError(parsed.error).fieldErrors,
+      });
     }
     try {
       const { tanggal, ...rest } = parsed.data;
@@ -63,6 +67,7 @@ export const perbaikanController = {
         }
       });
     } catch (err) {
+      console.error('Gagal menyimpan data perbaikan:', err);
       return res.status(500).json({ success: false, message: 'Gagal menyimpan data perbaikan.' });
     }
   },

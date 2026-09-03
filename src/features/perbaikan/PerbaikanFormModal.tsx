@@ -57,8 +57,13 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
   if (!isOpen) return null;
 
   const handleJenisLaporanToggle = (val: string) => {
+    // Sebelumnya unek centang terakhir DIBLOKIR di sini (supaya minimal 1
+    // selalu tercentang) - efeknya orang yang mau pindah dari "Perbaikan"
+    // ke "Instalasi" saja jadi kesulitan (harus centang dulu yang baru,
+    // baru bisa lepas yang lama). Sekarang toggle bebas; validasi "minimal
+    // 1 harus dicentang" dipindah ke saat Simpan (lihat handleSubmit).
     if (jenisLaporan.includes(val)) {
-      if (jenisLaporan.length > 1) setJenisLaporan(jenisLaporan.filter(j => j !== val));
+      setJenisLaporan(jenisLaporan.filter(j => j !== val));
     } else {
       setJenisLaporan([...jenisLaporan, val]);
     }
@@ -81,6 +86,10 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (jenisLaporan.length === 0) {
+      alert('Pilih minimal 1 Jenis Laporan!');
+      return;
+    }
     const validTeknisi = selectedTeknisi.filter(Boolean);
     if (validTeknisi.length === 0) {
       alert('Pilih minimal 1 teknisi!');
@@ -110,8 +119,9 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
       });
       onSaved();
       onClose();
-    } catch (err) {
-      alert('Gagal menyimpan laporan perbaikan.');
+    } catch (err: any) {
+      console.error('Gagal menyimpan laporan perbaikan:', err);
+      alert(err?.message || 'Gagal menyimpan laporan perbaikan.');
     } finally {
       setIsSubmitting(false);
     }
@@ -129,7 +139,7 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
             </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base">Form Laporan Perbaikan / Instalasi / Pengujian</h3>
-              <p className="text-[11px] text-slate-300">Sub Bidang Instrumentasi dan Kalibrasi BBMKG V</p>
+              <p className="text-[11px] text-slate-300">Tim Kerja Instrumentasi dan Kalibrasi BBMKG V</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-slate-300 hover:text-white"><X size={18} /></button>

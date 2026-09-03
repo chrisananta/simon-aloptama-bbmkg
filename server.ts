@@ -25,8 +25,6 @@ function generateRandomPassword(): string {
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-app.use('/api', perbaikanRoutes);
-
 // Aplikasi ini bisa jalan di belakang reverse proxy (mis. saat nanti
 // dideploy ke server dengan Nginx/Caddy di depannya). Tanpa "trust proxy",
 // Express membaca req.ip dari koneksi TCP langsung (yaitu alamat proxy
@@ -237,6 +235,11 @@ async function autoSeedDatabase() {
 // Mount Centralized API Router
 app.use("/api", apiRouter);
 app.use("/api/v1", apiRouter);
+// perbaikanRoutes dulu sempat didaftarkan SEBELUM express.json() terpasang
+// (di atas, dekat inisialisasi app) - akibatnya req.body selalu undefined
+// saat submit form Laporan Perbaikan. Sekarang didaftarkan di sini, SETELAH
+// express.json() sudah aktif, supaya body JSON ter-parse dengan benar.
+app.use("/api", perbaikanRoutes);
 
 async function startServer() {
   // Setup Frontend: Mode Dev (Vite Middleware) vs Production (Static Dist)

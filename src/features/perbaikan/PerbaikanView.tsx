@@ -31,7 +31,7 @@ export const PerbaikanView: React.FC = () => {
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <Wrench size={20} className="text-[#0052CC]" /> Perbaikan &amp; Instalasi Peralatan
           </h2>
-          <p className="text-xs text-slate-500 mt-1">Laporan resmi pemeliharaan Form 1.1 (MKG) &amp; Form 1.2 (Penunjang) BBMKG V.</p> [source: 1]
+          <p className="text-xs text-slate-500 mt-1">Laporan resmi pemeliharaan Form 1.1 (MKG) &amp; Form 1.2 (Penunjang) BBMKG V.</p>
         </div>
         <button
           onClick={() => setIsFormOpen(true)}
@@ -62,7 +62,7 @@ export const PerbaikanView: React.FC = () => {
                   <td className="p-4 font-bold text-slate-900 whitespace-nowrap">{r.tanggal}</td>
                   <td className="p-4">
                     <span className="px-2.5 py-1 rounded-md bg-blue-50 text-[#0052CC] font-bold text-[10px]">
-                      {r.formType === 'FORM_1_1' ? 'Form 1.1 (MKG)' : 'Form 1.2 (Penunjang)'} [source: 1]
+                      {r.formType === 'FORM_1_1' ? 'Form 1.1 (MKG)' : 'Form 1.2 (Penunjang)'}
                     </span>
                   </td>
                   <td className="p-4">

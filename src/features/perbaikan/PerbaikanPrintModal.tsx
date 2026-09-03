@@ -56,27 +56,27 @@ export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => voi
                   <div>
                     <h2 className="font-extrabold text-[11px] uppercase">BALAI BESAR METEOROLOGI KLIMATOLOGI DAN GEOFISIKA</h2>
                     <h3 className="font-bold text-[10px] uppercase">WILAYAH V JAYAPURA</h3>
-                    <p className="text-[9px] font-bold">SUB BIDANG INSTRUMENTASI DAN KALIBRASI</p>
+                    <p className="text-[9px] font-bold">TIM KERJA INSTRUMENTASI DAN KALIBRASI</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="border border-black px-2 py-0.5 text-[9px] font-bold">
-                    {isForm11 ? 'Form 1.1 Peralatan MKG' : 'Form 1.2 Peralatan Penunjang Operasional'} [source: 1]
+                    {isForm11 ? 'Form 1.1 Peralatan MKG' : 'Form 1.2 Peralatan Penunjang Operasional'}
                   </span>
-                  <p className="text-[9px] font-semibold mt-1">Halaman 1 dari {record.fotoLampiran && record.fotoLampiran.length > 0 ? '2' : '1'}</p> [source: 1]
+                  <p className="text-[9px] font-semibold mt-1">Halaman 1 dari {record.fotoLampiran && record.fotoLampiran.length > 0 ? '2' : '1'}</p>
                 </div>
               </div>
 
               {/* Title & Type Checkboxes */}
               <div className="text-center font-bold uppercase text-xs py-1 border-b border-black">
-                Laporan {isForm11 ? 'Peralatan Meteorologi Klimatologi dan Geofisika' : 'Peralatan Penunjang Operasional MKG'} [source: 1]
+                Laporan {isForm11 ? 'Peralatan Meteorologi Klimatologi dan Geofisika' : 'Peralatan Penunjang Operasional MKG'}
               </div>
 
               {/* Checkboxes jenis laporan */}
               <div className="grid grid-cols-2 gap-1 text-[10px] font-semibold border-b border-black pb-2">
                 {['Perbaikan', 'Instalasi', 'Pengecekan Fungsi Alat', 'Pengujian Setelah Perbaikan'].map(item => (
                   <div key={item} className="flex items-center gap-1.5">
-                    <span>{record.jenisLaporan.includes(item) ? '☑' : '☐'}</span> [source: 1]
+                    <span>{record.jenisLaporan.includes(item) ? '☑' : '☐'}</span>
                     <span>{item}</span>
                   </div>
                 ))}
@@ -112,56 +112,56 @@ export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => voi
 
               {/* Akar Penyebab */}
               <div className="border border-black p-2 space-y-1">
-                <span className="font-bold block text-[10px]">Akar Penyebab / Kerusakan/Permasalahan / Kondisi Awal Peralatan:</span> [source: 1]
+                <span className="font-bold block text-[10px]">Akar Penyebab / Kerusakan/Permasalahan / Kondisi Awal Peralatan:</span>
                 <p className="text-[10px] leading-tight min-h-[30px]">{record.akarPenyebab}</p>
               </div>
 
               {/* Analisis */}
               <div className="border border-black p-2 space-y-1">
-                <span className="font-bold block text-[10px]">Analisis Terhadap Kerusakan atau Permasalahan: (jika ada)</span> [source: 1]
+                <span className="font-bold block text-[10px]">Analisis Terhadap Kerusakan atau Permasalahan: (jika ada)</span>
                 <p className="text-[10px] leading-tight min-h-[30px]">{record.analisisKerusakan || '-'}</p>
               </div>
 
               {/* Rekomendasi */}
               <div className="border border-black p-2 space-y-1">
-                <span className="font-bold block text-[10px]">Rekomendasi:</span> [source: 1]
+                <span className="font-bold block text-[10px]">Rekomendasi:</span>
                 <p className="text-[10px] leading-tight min-h-[30px]">{record.rekomendasi}</p>
               </div>
 
               {/* Status Kondisi & Tanggal */}
               <div className="border border-black p-2 space-y-1.5 text-[10px]">
-                <span className="font-bold block">Kondisi alat yang telah dilakukan pengecekan</span> [source: 1]
+                <span className="font-bold block">Kondisi alat yang telah dilakukan pengecekan</span>
                 <div className="space-y-0.5">
-                  <div>{record.kondisiAlat === 'LAYAK_NORMAL' ? '☑' : '☐'} Layak dan semua fungsi normal</div> [source: 1]
-                  <div>{record.kondisiAlat === 'LAYAK_SEBAGIAN' ? '☑' : '☐'} Layak dan ada beberapa fungsi tidak normal</div> [source: 1]
-                  <div>{record.kondisiAlat === 'LAYAK_MODIFIKASI' ? '☑' : '☐'} Layak dan beroperasi setelah dilakukan modifikasi</div> [source: 1]
-                  <div>{record.kondisiAlat === 'TIDAK_LAYAK' ? '☑' : '☐'} Tidak Layak dioperasikan</div> [source: 1]
+                  <div>{record.kondisiAlat === 'LAYAK_NORMAL' ? '☑' : '☐'} Layak dan semua fungsi normal</div>
+                  <div>{record.kondisiAlat === 'LAYAK_SEBAGIAN' ? '☑' : '☐'} Layak dan ada beberapa fungsi tidak normal</div>
+                  <div>{record.kondisiAlat === 'LAYAK_MODIFIKASI' ? '☑' : '☐'} Layak dan beroperasi setelah dilakukan modifikasi</div>
+                  <div>{record.kondisiAlat === 'TIDAK_LAYAK' ? '☑' : '☐'} Tidak Layak dioperasikan</div>
                 </div>
                 <div className="flex justify-between font-bold pt-1 border-t border-slate-300">
-                  <span>Tanggal: {record.tanggal}</span> [source: 1]
-                  <span>Persentase fungsi kerja alat: {record.persentaseFungsi}%</span> [source: 1]
+                  <span>Tanggal: {record.tanggal}</span>
+                  <span>Persentase fungsi kerja alat: {record.persentaseFungsi}%</span>
                 </div>
               </div>
 
               {/* Tanda Tangan Teknisi & Subkor */}
               <div className="border border-black p-2 pt-1 text-[10px]">
-                <p className="font-bold text-center mb-1">Kolom Paraf dan Tanda Tangan Teknisi Yang Melakukan</p> [source: 1]
+                <p className="font-bold text-center mb-1">Kolom Paraf dan Tanda Tangan Teknisi Yang Melakukan</p>
                 <div className="grid grid-cols-4 text-center border border-black min-h-[75px]">
                   <div className="border-r border-black p-1 flex flex-col justify-between">
-                    <span className="font-bold">Teknisi I</span> [source: 1]
+                    <span className="font-bold">Teknisi I</span>
                     <span className="underline font-bold mt-8">{record.teknisiList[0] || '-'}</span>
                   </div>
                   <div className="border-r border-black p-1 flex flex-col justify-between">
-                    <span className="font-bold">Teknisi II</span> [source: 1]
+                    <span className="font-bold">Teknisi II</span>
                     <span className="underline font-bold mt-8">{record.teknisiList[1] || '-'}</span>
                   </div>
                   <div className="border-r border-black p-1 flex flex-col justify-between">
-                    <span className="font-bold">Teknisi III</span> [source: 1]
+                    <span className="font-bold">Teknisi III</span>
                     <span className="underline font-bold mt-8">{record.teknisiList[2] || '-'}</span>
                   </div>
                   <div className="p-1 flex flex-col justify-between">
-                    <span className="font-bold">Sub Koordinator Inskal</span> [source: 1]
-                    <span className="underline font-bold mt-8">Suroto, S.T.</span> [source: 1]
+                    <span className="font-bold">Sub Koordinator Inskal</span>
+                    <span className="underline font-bold mt-8">Yessi Veronika Marpaung, S.Tr</span>
                   </div>
                 </div>
               </div>
@@ -173,14 +173,14 @@ export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => voi
               <div className="page-break pt-8">
                 <div className="border border-black p-4 space-y-4">
                   <div className="flex justify-between items-center border-b border-black pb-2">
-                    <span className="font-bold text-xs uppercase">LAMPIRAN DOKUMENTASI PENGERJAAN</span> [source: 1]
-                    <span className="text-[10px] font-bold">Halaman 2 dari 2</span> [source: 1]
+                    <span className="font-bold text-xs uppercase">LAMPIRAN DOKUMENTASI PENGERJAAN</span>
+                    <span className="text-[10px] font-bold">Halaman 2 dari 2</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     {record.fotoLampiran.map((img, i) => (
                       <div key={i} className="border border-black p-1 text-center bg-slate-50">
-                        <img src={img} alt={`Dokumentasi ${i+1}`} className="w-full h-64 object-contain" /> [source: 1]
+                        <img src={img} alt={`Dokumentasi ${i+1}`} className="w-full h-64 object-contain" />
                         <span className="text-[9px] font-bold block mt-1">Dokumentasi Foto {i+1}</span>
                       </div>
                     ))}

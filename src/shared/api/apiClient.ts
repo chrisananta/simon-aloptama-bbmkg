@@ -805,7 +805,25 @@ export const apiClient = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(record)
       });
-      if (!res.ok) throw new Error('Gagal menyimpan laporan perbaikan/instalasi');
+      if (!res.ok) {
+        // Sebelumnya pesan error di sini selalu generik ("Gagal menyimpan...")
+        // walau server sebenarnya mengirim alasan spesifik (validasi gagal,
+        // field kosong, dll). Sekarang pesan asli dari server ditampilkan.
+        let serverMessage = `Gagal menyimpan laporan perbaikan/instalasi (HTTP ${res.status}).`;
+        try {
+          const errJson = await res.json();
+          if (errJson?.message) serverMessage = errJson.message;
+          if (errJson?.errors && typeof errJson.errors === 'object') {
+            const details = Object.entries(errJson.errors as Record<string, string[]>)
+              .map(([field, msgs]) => `${field}: ${msgs.join(', ')}`)
+              .join('\n');
+            if (details) serverMessage += `\n\n${details}`;
+          }
+        } catch {
+          /* respons bukan JSON, pakai pesan default di atas */
+        }
+        throw new Error(serverMessage);
+      }
       const json = await res.json();
       return json.data;
     },
