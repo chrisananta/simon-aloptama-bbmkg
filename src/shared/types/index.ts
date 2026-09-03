@@ -52,7 +52,7 @@ export interface FilterState {
   month: string;
   year: string;
 }
-export type ActiveNavMenu = 'dashboard' | 'sla-ola' | 'kalibrasi' | 'sertifikat' | 'admin-master' | 'audit-log' | 'genset';
+export type ActiveNavMenu = 'dashboard' | 'sla-ola' | 'kalibrasi' | 'sertifikat' | 'admin-master' | 'audit-log' | 'genset' | 'perbaikan';
 
 export type LogAction = 'TAMBAH' | 'EDIT' | 'HAPUS' | 'SIMPAN_SLA_OLA' | 'SIMPAN_KALIBRASI' | 'SYNC_SERVER' | 'RESET_DATA' | 'EXPORT_DATA' | 'LOGIN' | 'LOGOUT' | 'REFRESH_TOKEN';
 export type LogTable = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'master_petugas' | 'master_akun' | 'kalibrasi' | 'sistem' | 'pengaturan' | 'autentikasi';
@@ -103,4 +103,25 @@ export interface GensetRecord {
   checklistData?: GensetChecklist;
   kesimpulan: string;
   catatan?: string;
+}
+
+export interface PerbaikanRecord {
+  id: string;
+  formType: 'FORM_1_1' | 'FORM_1_2';
+  jenisLaporan: string[];
+  namaAlat: string;
+  merk: string;
+  typeSn: string;
+  lokasiAlat: string;
+  jenisPeralatan: string;
+  kategoriPeralatan?: string;
+  akarPenyebab: string;
+  analisisKerusakan?: string;
+  rekomendasi: string;
+  kondisiAlat: 'LAYAK_NORMAL' | 'LAYAK_SEBAGIAN' | 'LAYAK_MODIFIKASI' | 'TIDAK_LAYAK' | 'OTHER';
+  kondisiOtherDetail?: string;
+  persentaseFungsi: number;
+  tanggal: string;
+  teknisiList: string[];
+  fotoLampiran?: string[]; // Array Base64 Foto
 }

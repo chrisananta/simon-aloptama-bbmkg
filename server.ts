@@ -15,6 +15,7 @@ import {
 } from "./simon-backend/src/db/seedData.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import perbaikanRoutes from './simon-backend/src/routes/perbaikanRoutes.js';
 
 // Bikin password acak yang aman & gampang dibaca manusia
 function generateRandomPassword(): string {
@@ -23,6 +24,8 @@ function generateRandomPassword(): string {
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+
+app.use('/api', perbaikanRoutes);
 
 // Aplikasi ini bisa jalan di belakang reverse proxy (mis. saat nanti
 // dideploy ke server dengan Nginx/Caddy di depannya). Tanpa "trust proxy",

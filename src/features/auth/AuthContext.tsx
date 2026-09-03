@@ -32,6 +32,8 @@ const DEFAULT_PERMISSIONS: RBACPermissions = {
   canViewUnreportedList: false,
   canViewWeeklyReport: false,
   masterDataScope: 'FULL',
+  canManageGenset: false,
+  canManagePerbaikan: false,
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

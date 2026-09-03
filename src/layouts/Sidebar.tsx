@@ -9,7 +9,8 @@ import {
   Database,
   ShieldCheck,
   LogOut,
-  Zap
+  Zap,
+  Wrench
 } from 'lucide-react';
 import { ActiveNavMenu, AloptamaDevice } from '../shared/types';
 import { useAuth } from '../features/auth/AuthContext';
@@ -92,14 +93,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'audit-log' as ActiveNavMenu,
       label: 'Log Aktivitas',
       icon: ShieldCheck,
-      badge: 'Audit',
     },
     {
       id: 'genset' as ActiveNavMenu,
       label: 'Monitoring Genset',
       icon: Zap,
-      badge: 'Admin',
     },    
+    {
+      id: 'perbaikan' as ActiveNavMenu,
+      label: 'Perbaikan & Instalasi',
+      icon: Wrench,
+    },
   ];
 
   // Filter menus according to logged-in user RBAC

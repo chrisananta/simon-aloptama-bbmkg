@@ -224,3 +224,28 @@ model GensetMonitoring {
 
   @@map("genset_monitoring")
 }
+
+model PerbaikanInstalasi {
+  id                 String   @id @default(uuid())
+  formType           String   @default("FORM_1_1") // "FORM_1_1" (MKG) atau "FORM_1_2" (Penunjang)
+  jenisLaporan       Json     // Array string: ["Perbaikan", "Pengujian Setelah Perbaikan", ...]
+  namaAlat           String
+  merk               String
+  typeSn             String
+  lokasiAlat         String
+  jenisPeralatan     String   // Form 1.1: Meteorologi/Klimatologi/Geofisika | Form 1.2: Kelistrikan/Mesin/dll
+  kategoriPeralatan  String?  // Form 1.1: Sederhana Mekanik/Sederhana Elektronik/Canggih
+  akarPenyebab        String   // Kerusakan/Permasalahan/Kondisi Awal
+  analisisKerusakan   String?  // Analisis Terhadap Kerusakan/Permasalahan
+  rekomendasi        String
+  kondisiAlat        String   // LAYAK_NORMAL, LAYAK_SEBAGIAN, LAYAK_MODIFIKASI, TIDAK_LAYAK, OTHER
+  kondisiOtherDetail String?
+  persentaseFungsi   Int      @default(100)
+  tanggal            DateTime @db.Date
+  teknisiList        Json     // Array nama teknisi: ["Teknisi 1", "Teknisi 2", "Teknisi 3"]
+  fotoLampiran       Json?    // Array base64 image string / URL foto dokumentasi
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("perbaikan_instalasi")
+}

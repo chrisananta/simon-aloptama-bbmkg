@@ -49,6 +49,7 @@ export interface RBACPermissions {
   canClearAuditLogs: boolean;
   canInputSlaOla: boolean;
   canManageGenset: boolean;
+  canManagePerbaikan: boolean;
   // Teknisi UPT & KaUPT hanya boleh melihat alat milik UPT mereka sendiri.
   isScopedToOwnUpt: boolean;
   // Sembunyikan panel "Daftar Aloptama Belum Dilaporkan" & laporan mingguan

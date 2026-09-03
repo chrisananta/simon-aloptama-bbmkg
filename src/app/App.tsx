@@ -19,6 +19,7 @@ import { ServerFetchResult } from '../shared/api/serverDataService';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { GensetPage } from '../features/genset/GensetPage';
+import { PerbaikanView } from '../features/perbaikan/PerbaikanView';
 
 function AppContent() {
   const { user, permissions, isAuthenticated } = useAuth();
@@ -279,6 +280,10 @@ function AppContent() {
 
             {activeMenu === 'genset' && permissions.canManageGenset && (
               <GensetPage />
+            )}
+
+            {activeMenu === 'perbaikan' && permissions.canManagePerbaikan && (
+              <PerbaikanView />
             )}
           </div>
         </main>

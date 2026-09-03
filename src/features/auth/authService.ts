@@ -168,7 +168,7 @@ export const authService = {
     switch (role) {
       case 'SUPER_ADMIN':
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'audit-log', 'genset'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'audit-log', 'genset', 'perbaikan'],
           canAddCalibration: true,
           canManageMasterData: true,
           canViewAuditLogs: true,
@@ -179,11 +179,12 @@ export const authService = {
           canViewWeeklyReport: true,
           masterDataScope: 'FULL',
           canManageGenset: true,
+          canManagePerbaikan: true,
         };
 
       case 'ADMIN_INSKAL':
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'genset'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'genset', 'perbaikan'],
           canAddCalibration: true,
           canManageMasterData: true,
           canViewAuditLogs: false,
@@ -193,6 +194,7 @@ export const authService = {
           canViewUnreportedList: true,
           canViewWeeklyReport: true,
           canManageGenset: true,
+          canManagePerbaikan: true,
           // Database Master dipersempit: hanya monitoring SLA OLA harian,
           // tanpa akses tab master data lain (alat, stasiun, akun, dst).
           masterDataScope: 'SLA_OLA_HARIAN_ONLY',
@@ -206,6 +208,7 @@ export const authService = {
           canViewAuditLogs: false,
           canClearAuditLogs: false,
           canManageGenset: false,
+          canManagePerbaikan: false,
           // Sama seperti Teknisi UPT, tapi TANPA tombol pengisian SLA OLA.
           canInputSlaOla: false,
           isScopedToOwnUpt: true,
@@ -228,6 +231,7 @@ export const authService = {
           canViewWeeklyReport: false,
           masterDataScope: 'FULL',
           canManageGenset: false,
+          canManagePerbaikan: false,
         };
     }
   },
@@ -236,6 +240,9 @@ export const authService = {
    * Cek izin menu navigasi
    */
   isMenuAllowed: (role: UserRole, menu: ActiveNavMenu): boolean => {
+    if (menu === 'perbaikan') {
+    return role === 'SUPER_ADMIN' || role === 'ADMIN_INSKAL';
+  }
     const permissions = authService.getRBACPermissions(role);
     return permissions.allowedMenus.includes(menu);
   },

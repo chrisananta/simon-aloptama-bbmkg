@@ -7,6 +7,7 @@ import {
   LogAction,
   LogTable,
   GensetRecord,
+  PerbaikanRecord,
 } from "../types";
 import { AuthUser } from "../../features/auth/authTypes";
 import {
@@ -596,10 +597,10 @@ export const apiClient = {
     },
   },
 
+// ----------------------------------------------------
+  // GENSET API
   // ----------------------------------------------------
-  //GENSET API
-  // ----------------------------------------------------
- genset: {
+  genset: {
     getAll: async (): Promise<GensetRecord[]> => {
       try {
         const res = await authFetch('/api/genset');
@@ -619,15 +620,15 @@ export const apiClient = {
       if (!res.ok) throw new Error('Gagal menyimpan monitoring genset');
       const json = await res.json();
       return json.data;
-    }
-  }, 
+    },
     delete: async (id: string): Promise<boolean> => { 
       const res = await authFetch(`/api/genset/${id}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Gagal menghapus data monitoring genset');
       return true;
-    },
+    } 
+  },
 
   // ----------------------------------------------------
   // STATIONS API
@@ -781,6 +782,38 @@ export const apiClient = {
 
       return true;
     },
+  },
+
+  // ----------------------------------------------------
+  // Perbaikan API
+  // ----------------------------------------------------
+
+  perbaikan: {
+    getAll: async (): Promise<PerbaikanRecord[]> => {
+      try {
+        const res = await authFetch('/api/perbaikan');
+        if (res.ok) {
+          const json = await res.json();
+          return json.data || [];
+        }
+      } catch (e) { console.warn(e); }
+      return [];
+    },
+    add: async (record: Omit<PerbaikanRecord, 'id'>): Promise<PerbaikanRecord> => {
+      const res = await authFetch('/api/perbaikan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      if (!res.ok) throw new Error('Gagal menyimpan laporan perbaikan/instalasi');
+      const json = await res.json();
+      return json.data;
+    },
+    delete: async (id: string): Promise<boolean> => {
+      const res = await authFetch(`/api/perbaikan/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Gagal menghapus data');
+      return true;
+    }
   },
 
   // ----------------------------------------------------

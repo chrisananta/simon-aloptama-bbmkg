@@ -9,6 +9,7 @@ import petugasRoutes from './petugasRoutes.js';
 import { historyController } from '../controllers/historyController.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import gensetRoutes from './gensetRoutes.js';
+import perbaikanRoutes from './perbaikanRoutes.js';
 
 const apiRouter = Router();
 
@@ -26,6 +27,7 @@ apiRouter.use('/', petugasRoutes);
 apiRouter.use('/', auditLogRoutes);
 apiRouter.use('/', petugasRoutes);
 apiRouter.use('/', gensetRoutes);
+apiRouter.use('/', perbaikanRoutes);
 
 // Endpoint Riwayat Operasional & Historis (Wajib Login)
 apiRouter.get('/history', verifyToken, historyController.getHistoryLogs);
