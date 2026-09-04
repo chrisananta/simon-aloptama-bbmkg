@@ -844,7 +844,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               </p>
             </div>
             <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
-              {selectedUpt === 'ALL' ? `Filter: Tahun ${selectedYear}` : selectedUptName}
+              {selectedUpt === 'ALL' ? `Tahun ${selectedYear}` : selectedUptName}
             </span>
           </div>
 
@@ -878,10 +878,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <h3 className="font-heading font-bold text-base text-slate-800">
                 Grafik OLA Berdasarkan Jenis Peralatan ({selectedMonth} {selectedYear})
               </h3>
-              <p className="text-xs text-slate-500">Capaian level operasional per jenis instrumentasi</p>
             </div>
             <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
-              Filter: {selectedMonth} {selectedYear}
+              {selectedMonth} {selectedYear}
             </span>
           </div>
 
@@ -921,15 +920,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <h3 className="font-bold text-xs sm:text-sm text-slate-900">
                 Filter Riwayat Log Gangguan &amp; Alat Mati
               </h3>
-              <p className="text-[10px] sm:text-xs text-slate-500">
-                Pilih mode data status live real-time saat ini atau arsip rekapan
-              </p>
             </div>
           </div>
-
-          <span className="self-start sm:self-auto bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-            ⚡ STATUS LIVE REAL-TIME
-          </span>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-slate-50 p-2 sm:p-3 rounded-xl border border-slate-200 gap-2">
@@ -969,9 +961,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 Daftar Alat Gangguan ({displayGangguan.length})
               </h3>
             </div>
-            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-              🟡 Gangguan {tableFilterMonth !== 'REALTIME' && `(${activePeriodTarget})`}
-            </span>
           </div>
 
           <div className="overflow-x-auto">
@@ -1025,9 +1014,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 Daftar Alat Mati ({displayMati.length})
               </h3>
             </div>
-            <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-              🔴 Mati {tableFilterMonth !== 'REALTIME' && `(${activePeriodTarget})`}
-            </span>
           </div>
 
           <div className="overflow-x-auto">
@@ -1088,9 +1074,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 {reportedCount} / {totalDevicesCount} Alat Sudah Lapor Hari Ini
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Peralatan yang belum diisi SLA OLA oleh teknisi UPT. Saat ini <strong>{reportedCount} dari {totalDevicesCount} unit alat ({Math.round((reportedCount/totalDevicesCount)*100)}%)</strong> telah melaporkan status hari ini.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">

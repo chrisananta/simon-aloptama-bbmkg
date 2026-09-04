@@ -217,7 +217,7 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
                 <div className="text-center text-xs font-bold space-y-1 min-w-[200px]">
                   <p>Jayapura, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                   <p>Mengetahui,</p>
-                  <p className="text-[10px] text-slate-500 font-normal">Ketua Tim Kerja Inskal BBMKG V</p>
+                  <p className="text-[10px] font-bold">Ketua Tim Kerja Instrumentasi dan Kalibrasi</p>
                   <div className="h-16 flex items-center justify-center italic text-slate-300 text-[10px]">
                     ( Tanda Tangan Digital )
                   </div>

@@ -31,7 +31,7 @@ export const PerbaikanView: React.FC = () => {
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <Wrench size={20} className="text-[#0052CC]" /> Perbaikan &amp; Instalasi Peralatan
           </h2>
-          <p className="text-xs text-slate-500 mt-1">Laporan resmi pemeliharaan Form 1.1 (MKG) &amp; Form 1.2 (Penunjang) BBMKG V.</p>
+          <p className="text-xs text-slate-500 mt-1">Laporan pemeliharan, Instalasi &amp; Perbaikan.</p>
         </div>
         <button
           onClick={() => setIsFormOpen(true)}

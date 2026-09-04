@@ -498,7 +498,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase rounded-md border border-emerald-500/30">
-                  Laporan BBMKG Wil. V
+                  Laporan
                 </span>
               </div>
               <h2 className="text-sm sm:text-lg font-black tracking-tight text-white mt-0.5 leading-tight">
@@ -519,7 +519,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 }`}
               >
                 <Users size={14} />
-                <span>Input &amp; Param</span>
+                <span>Input</span>
               </button>
               <button
                 type="button"
@@ -1123,7 +1123,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     <div className="flex justify-end mt-8">
                       <div className="text-center min-w-[240px] text-xs font-semibold text-black space-y-1">
                         <p>Mengetahui,</p>
-                        <p>{jabatanMengetahui},</p>
+                        <p>{jabatanMengetahui}</p>
                         <div className="h-20 flex items-center justify-center my-1">
                           <div className="border border-slate-300 rounded px-3 py-1.5 bg-slate-50/50 text-[10px] text-slate-400 italic">
                             ( Tanda Tangan Digital )

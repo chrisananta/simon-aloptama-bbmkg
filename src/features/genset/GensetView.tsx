@@ -52,7 +52,7 @@ export const GensetView: React.FC = () => {
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <Zap size={20} className="text-[#0052CC]" /> Riwayat Monitoring Genset
           </h2>
-          <p className="text-xs text-slate-500 mt-1">Daftar inspeksi dan kondisi operasional Generator Set.</p>
+          <p className="text-xs text-slate-500 mt-1">Daftar inspeksi dan kondisi operasional Genset.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">

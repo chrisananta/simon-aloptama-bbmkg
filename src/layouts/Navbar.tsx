@@ -44,11 +44,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   const getMenuTitle = () => {
     switch (activeMenu) {
       case 'dashboard':
-        return 'Dashboard Monitoring Operasional';
+        return 'Dashboard Monitoring Aloptama';
       case 'sla-ola':
-        return 'SLA & OLA Aloptama BBMKG Wilayah V';
+        return 'SLA & OLA Aloptama';
       case 'kalibrasi':
-        return 'Monitoring Status Kalibrasi Peralatan';
+        return 'Monitoring Status Kalibrasi';
       case 'sertifikat':
         return 'Portal Sertifikat Kalibrasi Lapang';
       case 'admin-master':
@@ -56,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       case 'audit-log':
         return 'Audit Log Aktivitas & Perubahan Sistem';
       default:
-        return 'SIMON BBMKG V';
+        return 'Perbaikan dan Instalasi Peralatan';
       case 'genset':
         return 'Monitoring Operasional Genset';  
     }
