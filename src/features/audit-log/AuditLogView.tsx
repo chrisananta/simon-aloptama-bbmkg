@@ -95,7 +95,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
         );
       case 'SIMPAN_KALIBRASI':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-300">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
             <Wrench size={12} />
             Kalibrasi
           </span>
@@ -145,7 +145,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
       case 'master_sla_ola':
         return <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">SLA/OLA</span>;
       case 'kalibrasi':
-        return <span className="font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Kalibrasi</span>;
+        return <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Kalibrasi</span>;
       case 'master_stasiun':
         return <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Stasiun</span>;
       case 'master_alat':
@@ -162,16 +162,18 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
       {/* Top Banner Header */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-heading font-bold text-xl text-slate-900 flex items-center gap-2">
-              <FileText size={22} className="text-[#0052CC]" />
-              Audit Log Aktivitas &amp; Perubahan Sistem
-            </h2>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0052CC] text-[10px] font-bold uppercase tracking-wider border border-blue-200">
-              Audit Trail Terpusat
-            </span>
+          <div className="flex items-start gap-2">
+            <FileText size={20} className="text-[#0052CC] shrink-0 mt-0.5" />
+            <div>
+              <h2 className="font-heading font-bold text-base sm:text-xl text-slate-900 leading-snug">
+                Audit Log Aktivitas &amp; Perubahan Sistem
+              </h2>
+              <span className="inline-flex mt-1.5 px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0052CC] text-[10px] font-bold uppercase tracking-wider border border-blue-200">
+                Audit Trail Terpusat
+              </span>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-2">
             Semua riwayat pengisian data, pembaruan SLA/OLA, rekaman kalibrasi, serta manipulasi database dicatat secara real-time.
           </p>
         </div>
@@ -238,12 +240,12 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
         </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0">
             <Wrench size={20} />
           </div>
           <div>
             <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Laporan Kalibrasi</p>
-            <p className="font-heading font-extrabold text-xl text-purple-700">{kalibrasiCount}</p>
+            <p className="font-heading font-extrabold text-xl text-blue-700">{kalibrasiCount}</p>
           </div>
         </div>
 

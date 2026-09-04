@@ -819,22 +819,22 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     <div className="space-y-6 animate-fadeIn pb-12">
       {/* 1. TOP TITLE HEADER */}
       <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3.5">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2.5 sm:p-3 bg-blue-50 text-[#0052CC] rounded-xl border border-blue-100 flex items-center justify-center shadow-xs shrink-0">
-            <Database size={24} className="sm:w-7 sm:h-7" />
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className="p-2 sm:p-3 bg-blue-50 text-[#0052CC] rounded-xl border border-blue-100 flex items-center justify-center shadow-xs shrink-0">
+            <Database size={20} className="sm:w-7 sm:h-7" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase rounded-full tracking-wider flex items-center gap-1">
-                <ShieldCheck size={12} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] sm:text-[10px] font-extrabold uppercase rounded-full tracking-wider flex items-center gap-1 shrink-0">
+                <ShieldCheck size={11} className="sm:w-3 sm:h-3" />
                 Akses Hanya Admin
               </span>
               <span className="text-xs text-slate-400 hidden xs:inline">• BBMKG Wilayah V Papua</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+            <h1 className="text-base sm:text-2xl font-black text-slate-900 tracking-tight mt-1 leading-snug">
               Pengelolaan Database Master
             </h1>
-            <p className="text-slate-500 text-xs mt-0.5">
+            <p className="text-slate-500 text-[11px] sm:text-xs mt-0.5 leading-relaxed">
               Ubah data <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_stasiun</code>, <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_alat</code>, serta audit jejak perubahan pada <code className="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">Log_Perubahan</code>.
             </p>
           </div>

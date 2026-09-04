@@ -413,22 +413,16 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           <title>${docTitle}</title>
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
+            @page { size: A4 portrait; margin: 12mm; }
+            * { box-sizing: border-box; }
+            body { margin: 0; padding: 20px; background: #f1f5f9; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            .page { background: white; padding: 12mm; max-width: 210mm; margin: 0 auto; }
+            #printable-report-area { border: none !important; box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; }
             @media print {
-              body { margin: 0; padding: 0; background: white; }
+              body { padding: 0; background: white; }
               .no-print { display: none !important; }
+              .page { padding: 0; max-width: none; margin: 0; box-shadow: none; border-radius: 0; }
               .page-break { page-break-before: always !important; }
-              #printable-report-area {
-                border: none !important;
-                box-shadow: none !important;
-                padding: 10mm !important;
-                width: 100% !important;
-                max-width: 100% !important;
-              }
-            }
-            body {
-              background-color: #f1f5f9;
-              padding: 24px;
-              font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             }
           </style>
         </head>
@@ -442,7 +436,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
               🖨️ Cetak / Simpan PDF
             </button>
           </div>
-          <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-2">
+          <div class="page">
             ${reportHtml}
           </div>
           <script>
@@ -463,6 +457,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
       <style>{`
+        @page { size: A4 portrait; margin: 12mm; }
         @media print {
           body * {
             visibility: hidden !important;
@@ -1119,7 +1114,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     </table>
                   </div>
 
-                  <div className="my-8 pt-4 flex flex-col justify-between min-h-[160px]">
+                  <div className="my-8 pt-4 flex flex-col justify-between min-h-[160px] break-inside-avoid">
                     <div className="text-xs font-semibold text-black space-y-1">
                       <p className="font-bold">Catatan :</p>
                       <p className="pl-4">{catatanText}</p>
@@ -1136,6 +1131,15 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                         </div>
                         <p className="font-extrabold underline text-sm">{namaMengetahui}</p>
                       </div>
+                    </div>
+
+                    {/* Footer TTE */}
+                    <div className="mt-6 text-center">
+                      <div className="border-t-[3px] border-black" />
+                      <div className="border-t border-black mt-[3px] mb-3" />
+                      <p className="text-[10px] sm:text-[11px] font-bold italic text-black leading-snug">
+                        Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang<br className="hidden sm:block" /> diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara
+                      </p>
                     </div>
                   </div>
 

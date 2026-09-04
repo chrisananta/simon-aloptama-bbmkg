@@ -105,13 +105,13 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden my-2 sm:my-6 flex flex-col max-h-[95vh]">
         <div className="bg-[#0A203C] text-white p-3 sm:p-5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-400 shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 shrink-0">
               <ShieldCheck size={18} className="sm:w-[22px] sm:h-[22px]" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <h3 className="font-heading text-sm sm:text-lg font-bold">Input Data Kalibrasi INSKAL</h3>
-                <span className="bg-purple-500/20 text-purple-300 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border border-purple-400/30 shrink-0">
+                <span className="bg-blue-500/20 text-blue-300 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border border-blue-400/30 shrink-0">
                   INSKAL BMKG
                 </span>
               </div>
@@ -130,12 +130,12 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
         </div>
 
         {isSubmitted ? (
-          <div className="p-5 sm:p-8 text-center space-y-2.5 sm:space-y-3 bg-purple-50">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto border border-purple-300">
+          <div className="p-5 sm:p-8 text-center space-y-2.5 sm:space-y-3 bg-blue-50">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto border border-blue-300">
               <Check size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <h4 className="font-heading font-bold text-sm sm:text-lg text-purple-900">Data Kalibrasi Berhasil Disimpan!</h4>
-            <p className="text-[11px] sm:text-xs text-purple-700">
+            <h4 className="font-heading font-bold text-sm sm:text-lg text-blue-900">Data Kalibrasi Berhasil Disimpan!</h4>
+            <p className="text-[11px] sm:text-xs text-blue-700">
               Catatan kalibrasi {selectedDevice?.site} telah ditambahkan ke Repository Histori Kalibrasi.
             </p>
           </div>
@@ -175,8 +175,8 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
               </div>
             )}
 
-            <div className="p-2.5 sm:p-3.5 bg-purple-50/50 rounded-lg sm:rounded-xl border border-purple-200 space-y-2.5 sm:space-y-3">
-              <span className="text-[11px] sm:text-xs font-bold text-purple-900 uppercase tracking-wide block">
+            <div className="p-2.5 sm:p-3.5 bg-blue-50/50 rounded-lg sm:rounded-xl border border-blue-200 space-y-2.5 sm:space-y-3">
+              <span className="text-[11px] sm:text-xs font-bold text-blue-900 uppercase tracking-wide block">
                 Detail Pelaksanaan Kalibrasi:
               </span>
 
@@ -294,7 +294,7 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-3.5 sm:px-5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold bg-purple-700 hover:bg-purple-800 text-white shadow-md transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+                className="px-3.5 sm:px-5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white shadow-md transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
               >
                 <Plus size={14} className="sm:w-[15px] sm:h-[15px]" />
                 <span className="whitespace-nowrap">Tambah ke Repository</span>

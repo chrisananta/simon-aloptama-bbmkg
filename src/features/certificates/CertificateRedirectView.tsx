@@ -7,21 +7,21 @@ export const CertificateRedirectView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4">
-      <div className="bg-white rounded-3xl p-8 md:p-12 shadow-lg border border-slate-200 text-center flex flex-col items-center">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0052CC] to-[#0F2D52] text-white flex items-center justify-center shadow-md mb-6 border border-blue-400/30">
-          <FileText size={38} />
+    <div className="max-w-4xl mx-auto py-6 px-3 sm:py-10 sm:px-4">
+      <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-12 shadow-lg border border-slate-200 text-center flex flex-col items-center">
+        <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#0052CC] to-[#0F2D52] text-white flex items-center justify-center shadow-md mb-5 sm:mb-6 border border-blue-400/30">
+          <FileText size={28} className="sm:w-[38px] sm:h-[38px]" />
         </div>
 
-        <span className="px-3.5 py-1 rounded-full bg-blue-50 text-[#0052CC] border border-blue-200 text-xs font-bold uppercase tracking-wider mb-3">
+        <span className="px-3 py-1 rounded-full bg-blue-50 text-[#0052CC] border border-blue-200 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-3 leading-snug">
           SISTEM INTEGRASI REPOSITORI SERTIFIKAT
         </span>
 
-        <h2 className="font-heading font-extrabold text-2xl md:text-3xl text-slate-900 tracking-tight">
+        <h2 className="font-heading font-extrabold text-lg sm:text-2xl md:text-3xl text-slate-900 tracking-tight leading-snug px-1">
           Web Sertifikat Kalibrasi Lapang BBMKG V
         </h2>
 
-        <p className="text-sm text-slate-600 max-w-xl mt-3 leading-relaxed">
+        <p className="text-[13px] sm:text-sm text-slate-600 max-w-xl mt-3 leading-relaxed">
           Arsip terenkripsi seluruh Sertifikat Kalibrasi Peralatan Operasional Meteorologi, Klimatologi, dan Geofisika milik BBMKG Wilayah V Papua.
         </p>
 
