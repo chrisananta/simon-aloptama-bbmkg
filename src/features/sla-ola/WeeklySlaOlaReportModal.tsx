@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import html2pdf from 'html2pdf.js';
 import printlogobmkg from '../../assets/images/BMKGLogo.png';
 import { 
   X, 
@@ -19,8 +18,6 @@ import {
   Image as ImageIcon,
   Paperclip,
   FileImage,
-  Download,
-  Loader2,
   ExternalLink
 } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
@@ -151,7 +148,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   };
 
   const [jabatanMengetahui, setJabatanMengetahui] = useState<string>(
-    'Ketua Tim Kerja Instrumentasi dan Kalibrasi'
+    'Ketua Tim Kerja\nInstrumentasi dan Kalibrasi'
   );
   const [namaMengetahui, setNamaMengetahui] = useState<string>(
     'Yessi Veronika Marpaung, S.Tr'
@@ -356,41 +353,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   const percentGangguan = useMemo(() => totalLokasiSum > 0 ? ((totalGangguanSum / totalLokasiSum) * 100).toFixed(2) : '0', [totalGangguanSum, totalLokasiSum]);
   const percentMati = useMemo(() => totalLokasiSum > 0 ? ((totalMatiSum / totalLokasiSum) * 100).toFixed(2) : '0', [totalMatiSum, totalLokasiSum]);
 
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
-
-  const handleDownloadPdf = async () => {
-    const element = document.getElementById('printable-report-area');
-    if (!element) {
-      alert('Dokumen pratinjau tidak ditemukan.');
-      return;
-    }
-
-    setIsExportingPdf(true);
-
-    try {
-      const sanitizedStart = startDate.replace(/[^a-zA-Z0-9]/g, '_');
-      const sanitizedEnd = endDate.replace(/[^a-zA-Z0-9]/g, '_');
-      const filename = `Laporan_Mingguan_SLA_OLA_BMKG_${sanitizedStart}_sd_${sanitizedEnd}.pdf`;
-
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
-      };
-
-      // @ts-ignore
-      await html2pdf().set(opt).from(element).save();
-    } catch (error) {
-      console.error('Download PDF Error:', error);
-      handleOpenPrintWindow();
-    } finally {
-      setIsExportingPdf(false);
-    }
-  };
-
   const handleOpenPrintWindow = () => {
     const element = document.getElementById('printable-report-area');
     if (!element) return;
@@ -421,8 +383,17 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
             @media print {
               body { padding: 0; background: white; }
               .no-print { display: none !important; }
-              .page { padding: 0; max-width: none; margin: 0; box-shadow: none; border-radius: 0; }
+              .page { padding: 0; max-width: none; margin: 0; box-shadow: none; border-radius: 0; padding-bottom: 28mm; }
               .page-break { page-break-before: always !important; }
+              /* Footer TTE tetap muncul di bawah SETIAP halaman cetak */
+              .tte-footer {
+                position: fixed;
+                left: 12mm;
+                right: 12mm;
+                bottom: 6mm;
+                background: white;
+                margin: 0 !important;
+              }
             }
           </style>
         </head>
@@ -471,7 +442,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
             top: 0 !important;
             width: 100% !important;
             margin: 0 !important;
-            padding: 15mm 15mm !important;
+            padding: 15mm 15mm 32mm 15mm !important;
             background: white !important;
             color: black !important;
             font-size: 11pt !important;
@@ -483,6 +454,15 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
           }
           .page-break {
             page-break-before: always !important;
+          }
+          /* Footer TTE tetap muncul di bawah SETIAP halaman cetak */
+          .tte-footer {
+            position: fixed !important;
+            left: 15mm !important;
+            right: 15mm !important;
+            bottom: 6mm !important;
+            background: white !important;
+            margin: 0 !important;
           }
         }
       `}</style>
@@ -707,12 +687,13 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Jabatan Penanggung Jawab (Mengetahui)
                     </label>
-                    <input
-                      type="text"
+                    <textarea
                       value={jabatanMengetahui}
                       onChange={(e) => setJabatanMengetahui(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white"
+                      rows={2}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0052CC] focus:bg-white resize-none"
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-1">Tekan Enter untuk baris baru pada hasil cetak.</p>
                   </div>
 
                   <div>
@@ -947,35 +928,16 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
               <div className="no-print mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-900 font-medium">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={16} className="text-[#0052CC] shrink-0" />
-                  <span>Pratinjau Hasil Cetak Laporan Mingguan. Silakan unduh PDF langsung atau cetak via jendela baru.</span>
+                  <span>Pratinjau Hasil Cetak Laporan Mingguan. Buka jendela cetak untuk mencetak atau menyimpan sebagai PDF (footer akan tampil di setiap halaman).</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-                  <button
-                    type="button"
-                    onClick={handleDownloadPdf}
-                    disabled={isExportingPdf}
-                    className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-800 disabled:bg-blue-400 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    {isExportingPdf ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" />
-                        <span>Mengunduh...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download size={14} />
-                        <span>Unduh PDF</span>
-                      </>
-                    )}
-                  </button>
-
                   <button
                     type="button"
                     onClick={handleOpenPrintWindow}
                     className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <Printer size={14} />
-                    <span>Cetak Jendela Baru</span>
+                    <span>Cetak / Simpan PDF</span>
                   </button>
                 </div>
               </div>
@@ -1123,7 +1085,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                     <div className="flex justify-end mt-8">
                       <div className="text-center min-w-[240px] text-xs font-semibold text-black space-y-1">
                         <p>Mengetahui,</p>
-                        <p>{jabatanMengetahui}</p>
+                        <p style={{ whiteSpace: 'pre-line' }}>{jabatanMengetahui}</p>
                         <div className="h-20 flex items-center justify-center my-1">
                           <div className="border border-slate-300 rounded px-3 py-1.5 bg-slate-50/50 text-[10px] text-slate-400 italic">
                             ( Tanda Tangan Digital )
@@ -1133,8 +1095,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                       </div>
                     </div>
 
-                    {/* Footer TTE */}
-                    <div className="mt-6 text-center">
+                    {/* Footer TTE — berulang di setiap halaman saat dicetak (lihat CSS .tte-footer) */}
+                    <div className="tte-footer mt-6 text-center">
                       <div className="border-t-[3px] border-black" />
                       <div className="border-t border-black mt-[3px] mb-3" />
                       <p className="text-[10px] sm:text-[11px] font-bold italic text-black leading-snug">

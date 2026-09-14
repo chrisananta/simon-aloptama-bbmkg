@@ -61,7 +61,16 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
         .page { background: white; padding: 12mm; max-width: 297mm; margin: auto; }
         @media print {
           body { padding: 0; background: white; }
-          .page { padding: 0; max-width: none; margin: 0; box-shadow: none; }
+          .page { padding: 0; max-width: none; margin: 0; box-shadow: none; padding-bottom: 24mm; }
+          /* Footer TTE tetap muncul di bawah SETIAP halaman cetak (position: fixed diulang browser per halaman) */
+          .tte-footer {
+            position: fixed;
+            left: 10mm;
+            right: 10mm;
+            bottom: 4mm;
+            background: white;
+            margin: 0 !important;
+          }
         }
       </style></head><body><div class="page">${printContent.innerHTML}</div>
       <script>window.onload = function() { setTimeout(window.print, 500); }</script></body></html>
@@ -211,34 +220,60 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
               </tbody>
             </table>
 
-            {/* Tanda Tangan & Footer TTE (tetap satu halaman, tidak terpisah saat cetak) */}
+            {/* Tanda Tangan & Footer TTE */}
             <div className="mt-8 break-inside-avoid">
-              <div className="flex justify-end">
-                <div className="text-center text-xs font-bold space-y-1 min-w-[200px]">
-                  <p>Jayapura, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  <p>Mengetahui,</p>
-                  <p className="text-[10px] font-bold">Ketua Tim Kerja Instrumentasi dan Kalibrasi</p>
-                  <div className="h-16 flex items-center justify-center italic text-slate-300 text-[10px]">
+              <div className="flex justify-end pr-2">
+                <div className="w-[260px] text-center text-xs font-bold leading-tight">
+
+                  {/* Tanggal */}
+                  <p className="mb-1">
+                    Jayapura, {new Date().toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+
+                  {/* Mengetahui */}
+                  <p className="mb-2">
+                    Mengetahui,
+                  </p>
+
+                  {/* Jabatan */}
+                  <p className="mb-1">
+                    Ketua Tim Kerja Instrumentasi<br />
+                    dan Kalibrasi
+                  </p>
+
+                  {/* Ruang tanda tangan */}
+                  <div className="h-16 flex items-center justify-center italic font-normal text-[10px] text-slate-300">
                     ( Tanda Tangan Digital )
                   </div>
-                  <p className="underline font-black">Yessi Veronika Marpaung, S.Tr</p>
-                </div>
-              </div>
 
-              {/* Footer TTE */}
-              <div className="mt-6 text-center">
-                <div className="border-t-[3px] border-black" />
-                <div className="border-t border-black mt-[3px] mb-3" />
-                <p className="text-[10px] sm:text-[11px] font-bold italic text-black leading-snug">
-                  Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang<br className="hidden sm:block" /> diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara
-                </p>
+                  {/* Nama */}
+                  <p className="underline font-black whitespace-nowrap">
+                    Yessi Veronika Marpaung, S.Tr
+                  </p>
+
+                </div>
               </div>
             </div>
 
-          </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            {/* Footer TTE */}
+            <div className="tte-footer mt-6 text-center">
+              <div className="border-t-[3px] border-black" />
+              <div className="border-t border-black mt-[3px] mb-3" />
+              <p className="text-[10px] sm:text-[11px] font-bold italic text-black leading-snug">
+                Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang
+                <br className="hidden sm:block" />
+                diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara
+              </p>
+            </div>
+
+          </div> 
+        </div>  
+      </div> 
+    </div>       
+  </div>         
   );
 };

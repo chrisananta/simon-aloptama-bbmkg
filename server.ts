@@ -81,11 +81,14 @@ app.use(
   })
 );
 
-app.use(express.json());
+// Form seperti Laporan Perbaikan & Genset mengirim foto lampiran sebagai
+// base64 di dalam body JSON (bukan multipart upload), sehingga ukurannya
+// jauh lebih besar dari limit default Express (100kb). "50mb" cukup untuk
+// beberapa foto kamera/WhatsApp sekaligus (maks 3 foto per form).
+app.use(express.json({ limit: '50mb' }));
 
 import cookieParser from 'cookie-parser';
 
-app.use(express.json());
 app.use(cookieParser()); // Pasang middleware pembaca cookie
 
 // Auto-seed database when empty

@@ -21,7 +21,8 @@ export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => voi
       <html><head><title>Form Laporan ${record.namaAlat}</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
-        @media print { body { padding: 0; background: white; } .page-break { page-break-before: always; } }
+        @page { size: A4 portrait; margin: 10mm; }
+        @media print { body { padding: 0; background: white; } .page { padding: 0; max-width: none; margin: 0; border-radius: 0; box-shadow: none; } .page-break { page-break-before: always; } }
         body { padding: 20px; font-family: ui-sans-serif, system-ui, sans-serif; background: #f1f5f9; }
         .page { background: white; padding: 30px; border-radius: 8px; max-width: 900px; margin: auto; }
       </style></head><body><div class="page">${printContent.innerHTML}</div>
@@ -160,7 +161,7 @@ export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => voi
                     <span className="underline font-bold mt-8">{record.teknisiList[2] || '-'}</span>
                   </div>
                   <div className="p-1 flex flex-col justify-between">
-                    <span className="font-bold">Sub Koordinator Inskal</span>
+                    <span className="font-bold">Ketua Tim Kerja <br /> Instrumentasi dan Kalibrasi</span>
                     <span className="underline font-bold mt-8">Yessi Veronika Marpaung, S.Tr</span>
                   </div>
                 </div>
