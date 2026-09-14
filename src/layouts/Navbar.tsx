@@ -58,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       default:
         return 'Perbaikan dan Instalasi Peralatan';
       case 'genset':
-        return 'Monitoring Operasional Genset';  
+        return 'Monitoring Operasional Genset';   
     }
   };
 

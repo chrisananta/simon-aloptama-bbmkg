@@ -1,19 +1,15 @@
 services:
-  # db-aloptama:
+  # db:
   #   image: postgres:16-alpine
   #   restart: unless-stopped
-  #   # ports:
-  #   #   - "5433:5432"
+  #   ports:
+  #     - "5433:5432"
   #   environment:
-  #     # POSTGRES_USER: postgres
-  #     POSTGRES_USER: Simon_Admn
-  #     POSTGRES_PASSWORD: Simon123$
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
   #     POSTGRES_DB: simon_bmkg
   #   volumes:
   #     - simon_db_data:/var/lib/postgresql/data
-  #   networks:
-  #     smn-alptma-net:
-  #       ipv4_address: 10.101.29.2
   #   healthcheck:
   #     test: ["CMD-SHELL", "pg_isready -U postgres"]
   #     interval: 5s
@@ -24,31 +20,16 @@ services:
     image: chrisananta/simon-aloptama-bbmkg:latest
     restart: unless-stopped
     # depends_on:
-    #   db-aloptama:
+    #   db:
     #     condition: service_healthy
     environment:
       NODE_ENV: production
-      PORT: 8769
-      DATABASE_URL: postgresql://Simon_Admn:Simon123AdmN12@10.101.0.1:5434/simon_bmkg?schema=public
+      PORT: 3000
+      DATABASE_URL: postgresql://Simon_Admn:Simon123AdmN12@192.168.88.8:5434/simon_bmkg?schema=public
       JWT_SECRET: 4c41502136bf4047b6718f8d5a972ff2e42eb37e9e204fc69e3f61e3fbefc561
-      CORS_ORIGIN: "https://sla-ola.balai5.my.id"
-    networks:
-      smn-alptma-net:
-        ipv4_address: 10.101.29.3
+      CORS_ORIGIN: "http://localhost:3000"
     ports:
-      - "8769:8769"
+      - "3000:3000"
 
-# volumes:
-#   simon_db_data:
-
-
-networks:
-  smn-alptma-net:
-    driver: bridge
-    driver_opts:
-      com.docker.network.bridge.name: smn-alptma-net
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.101.29.0/24
-          gateway: 10.101.29.1
+volumes:
+  simon_db_data:
