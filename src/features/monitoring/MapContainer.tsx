@@ -165,7 +165,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         attribution: BASEMAPS.osm.attribution,
       }).addTo(map);
 
-      L.control.zoom({ position: 'bottomleft' }).addTo(map);
+      // Kontrol zoom ditaruh di kiri-atas (bukan kiri-bawah) supaya tidak
+      // bertumpuk dengan tombol custom "Layers" yang menempati kiri-bawah —
+      // hasil akhirnya simetris dengan tombol Fullscreen di kanan-atas.
+      L.control.zoom({ position: 'topleft' }).addTo(map);
       mapInstanceRef.current = map;
       setIsMapReady(true);
     }

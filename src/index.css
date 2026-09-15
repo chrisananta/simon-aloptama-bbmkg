@@ -4,6 +4,9 @@
   h1, h2, h3, h4, h5, h6, .font-heading {
     font-family: 'Poppins', sans-serif;
   }
+  html, body {
+    overflow-x: hidden;
+  }
   body {
     font-family: 'Inter', sans-serif;
     background-color: #F5F7FA;
@@ -114,5 +117,11 @@
 /* Jarak aman kontrol Leaflet agar tidak terpotong sudut melengkung (rounded-xl) */
 .leaflet-bottom.leaflet-left {
   margin-bottom: 18px !important;
+  margin-left: 18px !important;
+}
+
+/* Kontrol zoom ada di kiri-atas — beri jarak sama supaya tidak terpotong sudut & tidak nempel tombol Fullscreen */
+.leaflet-top.leaflet-left {
+  margin-top: 18px !important;
   margin-left: 18px !important;
 }

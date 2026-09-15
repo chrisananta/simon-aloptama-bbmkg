@@ -315,43 +315,45 @@ export const GensetFormModal: React.FC<{ isOpen: boolean; onClose: () => void; o
                     {sec.title} <span className="text-rose-500">*</span>
                   </div>
 
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50/50 text-slate-500 font-bold border-b border-slate-100 text-[11px]">
-                        <th className="py-2 px-4">Komponen Pengamatan</th>
-                        <th className="py-2 px-4 text-center w-24">Baik</th>
-                        <th className="py-2 px-4 text-center w-24">Buruk</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {sec.items.map((item) => {
-                        const currentVal = checklist[secKey]?.[item] || 'Baik';
-                        return (
-                          <tr key={item} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-2.5 px-4 font-semibold text-slate-700">{item}</td>
-                            <td className="py-2.5 px-4 text-center">
-                              <input
-                                type="radio"
-                                name={`chk-${secKey}-${item}`}
-                                checked={currentVal === 'Baik'}
-                                onChange={() => handleChecklistChange(secKey, item, 'Baik')}
-                                className="w-4 h-4 accent-emerald-600 cursor-pointer"
-                              />
-                            </td>
-                            <td className="py-2.5 px-4 text-center">
-                              <input
-                                type="radio"
-                                name={`chk-${secKey}-${item}`}
-                                checked={currentVal === 'Buruk'}
-                                onChange={() => handleChecklistChange(secKey, item, 'Buruk')}
-                                className="w-4 h-4 accent-rose-600 cursor-pointer"
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/50 text-slate-500 font-bold border-b border-slate-100 text-[11px]">
+                          <th className="py-2 px-4">Komponen Pengamatan</th>
+                          <th className="py-2 px-4 text-center w-24">Baik</th>
+                          <th className="py-2 px-4 text-center w-24">Buruk</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {sec.items.map((item) => {
+                          const currentVal = checklist[secKey]?.[item] || 'Baik';
+                          return (
+                            <tr key={item} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-2.5 px-4 font-semibold text-slate-700 break-words">{item}</td>
+                              <td className="py-2.5 px-4 text-center">
+                                <input
+                                  type="radio"
+                                  name={`chk-${secKey}-${item}`}
+                                  checked={currentVal === 'Baik'}
+                                  onChange={() => handleChecklistChange(secKey, item, 'Baik')}
+                                  className="w-4 h-4 accent-emerald-600 cursor-pointer"
+                                />
+                              </td>
+                              <td className="py-2.5 px-4 text-center">
+                                <input
+                                  type="radio"
+                                  name={`chk-${secKey}-${item}`}
+                                  checked={currentVal === 'Buruk'}
+                                  onChange={() => handleChecklistChange(secKey, item, 'Buruk')}
+                                  className="w-4 h-4 accent-rose-600 cursor-pointer"
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               );
             })}
