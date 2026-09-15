@@ -272,14 +272,14 @@ export const GensetFormModal: React.FC<{ isOpen: boolean; onClose: () => void; o
                       required
                       value={petugasVal}
                       onChange={e => handlePetugasChange(idx, e.target.value)}
-                      className="flex-1 p-2 bg-white border border-slate-300 rounded-xl font-semibold outline-none focus:border-[#0052CC] cursor-pointer text-xs"
+                      className="flex-1 min-w-0 p-2 bg-white border border-slate-300 rounded-xl font-semibold outline-none focus:border-[#0052CC] cursor-pointer text-xs truncate"
                     >
                       <option value="">-- Pilih Petugas dari Master Data --</option>
                       {masterPetugas.map(p => {
                         const isSelectedOther = selectedPetugas.some((sp, sIdx) => sIdx !== idx && sp === p.name);
                         return (
                           <option key={p.id} value={p.name} disabled={isSelectedOther}>
-                            {p.name} {p.jabatan ? `(${p.jabatan})` : ''} {isSelectedOther ? '- (Sudah Dipilih)' : ''}
+                            {p.name}{isSelectedOther ? ' - (Sudah Dipilih)' : ''}
                           </option>
                         );
                       })}

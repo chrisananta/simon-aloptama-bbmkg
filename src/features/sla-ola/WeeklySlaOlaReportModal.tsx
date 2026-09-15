@@ -928,7 +928,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
               <div className="no-print mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-900 font-medium">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={16} className="text-[#0052CC] shrink-0" />
-                  <span>Pratinjau Hasil Cetak Laporan Mingguan. Buka jendela cetak untuk mencetak atau menyimpan sebagai PDF (footer akan tampil di setiap halaman).</span>
+                  <span>Pratinjau Hasil Cetak Laporan.</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                   <button

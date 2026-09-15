@@ -1,18 +1,16 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /**
-   * API key gratis dari MapTiler (daftar di https://cloud.maptiler.com/),
-   * dipakai untuk basemap peta monitoring. Tanpa key ini, peta akan
-   * fallback ke tile.openstreetmap.org yang SERING DIBLOKIR (403 "Access
-   * blocked") untuk pemakaian aplikasi produksi, terutama di Firefox.
-   */
-  readonly VITE_MAPTILER_KEY?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// Di-inject oleh vite.config.ts (define) saat build — hash commit Git &
+// tanggal build otomatis, dipakai untuk tampilan versi di footer Sidebar.
+declare const __APP_VERSION__: string;
+declare const __BUILD_DATE__: string;
 
 declare module '*.jpg' {
   const src: string;

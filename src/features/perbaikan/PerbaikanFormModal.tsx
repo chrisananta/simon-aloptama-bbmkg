@@ -311,12 +311,12 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
                     copy[idx] = e.target.value;
                     setSelectedTeknisi(copy);
                   }}
-                  className="flex-1 p-2 bg-white border rounded-xl font-semibold"
+                  className="flex-1 min-w-0 p-2 bg-white border rounded-xl font-semibold truncate"
                 >
                   <option value="">-- Pilih Teknisi --</option>
                   {masterPetugas.map(p => (
                     <option key={p.id} value={p.name} disabled={selectedTeknisi.some((st, i) => i !== idx && st === p.name)}>
-                      {p.name} ({p.jabatan || 'Teknisi'})
+                      {p.name}
                     </option>
                   ))}
                 </select>

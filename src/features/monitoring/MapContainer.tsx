@@ -29,19 +29,15 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const [showProvinceBorders, setShowProvinceBorders] = useState(true);
   const [isMapReady, setIsMapReady] = useState(false);
 
-  const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
-  const osmTileUrl = MAPTILER_KEY
-    ? `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; // fallback darurat kalau key belum diisi - AKAN sering diblokir
-
+  // Pakai Esri (World Street Map) untuk basemap jalan — GRATIS, tanpa API key,
+  // dan tidak diblokir seperti tile.openstreetmap.org untuk pemakaian produksi.
+  // Konsisten dengan basemap satelit di bawah yang juga sudah pakai Esri.
   const BASEMAPS: Record<'osm' | 'satellite', { label: string; url: string; attribution: string; maxZoom: number }> = {
     osm: {
-      label: 'OpenStreetMap',
-      url: osmTileUrl,
-      attribution: MAPTILER_KEY
-        ? '&copy; MapTiler &copy; OpenStreetMap contributors | BMKG Wilayah V Papua'
-        : '&copy; OpenStreetMap contributors | BMKG Wilayah V Papua',
-      maxZoom: 18,
+      label: 'Jalan',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      attribution: 'Tiles &copy; Esri | BMKG Wilayah V Papua',
+      maxZoom: 19,
     },
     satellite: {
       label: 'Satelit',
