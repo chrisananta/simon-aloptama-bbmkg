@@ -114,14 +114,10 @@
   border-radius: 8px !important;
 }
 
-/* Jarak aman kontrol Leaflet agar tidak terpotong sudut melengkung (rounded-xl) */
+/* Jarak aman kontrol Leaflet agar tidak terpotong sudut melengkung (rounded-xl).
+   Zoom +/- & tombol Layers sengaja digabung jadi satu kolom di kiri-bawah,
+   sejajar left:18px — lihat penyesuaian posisi tombol Layers di MapContainer.tsx */
 .leaflet-bottom.leaflet-left {
   margin-bottom: 18px !important;
-  margin-left: 18px !important;
-}
-
-/* Kontrol zoom ada di kiri-atas — beri jarak sama supaya tidak terpotong sudut & tidak nempel tombol Fullscreen */
-.leaflet-top.leaflet-left {
-  margin-top: 18px !important;
   margin-left: 18px !important;
 }

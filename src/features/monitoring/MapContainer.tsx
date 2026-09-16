@@ -161,10 +161,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         attribution: BASEMAPS.osm.attribution,
       }).addTo(map);
 
-      // Kontrol zoom ditaruh di kiri-atas (bukan kiri-bawah) supaya tidak
-      // bertumpuk dengan tombol custom "Layers" yang menempati kiri-bawah —
-      // hasil akhirnya simetris dengan tombol Fullscreen di kanan-atas.
-      L.control.zoom({ position: 'topleft' }).addTo(map);
+      // Kontrol zoom digabung satu kolom dengan tombol custom "Layers" di
+      // kiri-bawah (lihat penyesuaian posisi tombol Layers & CSS margin).
+      L.control.zoom({ position: 'bottomleft' }).addTo(map);
       mapInstanceRef.current = map;
       setIsMapReady(true);
     }
@@ -359,12 +358,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <button
         onClick={toggleFullscreen}
         title={isFullscreen ? 'Keluar dari tampilan penuh' : 'Tampilan penuh'}
-        className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-md p-2 rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+        className="absolute top-3 right-3 z-[1000] flex items-center justify-center w-[34px] h-[34px] bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
       >
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      <div className="absolute left-[28px] bottom-28 z-[1100]">
+      <div className="absolute left-[18px] bottom-[104px] z-[1100]">
         <button
           onClick={() => setIsThemeMenuOpen((prev) => !prev)}
           title="Pilih tema peta"
