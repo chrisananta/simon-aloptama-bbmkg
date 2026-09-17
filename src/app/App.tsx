@@ -20,6 +20,7 @@ import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { GensetPage } from '../features/genset/GensetPage';
 import { PerbaikanView } from '../features/perbaikan/PerbaikanView';
+import { TimeBar } from '../layouts/TimeBar';
 
 function AppContent() {
   const { user, permissions, isAuthenticated } = useAuth();
@@ -206,7 +207,10 @@ function AppContent() {
   return (
     <ProtectedRoute activeMenu={activeMenu} onRedirectToDashboard={() => setActiveMenu('dashboard')}>
       <div className="min-h-screen bg-[#F5F7FA] font-['Inter',sans-serif] text-slate-800 flex flex-col">
-        {/* Sidebar Navigation */}
+        {/* Bar tanggal & jam — full-width dari ujung ke ujung, di atas Sidebar & Navbar */}
+        <TimeBar />
+
+        {/* Sidebar Navigation */}       
         <Sidebar
           activeMenu={activeMenu}
           onSelectMenu={(menu) => setActiveMenu(menu)}
@@ -232,7 +236,7 @@ function AppContent() {
 
         {/* Main Content Workspace */}
         <main
-          className={`flex-1 pt-18 sm:pt-20 pb-10 px-3 sm:px-4 md:px-6 transition-all duration-300 ${
+          className={`flex-1 pt-[108px] sm:pt-[116px] pb-10 px-3 sm:px-4 md:px-6 transition-all duration-300 ${
             sidebarCollapsed ? 'ml-16 md:ml-20' : 'ml-0 md:ml-72'
           }`}
         >
