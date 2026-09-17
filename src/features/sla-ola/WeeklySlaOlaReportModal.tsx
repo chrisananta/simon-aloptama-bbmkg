@@ -535,7 +535,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
                     <Calendar size={18} className="text-[#0052CC]" />
-                    Periode &amp; Tanggal Monitoring
+                    Periode &amp; Monitoring
                   </h3>
                   <span className="text-[11px] font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 shrink-0">
                     {calculatedPeriodDays} Hari Operasional ({calculatedPeriodDays * 24} Jam)

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { Maximize2, Minimize2, Layers } from 'lucide-react';
+import { Maximize2, Minimize2, Layers, Plus, Minus } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import { formatDateIndo } from '../../shared/utils/dateUtils';
 
@@ -161,9 +161,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         attribution: BASEMAPS.osm.attribution,
       }).addTo(map);
 
-      // Kontrol zoom digabung satu kolom dengan tombol custom "Layers" di
-      // kiri-bawah (lihat penyesuaian posisi tombol Layers & CSS margin).
-      L.control.zoom({ position: 'bottomleft' }).addTo(map);
+      // Kontrol zoom bawaan Leaflet TIDAK dipakai lagi — sering rusak posisinya
+      // saat resize/mobile. Diganti tombol custom React (lihat JSX di bawah,
+      // dekat tombol Layers) yang stabil karena murni React state, bukan
+      // manipulasi DOM internal Leaflet.
       mapInstanceRef.current = map;
       setIsMapReady(true);
     }
@@ -363,20 +364,21 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      <div className="absolute left-[18px] bottom-[104px] z-[1100]">
-        <button
-          onClick={() => setIsThemeMenuOpen((prev) => !prev)}
-          title="Pilih tema peta"
-          className="flex items-center justify-center w-[34px] h-[34px] bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-        >
-          <Layers size={16} />
-        </button>
+      <div className="absolute left-[18px] bottom-[18px] z-[1100] flex flex-col gap-2">
+        <div className="relative">
+          <button
+            onClick={() => setIsThemeMenuOpen((prev) => !prev)}
+            title="Pilih tema peta"
+            className="flex items-center justify-center w-[34px] h-[34px] bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+          >
+            <Layers size={16} />
+          </button>
 
-        {isThemeMenuOpen && (
-          <div className="absolute left-full bottom-0 ml-1.5 w-40 bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 overflow-hidden text-xs font-semibold text-slate-700">
-            {(Object.keys(BASEMAPS) as Array<'osm' | 'satellite'>).map((key) => (
-              <button
-                key={key}
+          {isThemeMenuOpen && (
+            <div className="absolute left-full bottom-0 ml-1.5 w-40 bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 overflow-hidden text-xs font-semibold text-slate-700">
+              {(Object.keys(BASEMAPS) as Array<'osm' | 'satellite'>).map((key) => (
+                <button
+                  key={key}
                 onClick={() => {
                   setMapTheme(key);
                   setIsThemeMenuOpen(false);
@@ -403,8 +405,27 @@ export const MapContainer: React.FC<MapContainerProps> = ({
                 />
               </button>
             </div>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+
+        {/* Tombol zoom custom (bukan kontrol bawaan Leaflet) — stabil di semua ukuran layar */}
+        <div className="flex flex-col rounded-lg overflow-hidden shadow-md border border-slate-200 bg-white/95 backdrop-blur-md">
+          <button
+            onClick={() => mapInstanceRef.current?.zoomIn()}
+            title="Perbesar"
+            className="flex items-center justify-center w-[34px] h-[34px] border-b border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+          >
+            <Plus size={16} />
+          </button>
+          <button
+            onClick={() => mapInstanceRef.current?.zoomOut()}
+            title="Perkecil"
+            className="flex items-center justify-center w-[34px] h-[34px] text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+          >
+            <Minus size={16} />
+          </button>
+        </div>
       </div>
 
       <div

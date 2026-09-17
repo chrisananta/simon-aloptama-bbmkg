@@ -45,7 +45,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       />
 
       <main
-        className={`flex-1 pt-20 pb-10 px-3 sm:px-4 md:px-6 transition-all duration-300 ${
+        className={`flex-1 pt-[100px] sm:pt-20 pb-10 px-3 sm:px-4 md:px-6 transition-all duration-300 ${
           collapsed ? 'ml-16 md:ml-20' : 'ml-0 md:ml-72'
         }`}
       >
