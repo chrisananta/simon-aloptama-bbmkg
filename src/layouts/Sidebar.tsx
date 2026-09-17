@@ -124,8 +124,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div
-          className={`flex items-center border-b border-slate-200 bg-slate-50/80 transition-all duration-300 ${
-            collapsed ? 'justify-center py-4 px-2 h-[100px] sm:h-16' : 'justify-between px-3 md:px-4 py-3 min-h-[100px] sm:min-h-[64px] md:min-h-[72px]'
+          className={`flex items-center border-b border-slate-200 bg-slate-50/80 transition-all duration-300 h-16 ${
+            collapsed ? 'justify-center px-2' : 'justify-between px-3 md:px-4'
           }`}
         >
           {!collapsed && (

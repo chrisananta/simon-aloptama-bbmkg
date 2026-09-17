@@ -339,7 +339,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   return (
     <div
       ref={mapWrapperRef}
-      className={`relative w-full h-full min-h-[460px] rounded-xl overflow-hidden shadow-md border border-slate-200 ${
+      className={`relative isolate w-full h-full min-h-[460px] rounded-xl overflow-hidden shadow-md border border-slate-200 ${
         isFullscreen ? 'bg-white' : ''
       }`}
     >
