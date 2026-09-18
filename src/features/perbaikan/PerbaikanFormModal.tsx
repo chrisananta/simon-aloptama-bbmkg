@@ -57,11 +57,6 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
   if (!isOpen) return null;
 
   const handleJenisLaporanToggle = (val: string) => {
-    // Sebelumnya unek centang terakhir DIBLOKIR di sini (supaya minimal 1
-    // selalu tercentang) - efeknya orang yang mau pindah dari "Perbaikan"
-    // ke "Instalasi" saja jadi kesulitan (harus centang dulu yang baru,
-    // baru bisa lepas yang lama). Sekarang toggle bebas; validasi "minimal
-    // 1 harus dicentang" dipindah ke saat Simpan (lihat handleSubmit).
     if (jenisLaporan.includes(val)) {
       setJenisLaporan(jenisLaporan.filter(j => j !== val));
     } else {
@@ -139,7 +134,6 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
             </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base">Form Laporan Perbaikan / Instalasi / Pengujian</h3>
-              <p className="text-[11px] text-slate-300">Tim Kerja Instrumentasi dan Kalibrasi BBMKG V</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-slate-300 hover:text-white"><X size={18} /></button>
@@ -151,7 +145,7 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
           {/* Pilihan Tipe Form & Jenis Laporan */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-bold mb-1 text-slate-700">Tipe Kategori Peralatan *</label>
+              <label className="block font-bold mb-1 text-slate-700">Tipe Kategori Peralatan</label>
               <select
                 value={formType}
                 onChange={e => {
@@ -167,7 +161,7 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
             </div>
 
             <div>
-              <label className="block font-bold mb-1 text-slate-700">Jenis Laporan (Dapat Centang Banyak) *</label>
+              <label className="block font-bold mb-1 text-slate-700">Jenis Laporan</label>
               <div className="flex flex-wrap gap-2 pt-1">
                 {['Perbaikan', 'Instalasi', 'Pengecekan Fungsi Alat', 'Pengujian Setelah Perbaikan'].map(item => (
                   <label key={item} className="flex items-center gap-1.5 font-semibold cursor-pointer bg-white px-2.5 py-1.5 border border-slate-300 rounded-lg">
@@ -189,19 +183,19 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
             <h4 className="font-bold text-slate-900 border-b pb-1">Identitas Peralatan</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <label className="block font-bold mb-1">Nama Alat *</label>
-                <input required value={namaAlat} onChange={e=>setNamaAlat(e.target.value)} placeholder="Misal: Display Pyranometer" className="w-full p-2 bg-white border rounded-xl font-semibold" />
+                <label className="block font-bold mb-1">Nama Alat</label>
+                <input required value={namaAlat} onChange={e=>setNamaAlat(e.target.value)} placeholder="Misal: Pyranometer" className="w-full p-2 bg-white border rounded-xl font-semibold" />
               </div>
               <div>
-                <label className="block font-bold mb-1">Merk *</label>
+                <label className="block font-bold mb-1">Merk</label>
                 <input required value={merk} onChange={e=>setMerk(e.target.value)} placeholder="Misal: Kipp & Zonen" className="w-full p-2 bg-white border rounded-xl font-semibold" />
               </div>
               <div>
-                <label className="block font-bold mb-1">Type / SN *</label>
+                <label className="block font-bold mb-1">Type / SN</label>
                 <input required value={typeSn} onChange={e=>setTypeSn(e.target.value)} placeholder="Meteon / 1234" className="w-full p-2 bg-white border rounded-xl font-semibold" />
               </div>
               <div>
-                <label className="block font-bold mb-1">Lokasi Alat *</label>
+                <label className="block font-bold mb-1">Lokasi Alat</label>
                 <input required value={lokasiAlat} onChange={e=>setLokasiAlat(e.target.value)} placeholder="BBMKG 5 / Lab Kalibrasi" className="w-full p-2 bg-white border rounded-xl font-semibold" />
               </div>
             </div>
@@ -209,7 +203,7 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
             {/* Classification Based on Form Type */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <div>
-                <label className="block font-bold mb-1">Jenis Peralatan *</label>
+                <label className="block font-bold mb-1">Jenis Peralatan</label>
                 <select value={jenisPeralatan} onChange={e=>setJenisPeralatan(e.target.value)} className="w-full p-2 bg-white border rounded-xl font-bold">
                   {formType === 'FORM_1_1' ? (
                     <>
@@ -232,7 +226,7 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
 
               {formType === 'FORM_1_1' && (
                 <div>
-                  <label className="block font-bold mb-1">Kategori *</label>
+                  <label className="block font-bold mb-1">Kategori</label>
                   <select value={kategoriPeralatan} onChange={e=>setKategoriPeralatan(e.target.value)} className="w-full p-2 bg-white border rounded-xl font-bold">
                     <option value="Sederhana Mekanik">Sederhana Mekanik</option>
                     <option value="Sederhana Elektronik">Sederhana Elektronik</option>
@@ -246,7 +240,7 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
           {/* Deskripsi Masalah & Analisis */}
           <div className="space-y-3">
             <div>
-              <label className="block font-bold mb-1">Akar Penyebab / Kerusakan / Permasalahan / Kondisi Awal *</label>
+              <label className="block font-bold mb-1">Akar Penyebab / Kerusakan / Permasalahan / Kondisi Awal</label>
               <textarea required rows={2} value={akarPenyebab} onChange={e=>setAkarPenyebab(e.target.value)} placeholder="Tuliskan temuan awal kerusakan..." className="w-full p-2.5 bg-white border rounded-xl resize-none" />
             </div>
 
@@ -256,7 +250,7 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
             </div>
 
             <div>
-              <label className="block font-bold mb-1">Rekomendasi *</label>
+              <label className="block font-bold mb-1">Rekomendasi</label>
               <textarea required rows={2} value={rekomendasi} onChange={e=>setRekomendasi(e.target.value)} placeholder="Tuliskan saran penyimpanan atau perawatan selanjutnya..." className="w-full p-2.5 bg-white border rounded-xl resize-none" />
             </div>
           </div>
@@ -264,7 +258,7 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
           {/* Result & Percentages */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="md:col-span-2 space-y-1">
-              <label className="block font-bold mb-1">Kondisi Alat Setelah Pengecekan *</label>
+              <label className="block font-bold mb-1">Kondisi Alat Setelah Pengecekan</label>
               {[
                 { key: 'LAYAK_NORMAL', label: 'Layak dan semua fungsi normal' },
                 { key: 'LAYAK_SEBAGIAN', label: 'Layak dan ada beberapa fungsi tidak normal' },
@@ -280,11 +274,11 @@ export const PerbaikanFormModal: React.FC<{ isOpen: boolean; onClose: () => void
 
             <div className="space-y-3">
               <div>
-                <label className="block font-bold mb-1">Tanggal Pengecekan *</label>
+                <label className="block font-bold mb-1">Tanggal Pengecekan</label>
                 <input type="date" required value={tanggal} onChange={e=>setTanggal(e.target.value)} className="w-full p-2 bg-white border rounded-xl font-bold" />
               </div>
               <div>
-                <label className="block font-bold mb-1">Persentase Fungsi Kerja (%) *</label>
+                <label className="block font-bold mb-1">Persentase Fungsi Kerja (%)</label>
                 <input type="number" min={0} max={100} required value={persentaseFungsi} onChange={e=>setPersentaseFungsi(Number(e.target.value))} className="w-full p-2 bg-white border rounded-xl font-bold" />
               </div>
             </div>

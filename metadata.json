@@ -1,6 +1,6 @@
 {
   "name": "SIMON BBMKG V",
-  "description": "Sistem Monitoring Operasional BBMKG Wilayah V Papua - BMKG Regional V Papua",
+  "description": "Sistem Informasi Monitoring Aloptama dan Kalibrasi BBMKG Wilayah V",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

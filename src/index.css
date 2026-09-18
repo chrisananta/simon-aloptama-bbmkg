@@ -6,6 +6,9 @@
   }
   html, body {
     overflow-x: hidden;
+    /* Cegah "elastic bounce" scroll iOS Safari yang bikin konten sesaat
+       nembus/tampil di atas header fixed saat discroll mentok ke atas. */
+    overscroll-behavior-y: none;
   }
   body {
     font-family: 'Inter', sans-serif;

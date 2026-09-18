@@ -78,6 +78,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: warningCount > 0 ? `${warningCount} Warning` : null,
     },
     {
+      id: 'genset' as ActiveNavMenu,
+      label: 'Monitoring Genset',
+      icon: Zap,
+    },    
+    {
+      id: 'perbaikan' as ActiveNavMenu,
+      label: 'Perbaikan & Instalasi',
+      icon: Wrench,
+    },
+    {
       id: 'sertifikat' as ActiveNavMenu,
       label: 'Sertifikat Kalibrasi Lapang',
       icon: ExternalLink,
@@ -93,16 +103,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'audit-log' as ActiveNavMenu,
       label: 'Log Aktivitas',
       icon: ShieldCheck,
-    },
-    {
-      id: 'genset' as ActiveNavMenu,
-      label: 'Monitoring Genset',
-      icon: Zap,
-    },    
-    {
-      id: 'perbaikan' as ActiveNavMenu,
-      label: 'Perbaikan & Instalasi',
-      icon: Wrench,
     },
   ];
 
@@ -124,8 +124,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div
-          className={`flex items-center border-b border-slate-200 bg-slate-50/80 transition-all duration-300 h-16 ${
-            collapsed ? 'justify-center px-2' : 'justify-between px-3 md:px-4'
+          className={`flex items-center border-b border-slate-200 bg-slate-50/80 transition-all duration-300 ${
+            collapsed ? 'justify-center py-4 px-2 h-16' : 'justify-between px-3 md:px-4 py-3 min-h-[64px] md:min-h-[72px]'
           }`}
         >
           {!collapsed && (

@@ -43,7 +43,7 @@ const CHECKLIST_SECTIONS = {
     ]
   },
   pemanasan: {
-    title: 'Kondisi Saat pemanasan genset tanpa beban ( 5 s/d 10 menit, 1 kali seminggu)',
+    title: 'Kondisi Saat pemanasan genset tanpa beban ( Selama 30 menit, 1 kali seminggu)',
     items: [
       'Tegangan Tiap Fase',
       'Arus Tiap Fase',
@@ -303,7 +303,7 @@ export const GensetFormModal: React.FC<{ isOpen: boolean; onClose: () => void; o
           {/* 3. Matriks Pengamatan */}
           <div className="space-y-4 pt-1">
             <h4 className="font-bold text-sm text-slate-900 border-b pb-2 flex items-center justify-between">
-              <span>Matriks Hasil Pengamatan Fisik &amp; Fungsi</span>
+              <span>Matriks Pengamatan Fisik &amp; Fungsi</span>
               <span className="text-[11px] font-normal text-slate-500">Pilih kondisi komponen</span>
             </h4>
 

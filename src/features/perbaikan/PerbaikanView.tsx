@@ -37,7 +37,7 @@ export const PerbaikanView: React.FC = () => {
           onClick={() => setIsFormOpen(true)}
           className="flex items-center gap-1.5 px-4 py-2 bg-[#0052CC] hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer"
         >
-          <Plus size={16} /> Buat Laporan Baru
+          <Plus size={16} /> Buat Laporan
         </button>
       </div>
 
@@ -47,7 +47,7 @@ export const PerbaikanView: React.FC = () => {
             <thead>
               <tr className="bg-slate-50 text-slate-600 font-bold uppercase border-b border-slate-200">
                 <th className="p-4">Tanggal</th>
-                <th className="p-4">Form</th>
+                <th className="p-4">Jenis Form</th>
                 <th className="p-4">Nama Alat &amp; Merk</th>
                 <th className="p-4">Jenis &amp; Lokasi</th>
                 <th className="p-4">Hasil Pengecekan</th>

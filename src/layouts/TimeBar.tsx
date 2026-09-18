@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
-// Bar tanggal & jam paling atas — SENGAJA dipisah dari Navbar/Sidebar dan
-// selalu fixed di left-0/right-0 (bukan mengikuti offset sidebar) supaya
-// benar-benar tampil dari ujung ke ujung layar, persis gaya bmkg.go.id.
-// Tinggi bar ini (h-9 = 36px) dipakai sebagai acuan `top-9` di Sidebar.tsx
-// dan Navbar.tsx — kalau tinggi di sini diubah, sesuaikan juga di sana.
 export const TimeBar: React.FC = () => {
   const [dateStr, setDateStr] = useState<string>("");
   const [timeWitStr, setTimeWitStr] = useState<string>("");
   const [timeUtcStr, setTimeUtcStr] = useState<string>("");
-  // Default tertutup di layar sempit (cuma 1 baris ramping); di layar
-  // sm ke atas, detail WIT/UTC langsung ditampilkan inline tanpa perlu tap.
   const [showTimeDetail, setShowTimeDetail] = useState(false);
 
   useEffect(() => {
@@ -84,7 +77,7 @@ export const TimeBar: React.FC = () => {
           </p>
           <p className="text-sm font-bold text-emerald-600 tabular-nums leading-snug mt-0.5">
             {timeWitStr || "--:--:--"}{" "}
-            <span className="text-slate-300 font-normal">/</span>{" "}
+            <span className="text-slate-300 font-normal">|</span>{" "}
             {timeUtcStr || "--:--:--"}
           </p>
         </div>
