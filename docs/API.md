@@ -117,8 +117,11 @@ Entry harian diisi rutin oleh operator UPT (bukan cuma admin), jadi cukup wajib 
 | :--- | :--- | :--- |
 | GET | `/api/sla-ola/logs` | Login |
 | POST | `/api/sla-ola` (atau `/api/sla-ola/save`) | Login |
+| GET | `/api/sla-ola/summary?tahun=YYYY` | Login |
 | GET | `/api/sla-ola/monthly` | Login + ADMIN |
 | POST | `/api/sla-ola/monthly` | Login + ADMIN |
+
+* **Ringkasan bulanan** (`GET /api/sla-ola/summary?tahun=YYYY`, sumber halaman SLA & OLA): nilai per alat per bulan dari tabel `sla_ola_logs`, dikelompokkan berdasarkan `reportDate`. Jika ada log yang `actor`-nya Admin (Super Admin / Admin Inskal) pada bulan itu, nilai admin dipakai (dianggap sudah rata-rata bulan itu). Jika tidak ada, dipakai rata-rata log pengisian UPT (satu nilai per tanggal, isian terakhir di tanggal itu). Bulan tanpa log tidak muncul di respons. Bentuk: `{ "success": true, "tahun": 2026, "data": { "<deviceId>": { "1": { "sla": 100, "ola": 92.5, "source": "ADMIN", "jumlahLog": 1 } } } }`. `GET /api/sla-ola/monthly` memakai aturan yang sama untuk satu bulan.
 
 * **Payload POST** (`/api/sla-ola` atau `/api/sla-ola/save`):
 ```json

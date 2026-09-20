@@ -84,7 +84,119 @@
   animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Selaraskan tampilan kontrol zoom Leaflet dengan tombol custom (fullscreen & layer) */
-/* Catatan: kontrol zoom bawaan Leaflet (.leaflet-control-zoom) SENGAJA
-   tidak dipakai lagi — sering rusak posisinya di mobile. Diganti tombol
-   zoom custom React di MapContainer.tsx (lihat komentar di sana). */
+/* ===== Logo SIMON beranimasi (halaman login) — lihat AnimatedSimonLogo.tsx ===== */
+.simon-logo {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.simon-logo__stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 8px rgba(0, 82, 204, 0.22));
+}
+
+.simon-logo__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* Intro: dua separuh S (atas biru, bawah hijau) meluncur masuk lalu menyatu.
+   Potongan saling menimpa 2% supaya tidak ada celah. */
+.simon-logo__top {
+  clip-path: inset(0 0 48% 0);
+  animation: simon-slide-top 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.simon-logo__bottom {
+  clip-path: inset(50% 0 0 0);
+  animation: simon-slide-bottom 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@keyframes simon-slide-top {
+  from {
+    opacity: 0;
+    transform: translate(-28%, -22%) rotate(-10deg) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes simon-slide-bottom {
+  from {
+    opacity: 0;
+    transform: translate(28%, 22%) rotate(10deg) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Setelah menyatu: melayang pelan */
+.simon-logo__stage--ready {
+  animation: simon-float 3.6s ease-in-out infinite;
+}
+@keyframes simon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9%); }
+}
+
+/* Kilau cahaya yang menyapu bentuk S (di-mask dengan gambar logonya sendiri) */
+.simon-logo__shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.9) 50%,
+    transparent 62%
+  );
+  background-size: 300% 100%;
+  background-position: 150% 0;
+  animation: simon-shine 3.6s ease-in-out 0.6s infinite;
+}
+@keyframes simon-shine {
+  0% { background-position: 150% 0; }
+  40%, 100% { background-position: -50% 0; }
+}
+
+/* Saat proses login berjalan: berdenyut + kilau lebih cepat */
+.simon-logo--loading .simon-logo__stage--ready {
+  animation: simon-pulse 0.9s ease-in-out infinite;
+  filter: drop-shadow(0 4px 12px rgba(0, 82, 204, 0.45));
+}
+.simon-logo--loading .simon-logo__shine {
+  animation-duration: 1s;
+  animation-delay: 0s;
+}
+@keyframes simon-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .simon-logo__top,
+  .simon-logo__bottom,
+  .simon-logo__stage--ready,
+  .simon-logo__shine,
+  .simon-logo--loading .simon-logo__stage--ready {
+    animation: none !important;
+  }
+  .simon-logo__shine {
+    display: none;
+  }
+}

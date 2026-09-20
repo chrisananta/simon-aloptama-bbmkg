@@ -346,7 +346,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <div ref={mapContainerRef} className="w-full h-full" />
 
     {isFullscreen && (
-      <div className="absolute top-12 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-md px-8 py-3.5 rounded-2xl shadow-lg border border-slate-200 text-center">
+      <div className="absolute top-12 left-1/2 -translate-x-1/2 z-10 bg-white/95 backdrop-blur-md px-8 py-3.5 rounded-2xl shadow-lg border border-slate-200 text-center">
         <p className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-wide leading-tight">
           DASHBOARD MONITORING ALOPTAMA
         </p>
@@ -359,12 +359,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <button
         onClick={toggleFullscreen}
         title={isFullscreen ? 'Keluar dari tampilan penuh' : 'Tampilan penuh'}
-        className="absolute top-3 right-3 z-[1000] flex items-center justify-center w-[34px] h-[34px] bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+        className="absolute top-3 right-3 z-10 flex items-center justify-center w-[34px] h-[34px] bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
       >
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      <div className="absolute left-[18px] bottom-[18px] z-[1100] flex flex-col gap-2">
+      <div className="absolute left-[18px] bottom-[18px] z-10 flex flex-col gap-2">
         <div className="relative">
           <button
             onClick={() => setIsThemeMenuOpen((prev) => !prev)}
@@ -429,7 +429,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       </div>
 
       <div
-        className={`absolute z-[1000] bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200 text-xs font-semibold text-slate-800 transition-all ${
+        className={`absolute z-10 bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200 text-xs font-semibold text-slate-800 transition-all ${
           isFullscreen
             ? 'bottom-6 left-1/2 -translate-x-1/2 px-5 py-2.5 text-sm sm:text-base rounded-xl shadow-lg'
             : 'bottom-4 right-4 px-3.5 py-2 text-xs'

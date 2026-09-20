@@ -125,3 +125,14 @@ export interface PerbaikanRecord {
   teknisiList: string[];
   fotoLampiran?: string[]; // Array Base64 Foto
 }
+
+/** Nilai SLA/OLA bulanan satu alat (hasil resolusi di backend: input admin, atau rata-rata log UPT). */
+export interface MonthlyDeviceScore {
+  sla: number;
+  ola: number;
+  source: 'ADMIN' | 'UPT';
+  jumlahLog: number;
+}
+
+/** deviceId -> nomor bulan ("1".."12") -> nilai bulanan. Bulan tanpa log tidak ada di map. */
+export type YearlyScoreMap = Record<string, Record<string, MonthlyDeviceScore>>;

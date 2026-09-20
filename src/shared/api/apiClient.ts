@@ -8,6 +8,7 @@ import {
   LogTable,
   GensetRecord,
   PerbaikanRecord,
+  YearlyScoreMap,
 } from "../types";
 import { AuthUser } from "../../features/auth/authTypes";
 import {
@@ -420,6 +421,25 @@ export const apiClient = {
       await apiClient.devices.fetch();
 
       return true;
+    },
+  },
+
+  // ----------------------------------------------------
+  // SLA/OLA SUMMARY API (sumber halaman SLA & OLA: rekap setahun per alat per bulan)
+  // ----------------------------------------------------
+  slaOlaSummary: {
+    /** Mengembalikan null kalau gagal dimuat (beda dengan {} = memang belum ada data). */
+    fetch: async (tahun: number): Promise<YearlyScoreMap | null> => {
+      try {
+        const res = await authFetch(`/api/sla-ola/summary?tahun=${tahun}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success) return (json.data || {}) as YearlyScoreMap;
+        }
+      } catch (e) {
+        console.warn("apiClient.slaOlaSummary.fetch failed:", e);
+      }
+      return null;
     },
   },
 

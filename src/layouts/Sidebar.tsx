@@ -5,7 +5,6 @@ import {
   Calendar, 
   ExternalLink, 
   ChevronLeft, 
-  ChevronRight, 
   Database,
   ShieldCheck,
   LogOut,
@@ -15,6 +14,7 @@ import {
 import { ActiveNavMenu, AloptamaDevice } from '../shared/types';
 import { useAuth } from '../features/auth/AuthContext';
 import sidebarLogoImg from '../assets/images/Logosidebar.png';
+import simonLogo from '../assets/images/simonlogo.png';
 import { UserRole } from '../features/auth/authTypes';
 
 const ROLE_LABEL: Record<UserRole, string> = {
@@ -123,27 +123,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
           collapsed ? 'w-16 md:w-20' : 'w-64 md:w-72'
         }`}
       >
+        {/* Header sidebar: putih & tinggi sama dengan Navbar (65px = h-16 + border)
+            supaya garis bawahnya lurus menyambung dengan Navbar. */}
         <div
-          className={`flex items-center border-b border-slate-200 bg-slate-50/80 transition-all duration-300 ${
-            collapsed ? 'justify-center py-4 px-2 h-16' : 'justify-between px-3 md:px-4 py-3 min-h-[64px] md:min-h-[72px]'
+          className={`flex items-center border-b border-slate-200 bg-white h-[65px] shrink-0 transition-all duration-300 ${
+            collapsed ? 'justify-center px-2' : 'justify-between px-3 md:px-4'
           }`}
         >
-          {!collapsed && (
-            <div className="flex flex-1 items-center justify-center">
-              <img 
-              src= {sidebarLogoImg}
-              alt="SIMON BBMKG V"
-              className="h-8 md:h-10 w-auto max-w-full object-contain" />
-            </div>
-          )}
+          {collapsed ? (
+            // Sidebar tertutup: logo S menggantikan tombol panah — klik untuk membuka sidebar.
+            <button
+              onClick={onToggleCollapse}
+              title="Buka Sidebar"
+              aria-label="Buka sidebar"
+              className="flex items-center justify-center rounded-xl p-0.5 cursor-pointer transition-transform duration-200 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50"
+            >
+              <img
+                src={simonLogo}
+                alt="SIMON"
+                draggable={false}
+                className="h-11 w-11 md:h-12 md:w-12 object-contain select-none"
+              />
+            </button>
+          ) : (
+            <>
+              <div className="flex flex-1 items-center justify-center">
+                <img
+                  src={sidebarLogoImg}
+                  alt="SIMON BBMKG V"
+                  className="h-8 md:h-10 w-auto max-w-full object-contain"
+                />
+              </div>
 
-          <button
-            onClick={onToggleCollapse}
-            className="p-1.5 md:p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors border border-slate-200 shrink-0 cursor-pointer"
-            title={collapsed ? 'Perluas Sidebar' : 'Tutup Sidebar'}
-          >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
+              <button
+                onClick={onToggleCollapse}
+                className="p-1.5 md:p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors border border-slate-200 shrink-0 cursor-pointer"
+                title="Tutup Sidebar"
+              >
+                <ChevronLeft size={18} />
+              </button>
+            </>
+          )}
         </div>
 
         <div className="flex-1 py-3 md:py-4 px-2 md:px-3 overflow-y-auto space-y-1.5">

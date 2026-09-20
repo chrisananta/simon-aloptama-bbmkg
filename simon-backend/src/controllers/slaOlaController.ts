@@ -9,6 +9,11 @@ import {
   getTodayDateOnlyWIT,
   diffDaysDateOnly,
 } from '../utils/dateUtils.js';
+import {
+  ADMIN_ACTOR_FALLBACK,
+  normalizeActor,
+  resolveMonthlyScores,
+} from '../utils/slaOlaMonthly.js';
 
 // Batas maksimal mundur untuk pengisian SLA/OLA susulan (hari).
 const MAX_BACKDATE_DAYS = 10;
@@ -45,6 +50,26 @@ const updateSlaOlaLogInput = z.object({
 
 function invalidSlaOla(res: Response, error: z.ZodError) {
   return res.status(400).json({ success: false, message: 'Data SLA/OLA tidak valid.', errors: z.flattenError(error).fieldErrors });
+}
+
+/**
+ * Kumpulan nama `actor` yang dianggap Admin: nama & username semua akun
+ * Super Admin / Admin Inskal, ditambah daftar cadangan (mis. akun yang sudah
+ * dihapus). Dipakai untuk membedakan log rekap bulanan admin dari log
+ * pengisian UPT (lihat utils/slaOlaMonthly.ts).
+ */
+async function loadAdminActorSet(): Promise<Set<string>> {
+  const admins = await prisma.user.findMany({
+    where: { role: { in: ['SUPER_ADMIN', 'ADMIN_INSKAL'] } },
+    select: { name: true, username: true },
+  });
+  const set = new Set<string>(ADMIN_ACTOR_FALLBACK.map(normalizeActor));
+  for (const u of admins) {
+    set.add(normalizeActor(u.name));
+    set.add(normalizeActor(u.username));
+  }
+  set.delete('');
+  return set;
 }
 
 export const slaOlaController = {
@@ -267,24 +292,43 @@ export const slaOlaController = {
 
       // Eksekusi Transaksi Atomik Database
       const { log } = await prisma.$transaction(async (tx) => {
-        // 1. Buat Log SLA/OLA Bulanan
-        const createdLog = await tx.slaOlaLog.create({
-          data: {
-            uptStation: uptStation || '',
-            category: category || '',
-            deviceId,
-            kondisiSla: slaOn,
-            kondisiOla: olaNum,
-            status: newStatus,
-            actor: actorName,
-            timestamp: targetTimestamp,
-            // Rekap bulanan tidak punya tanggal harian spesifik; pakai
-            // tanggal 15 bulan tsb sebagai representasi (sama seperti timestamp),
-            // dan bukan bagian dari alur pengisian susulan harian.
-            reportDate: targetTimestamp,
-            isLate: false,
-          },
+        // 1. Buat (atau perbarui) Log SLA/OLA Bulanan.
+        //    Rekap bulanan selalu memakai timestamp penanda yang sama persis
+        //    (tanggal 15 bulan tsb, 12:00). Kalau admin menyimpan ulang nilai
+        //    alat yang sama di bulan yang sama, baris itu DIPERBARUI, bukan
+        //    diduplikasi — supaya "nilai admin untuk bulan itu" selalu satu.
+        const existingMonthly = await tx.slaOlaLog.findFirst({
+          where: { deviceId, timestamp: targetTimestamp },
         });
+        const createdLog = existingMonthly
+          ? await tx.slaOlaLog.update({
+              where: { id: existingMonthly.id },
+              data: {
+                uptStation: uptStation || existingMonthly.uptStation,
+                category: category || existingMonthly.category,
+                kondisiSla: slaOn,
+                kondisiOla: olaNum,
+                status: newStatus,
+                actor: actorName,
+              },
+            })
+          : await tx.slaOlaLog.create({
+              data: {
+                uptStation: uptStation || '',
+                category: category || '',
+                deviceId,
+                kondisiSla: slaOn,
+                kondisiOla: olaNum,
+                status: newStatus,
+                actor: actorName,
+                timestamp: targetTimestamp,
+                // Rekap bulanan tidak punya tanggal harian spesifik; pakai
+                // tanggal 15 bulan tsb sebagai representasi (sama seperti timestamp),
+                // dan bukan bagian dari alur pengisian susulan harian.
+                reportDate: targetTimestamp,
+                isLate: false,
+              },
+            });
 
         // 2. Perbarui Perangkat Jika Mengedit Bulan Berjalan
         let updatedDeviceName = '';
@@ -334,7 +378,8 @@ export const slaOlaController = {
   },
 
   /**
-   * Mengambil Data SLA/OLA Terakhir Per Perangkat Berdasarkan Bulan & Tahun.
+   * Mengambil nilai SLA/OLA bulanan per perangkat berdasarkan Bulan & Tahun
+   * (input admin jika ada, kalau tidak rata-rata log pengisian UPT).
    */
   getMonthlySlaOla: async (req: AuthRequest, res: Response) => {
     const parsedQuery = z
@@ -350,31 +395,88 @@ export const slaOlaController = {
       const bulanNum = parsedQuery.data.bulan;
       const tahunNum = parsedQuery.data.tahun;
 
-      const start = new Date(tahunNum, bulanNum - 1, 1, 0, 0, 0);
-      const end = new Date(tahunNum, bulanNum, 1, 0, 0, 0);
+      const start = new Date(Date.UTC(tahunNum, bulanNum - 1, 1));
+      const end = new Date(Date.UTC(tahunNum, bulanNum, 1));
 
-      const logs = await prisma.slaOlaLog.findMany({
-        where: {
-          deviceId: { not: null },
-          timestamp: { gte: start, lt: end },
-        },
-        orderBy: { timestamp: 'desc' },
-      });
+      const [logs, adminActors] = await Promise.all([
+        prisma.slaOlaLog.findMany({
+          where: {
+            deviceId: { not: null },
+            reportDate: { gte: start, lt: end },
+          },
+          select: {
+            id: true,
+            deviceId: true,
+            kondisiSla: true,
+            kondisiOla: true,
+            actor: true,
+            reportDate: true,
+            timestamp: true,
+          },
+        }),
+        loadAdminActorSet(),
+      ]);
 
+      // Nilai bulan itu per alat: input admin kalau ada, kalau tidak
+      // rata-rata log UPT (aturan yang sama dengan dashboard SLA & OLA).
+      const resolved = resolveMonthlyScores(logs, adminActors);
       const latestPerDevice: Record<string, { sla: number; ola: number }> = {};
-      for (const log of logs) {
-        if (!log.deviceId) continue;
-        if (latestPerDevice[log.deviceId]) continue;
-        latestPerDevice[log.deviceId] = {
-          sla: log.kondisiSla ? 100 : 0,
-          ola: log.kondisiOla,
-        };
+      for (const [deviceId, months] of Object.entries(resolved)) {
+        const score = months[bulanNum];
+        if (score) latestPerDevice[deviceId] = { sla: score.sla, ola: score.ola };
       }
 
       return res.json({ success: true, data: latestPerDevice });
     } catch (error) {
       console.error('Error getMonthlySlaOla:', error);
       return res.status(500).json({ success: false, message: 'Gagal mengambil data SLA/OLA bulanan.' });
+    }
+  },
+
+  /**
+   * Ringkasan SLA/OLA setahun penuh per perangkat per bulan — sumber data
+   * halaman SLA & OLA (rekap, grafik tren, grafik OLA per jenis alat).
+   * Cukup login (read-only), sama seperti daftar perangkat.
+   *
+   * Bentuk respons: { deviceId: { "1": {sla, ola, source, jumlahLog}, ... } }
+   * Bulan tanpa log sama sekali tidak muncul (bukan 0).
+   */
+  getYearlySummary: async (req: AuthRequest, res: Response) => {
+    const parsedQuery = z
+      .object({ tahun: z.coerce.number().int().min(2000).max(2100) })
+      .safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({ success: false, message: 'Query tahun wajib diisi dengan benar.' });
+    }
+    try {
+      const { tahun } = parsedQuery.data;
+      const start = new Date(Date.UTC(tahun, 0, 1));
+      const end = new Date(Date.UTC(tahun + 1, 0, 1));
+
+      const [logs, adminActors] = await Promise.all([
+        prisma.slaOlaLog.findMany({
+          where: {
+            deviceId: { not: null },
+            reportDate: { gte: start, lt: end },
+          },
+          select: {
+            id: true,
+            deviceId: true,
+            kondisiSla: true,
+            kondisiOla: true,
+            actor: true,
+            reportDate: true,
+            timestamp: true,
+          },
+        }),
+        loadAdminActorSet(),
+      ]);
+
+      const data = resolveMonthlyScores(logs, adminActors);
+      return res.json({ success: true, tahun, data });
+    } catch (error) {
+      console.error('Error getYearlySummary:', error);
+      return res.status(500).json({ success: false, message: 'Gagal mengambil ringkasan SLA/OLA.' });
     }
   },
 

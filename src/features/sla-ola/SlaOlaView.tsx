@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   BarChart2, 
   Clock, 
@@ -25,11 +25,48 @@ import {
   CartesianGrid, 
   Tooltip
 } from 'recharts';
-import { AloptamaDevice, UPTStation } from '../../shared/types';
+import { AloptamaDevice, UPTStation, YearlyScoreMap, MonthlyDeviceScore } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 import { WaReportModal } from '../monitoring/WaReportModal';
 import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
 import { useAuth } from '../auth/AuthContext';
+
+// Kategori resmi sesuai field `category` di database (lihat dropdown di
+// AdminMasterView.tsx). Pencocokan exact-match (bukan substring) supaya
+// "AWOS Kat.I", "AWOS Kat.II", dan "AWOS Kat.III" tidak pernah saling tertukar.
+const normalizeCategory = (s: string) => (s || '').toLowerCase().replace(/[.\s]/g, '');
+
+const CATEGORY_DEFS = [
+  { no: 1, key: 'AWOS Kat.I', tableName: 'AWOS KAT. I', chartName: 'AWOS Kat I' },
+  { no: 2, key: 'AWOS Kat.II', tableName: 'AWOS KAT II', chartName: 'AWOS Kat II' },
+  { no: 3, key: 'AWOS Kat.III', tableName: 'AWOS KAT III', chartName: 'AWOS Kat III' },
+  { no: 4, key: 'Radar Cuaca', tableName: 'RADAR CUACA', chartName: 'Radar Cuaca' },
+  { no: 5, key: 'AWS', tableName: 'AWS', chartName: 'AWS' },
+  { no: 6, key: 'ARG', tableName: 'ARG', chartName: 'ARG' },
+  { no: 7, key: 'Seismometer', tableName: 'SEISMOMETER', chartName: 'Seismometer' },
+  { no: 8, key: 'Lightning Detector', tableName: 'LIGHTNING DETECTOR', chartName: 'Lightning' },
+  { no: 9, key: 'Accelerograph', tableName: 'ACCELEROGRAPH NC', chartName: 'Accelerograph' },
+  { no: 10, key: 'WRS NG', tableName: 'WRS NEW GENERATION', chartName: 'WRS NG' },
+  { no: 11, key: 'Sirene', tableName: 'SIRENE', chartName: 'Sirene' },
+];
+
+const isInCategory = (d: AloptamaDevice, categoryKey: string) =>
+  normalizeCategory(d.category) === normalizeCategory(categoryKey);
+
+// Nilai bulanan satu alat dari data setahun (undefined = belum ada log bulan itu).
+const pickScore = (
+  scores: YearlyScoreMap,
+  deviceId: string,
+  monthNum: number
+): MonthlyDeviceScore | undefined => scores[deviceId]?.[String(monthNum)];
+
+// Klasifikasi kondisi dari nilai bulanan: SLA/OLA 0 = mati, keduanya 100 = normal,
+// selain itu gangguan (aturan sama dengan status live perangkat di backend).
+const classifyScore = (sc: { sla: number; ola: number }): 'NORMAL' | 'GANGGUAN' | 'MATI' => {
+  if (sc.sla <= 0 || sc.ola <= 0) return 'MATI';
+  if (sc.sla >= 100 && sc.ola >= 100) return 'NORMAL';
+  return 'GANGGUAN';
+};
 
 interface SlaOlaViewProps {
   devices: AloptamaDevice[];
@@ -54,6 +91,31 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const [selectedYear, setSelectedYear] = useState<string>(() => {
     return new Date().getFullYear().toString();
   });
+
+  // Nilai SLA/OLA bulanan per alat untuk tahun terpilih, dari tabel sla_ola_logs
+  // (input admin jika ada, kalau tidak rata-rata log UPT) via /api/sla-ola/summary.
+  const [yearlyScores, setYearlyScores] = useState<YearlyScoreMap>({});
+  const [isScoresLoading, setIsScoresLoading] = useState(true);
+  const [scoresLoadFailed, setScoresLoadFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsScoresLoading(true);
+    setScoresLoadFailed(false);
+    apiClient.slaOlaSummary.fetch(Number(selectedYear)).then((result) => {
+      if (cancelled) return;
+      if (result === null) {
+        setYearlyScores({});
+        setScoresLoadFailed(true);
+      } else {
+        setYearlyScores(result);
+      }
+      setIsScoresLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedYear]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'NORMAL' | 'GANGGUAN' | 'MATI'>('ALL');
@@ -139,85 +201,55 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const slaTrendData = useMemo(() => {
     return MONTHS_LIST.map((mObj, idx) => {
-      const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
-      const totalMasterDevs = targetDevs.length;
-      const targetMonthNum = idx + 1;
-      const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
+      const totalMasterDevs = uptFilteredDevices.length;
+      let totalSla = 0;
+      let totalOla = 0;
+      let withDataCount = 0;
 
-      if (totalMasterDevs === 0) {
-        return { month: mObj.short, sla: 0, ola: 0 };
+      for (const d of uptFilteredDevices) {
+        const sc = pickScore(yearlyScores, d.devicesId, idx + 1);
+        if (!sc) continue;
+        withDataCount += 1;
+        totalSla += sc.sla;
+        totalOla += sc.ola;
       }
 
-      const reportedInThisMonthAndYear = targetDevs.filter((d) => {
-        if (d.slaScore === undefined && d.olaScore === undefined) return false;
-        if (!d.lastReportedDate) return false;
-        const parts = d.lastReportedDate.split('-');
-        return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
-      });
-
-      const totalSla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.slaScore ?? 0), 0);
-      const totalOla = reportedInThisMonthAndYear.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
-
-      const avgSla = totalSla / totalMasterDevs;
-      const avgOla = totalOla / totalMasterDevs;
+      // Bulan tanpa satu pun data dikosongkan (null) supaya garis grafik
+      // terputus, bukan jatuh ke 0% (mis. bulan yang belum berjalan).
+      if (totalMasterDevs === 0 || withDataCount === 0) {
+        return { month: mObj.short, sla: null as number | null, ola: null as number | null };
+      }
 
       return {
         month: mObj.short,
-        sla: Number(avgSla.toFixed(1)),
-        ola: Number(avgOla.toFixed(1)),
+        sla: Number((totalSla / totalMasterDevs).toFixed(1)),
+        ola: Number((totalOla / totalMasterDevs).toFixed(1)),
       };
     });
-  }, [selectedYear, selectedUpt, uptFilteredDevices, devices]);
+  }, [yearlyScores, uptFilteredDevices]);
 
   const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
 
   const olaByCategoryData = useMemo(() => {
-    const CATEGORIES = [
-      { key: 'AWOS', name: 'AWOS' },
-      { key: 'AWS', name: 'AWS' },
-      { key: 'ARG', name: 'ARG' },
-      { key: 'Radar Cuaca', name: 'Radar Cuaca' },
-      { key: 'Lightning Detector', name: 'Lightning' },
-      { key: 'Seismometer', name: 'Seismometer' },
-      { key: 'Accelerograph', name: 'Accelerograph' },
-      { key: 'WRS NG', name: 'WRS NG' },
-      { key: 'Sirene', name: 'Sirene' },
-    ];
-
-    const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
     const targetMonthNum = monthIdx + 1;
-    const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
-    return CATEGORIES.map((catObj) => {
-      const catDevs = targetDevs.filter((d) =>
-        (d.category || '').toLowerCase().includes(catObj.key.toLowerCase()) ||
-        (catObj.key === 'Radar Cuaca' && (d.category || '').toLowerCase().includes('radar')) ||
-        (catObj.key === 'WRS NG' && (d.category || '').toLowerCase().includes('wrs')) ||
-        (catObj.key === 'Lightning Detector' && (d.category || '').toLowerCase().includes('lightning'))
-      );
-
+    return CATEGORY_DEFS.map((cat) => {
+      const catDevs = uptFilteredDevices.filter((d) => isInCategory(d, cat.key));
       const jumlahLokasi = catDevs.length;
 
-      const reportedInSelectedMonthAndYearCatDevs = catDevs.filter((d) => {
-        if (d.olaScore === undefined) return false;
-        if (!d.lastReportedDate) return false;
-        const parts = d.lastReportedDate.split('-');
-        return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
-      });
-
-      let score = 0;
-      if (jumlahLokasi > 0) {
-        const totalOla = reportedInSelectedMonthAndYearCatDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
-        score = Number((totalOla / jumlahLokasi).toFixed(1));
+      let totalOla = 0;
+      for (const d of catDevs) {
+        const sc = pickScore(yearlyScores, d.devicesId, targetMonthNum);
+        if (sc) totalOla += sc.ola;
       }
 
       return {
-        category: catObj.name,
-        score,
+        category: cat.chartName,
+        score: jumlahLokasi > 0 ? Number((totalOla / jumlahLokasi).toFixed(1)) : 0,
         count: jumlahLokasi,
       };
     });
-  }, [selectedYear, selectedUpt, selectedMonth, monthIdx, devices, uptFilteredDevices]);
+  }, [yearlyScores, monthIdx, uptFilteredDevices]);
 
   const balaiDevices = uptFilteredDevices.filter(
     (d) => (d.picKalibrasi || 'Balai').toLowerCase() === 'balai'
@@ -230,132 +262,44 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const balaiKondisiKalibrasiPercent = Math.round((balaiTidakTerlambatCount / balaiTotalDevs) * 100);
 
   const rekapTableData = useMemo(() => {
-    // Kategori resmi sesuai field `category` di database (lihat dropdown di
-    // AdminMasterView.tsx). Pencocokan dilakukan exact-match (bukan substring)
-    // supaya "AWOS Kat.II" dan "AWOS Kat.III" tidak pernah saling tertukar,
-    // dan device dengan kategori lain tidak ikut kehitung secara tidak sengaja.
-    const normalizeCategory = (s: string) =>
-      (s || '').toLowerCase().replace(/[.\s]/g, '');
-
-    const makeExactMatcher = (canonicalCategory: string) => {
-      const target = normalizeCategory(canonicalCategory);
-      return (d: AloptamaDevice) => normalizeCategory(d.category) === target;
-    };
-
-    const CATEGORIES = [
-      {
-        no: 1,
-        key: 'AWOS Kat.I',
-        name: 'AWOS KAT. I',
-        matchFn: makeExactMatcher('AWOS Kat.I'),
-      },
-      {
-        no: 2,
-        key: 'AWOS Kat.II',
-        name: 'AWOS KAT II',
-        matchFn: makeExactMatcher('AWOS Kat.II'),
-      },
-      {
-        no: 3,
-        key: 'AWOS Kat.III',
-        name: 'AWOS KAT III',
-        matchFn: makeExactMatcher('AWOS Kat.III'),
-      },
-      {
-        no: 4,
-        key: 'Radar Cuaca',
-        name: 'RADAR CUACA',
-        matchFn: makeExactMatcher('Radar Cuaca'),
-      },
-      {
-        no: 5,
-        key: 'AWS',
-        name: 'AWS',
-        matchFn: makeExactMatcher('AWS'),
-      },
-      {
-        no: 6,
-        key: 'ARG',
-        name: 'ARG',
-        matchFn: makeExactMatcher('ARG'),
-      },
-      {
-        no: 7,
-        key: 'Seismometer',
-        name: 'SEISMOMETER',
-        matchFn: makeExactMatcher('Seismometer'),
-      },
-      {
-        no: 8,
-        key: 'Lightning Detector',
-        name: 'LIGHTNING DETECTOR',
-        matchFn: makeExactMatcher('Lightning Detector'),
-      },
-      {
-        no: 9,
-        key: 'Accelerograph',
-        name: 'ACCELEROGRAPH NC',
-        matchFn: makeExactMatcher('Accelerograph'),
-      },
-      {
-        no: 10,
-        key: 'WRS NG',
-        name: 'WRS NEW GENERATION',
-        matchFn: makeExactMatcher('WRS NG'),
-      },
-      {
-        no: 11,
-        key: 'Sirene',
-        name: 'SIRENE',
-        matchFn: makeExactMatcher('Sirene'),
-      },
-    ];
-
     const targetMonthNum = monthIdx + 1;
-    const monthPaddedStr = targetMonthNum < 10 ? `0${targetMonthNum}` : `${targetMonthNum}`;
 
-    return CATEGORIES.map((catObj) => {
-      const catDevs = uptFilteredDevices.filter(catObj.matchFn);
+    return CATEGORY_DEFS.map((cat) => {
+      const catDevs = uptFilteredDevices.filter((d) => isInCategory(d, cat.key));
       const jumlahLokasi = catDevs.length;
 
-      const reportedDevs = catDevs.filter((d) => {
-        if (d.slaScore === undefined && d.olaScore === undefined) return false;
-        if (!d.lastReportedDate) return false;
-        const parts = d.lastReportedDate.split('-');
-        return parts.length >= 3 && parts[0] === selectedYear && parts[1] === monthPaddedStr;
-      });
-
-      let sla = 0;
-      let ola = 0;
+      let totalSla = 0;
+      let totalOla = 0;
       let normalCount = 0;
       let gangguanCount = 0;
-      let matiCount = 0;
 
-      if (jumlahLokasi > 0) {
-        normalCount = reportedDevs.filter((d) => d.conditionStatus === 'NORMAL').length;
-        gangguanCount = reportedDevs.filter((d) => d.conditionStatus === 'GANGGUAN').length;
-        matiCount = jumlahLokasi - normalCount - gangguanCount;
-
-        const totalSla = reportedDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0);
-        const totalOla = reportedDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0);
-
-        sla = Number((totalSla / jumlahLokasi).toFixed(1));
-        ola = Number((totalOla / jumlahLokasi).toFixed(1));
+      for (const d of catDevs) {
+        const sc = pickScore(yearlyScores, d.devicesId, targetMonthNum);
+        if (!sc) continue;
+        totalSla += sc.sla;
+        totalOla += sc.ola;
+        const kondisi = classifyScore(sc);
+        if (kondisi === 'NORMAL') normalCount += 1;
+        else if (kondisi === 'GANGGUAN') gangguanCount += 1;
       }
 
+      // Alat yang belum punya nilai di bulan itu tetap dihitung di pembagi
+      // (jumlah lokasi) dan masuk kolom "Tidak Beroperasi".
+      const matiCount = jumlahLokasi - normalCount - gangguanCount;
+
       return {
-        no: catObj.no,
-        name: catObj.name,
+        no: cat.no,
+        name: cat.tableName,
         jumlahLokasi,
-        sla,
-        ola,
+        sla: jumlahLokasi > 0 ? Number((totalSla / jumlahLokasi).toFixed(1)) : 0,
+        ola: jumlahLokasi > 0 ? Number((totalOla / jumlahLokasi).toFixed(1)) : 0,
         normalCount,
         gangguanCount,
         matiCount,
         diff: null as number | null,
       };
     });
-  }, [selectedYear, selectedMonth, monthIdx, selectedUpt, uptFilteredDevices]);
+  }, [yearlyScores, monthIdx, uptFilteredDevices]);
 
   const monthlySlaValue = useMemo(() => {
     const sumSla = rekapTableData.reduce((acc, curr) => acc + curr.sla, 0);
@@ -522,37 +466,10 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       }));
   }
 
-  const hasDataForSelectedFilter = useMemo(() => {
-    const targetDevs = selectedUpt === 'ALL' ? devices : uptFilteredDevices;
-    const targetMonthNum = monthIdx + 1;
-    const monthPaddedStr = String(targetMonthNum).padStart(2, '0');
-
-    const hasReport = targetDevs.some((d) => {
-      if (d.slaScore === undefined && d.olaScore === undefined) return false;
-      if (!d.lastReportedDate) return false;
-
-      const dateObj = new Date(d.lastReportedDate);
-      if (!isNaN(dateObj.getTime())) {
-        const year = dateObj.getFullYear().toString();
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        return year === selectedYear && month === monthPaddedStr;
-      }
-
-      const parts = d.lastReportedDate.split('-');
-      if (parts.length >= 3) {
-        if (parts[0].length === 4) {
-          return parts[0] === selectedYear && parts[1] === monthPaddedStr;
-        }
-        if (parts[2].length === 4) {
-          return parts[2] === selectedYear && parts[1] === monthPaddedStr;
-        }
-      }
-
-      return false;
-    });
-
-    return hasReport;
-  }, [selectedYear, selectedUpt, monthIdx, devices, uptFilteredDevices]);
+  const hasDataForSelectedFilter = useMemo(
+    () => uptFilteredDevices.some((d) => pickScore(yearlyScores, d.devicesId, monthIdx + 1) !== undefined),
+    [yearlyScores, monthIdx, uptFilteredDevices]
+  );
 
   const reportedCount = uptFilteredDevices.filter((dev) => isReportedToday(dev)).length;
   const totalDevicesCount = uptFilteredDevices.length;
@@ -639,7 +556,21 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
       </div>
 
-      {!hasDataForSelectedFilter && (
+      {isScoresLoading && (
+        <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-4 py-3 text-xs font-medium shadow-2xs">
+          <RefreshCw size={16} className="shrink-0 animate-spin text-slate-500" />
+          <span>Memuat data SLA &amp; OLA {selectedYear}...</span>
+        </div>
+      )}
+
+      {!isScoresLoading && scoresLoadFailed && (
+        <div className="flex items-center gap-2.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl px-4 py-3 text-xs font-medium shadow-2xs">
+          <Info size={18} className="shrink-0 text-rose-600" />
+          <span>Gagal memuat data SLA &amp; OLA {selectedYear} dari server. Coba muat ulang halaman.</span>
+        </div>
+      )}
+
+      {!isScoresLoading && !scoresLoadFailed && !hasDataForSelectedFilter && (
         <div className="flex items-center gap-2.5 bg-amber-50/90 border border-amber-200 text-amber-900 rounded-xl px-4 py-3 text-xs font-medium shadow-2xs">
           <Info size={18} className="shrink-0 text-amber-600" />
           <span>
@@ -888,7 +819,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={olaByCategoryData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                <XAxis dataKey="category" stroke="#64748B" fontSize={11} interval={0} angle={-15} textAnchor="end" />
+                <XAxis dataKey="category" stroke="#64748B" fontSize={10} interval={0} angle={-25} textAnchor="end" height={60} />
                 <YAxis domain={[0, 100]} stroke="#64748B" fontSize={12} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0F2D52', borderRadius: '10px', color: '#FFF', fontSize: '12px' }}

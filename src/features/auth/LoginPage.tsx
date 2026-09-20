@@ -6,8 +6,8 @@ import { InstallAppBanner } from "../../shared/components/InstallAppBanner";
 // 1. Import Logo BMKG untuk Header Atas
 import bmkgLogo from "../../assets/images/BMKGLogo.png";
 
-// 2. Import Logo SIMON untuk Card Form
-import simonLogo from "../../assets/images/simonlogo.png";
+// 2. Logo SIMON beranimasi untuk Card Form
+import { AnimatedSimonLogo } from "./AnimatedSimonLogo";
 
 export const LoginPage: React.FC = () => {
   const { login, isLoading, getLastAuthError } = useAuth();
@@ -74,11 +74,10 @@ export const LoginPage: React.FC = () => {
           {/* Header Section */}
           <div className="text-center space-y-1 sm:space-y-2">
             <div className="flex justify-center mb-1 sm:mb-2">
-              {/* Logo SIMON di Atas Form Login Card */}
-              <img
-                src={simonLogo}
-                alt="Logo SIMON"
-                className="h-9 sm:h-14 w-auto object-contain shrink-0"
+              {/* Logo SIMON beranimasi di Atas Form Login Card */}
+              <AnimatedSimonLogo
+                loading={isSubmitting}
+                className="h-9 w-9 sm:h-14 sm:w-14"
               />
             </div>
 

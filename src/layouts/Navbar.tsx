@@ -1,9 +1,6 @@
 import React from 'react';
 import { ActiveNavMenu } from '../shared/types';
 
-// Import gambar langsung dari folder assets/images
-import simonLogo from '../assets/images/simonlogo.png';
-
 interface NavbarProps {
   activeMenu: ActiveNavMenu;
   collapsed: boolean;
@@ -47,19 +44,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     >
       {/* Bar tanggal & jam sudah dipindah ke <TimeBar /> (lihat App.tsx) —
           full-width dari ujung ke ujung layar, tidak lagi kepentok sidebar.
-          Header ini sekarang cuma berisi logo + judul halaman. */}
+          Header ini sekarang cuma berisi judul halaman — logo S pindah ke
+          header Sidebar (klik logo itu untuk membuka sidebar). */}
       <div className="h-16 flex items-center justify-between px-2.5 sm:px-4 md:px-6">
         <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 min-w-0 flex-1 mr-2 sm:mr-4">
-          {collapsed && (
-            <>
-              <img
-              src={simonLogo} 
-              alt="Logo Simon" 
-              className="max-h-9 sm:max-h-11 w-auto shrink-0 object-contain"
-              />
-              <div className="hidden sm:block h-7 w-px bg-slate-200 shrink-0" />
-            </>
-          )}
           <h1 className="font-heading font-bold text-xs sm:text-sm md:text-base text-slate-800 leading-tight truncate">
             {getMenuTitle()}
           </h1>
