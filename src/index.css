@@ -200,3 +200,9 @@
     display: none;
   }
 }
+
+/* Perbaikan garis putih antar-tile peta (celah sub-pixel saat zoom browser / skala layar bukan 100%) */
+.leaflet-tile-container img.leaflet-tile {
+  width: 256.5px !important;
+  height: 256.5px !important;
+}

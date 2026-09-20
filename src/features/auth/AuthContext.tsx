@@ -22,7 +22,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const DEFAULT_PERMISSIONS: RBACPermissions = {
-  allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat'],
+  allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan'],
   canAddCalibration: false,
   canManageMasterData: false,
   canViewAuditLogs: false,

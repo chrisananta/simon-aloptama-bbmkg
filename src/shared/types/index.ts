@@ -52,7 +52,7 @@ export interface FilterState {
   month: string;
   year: string;
 }
-export type ActiveNavMenu = 'dashboard' | 'sla-ola' | 'kalibrasi' | 'sertifikat' | 'admin-master' | 'audit-log' | 'genset' | 'perbaikan';
+export type ActiveNavMenu = 'dashboard' | 'sla-ola' | 'kalibrasi' | 'sertifikat' | 'admin-master' | 'audit-log' | 'genset' | 'perbaikan' | 'panduan';
 
 export type LogAction = 'TAMBAH' | 'EDIT' | 'HAPUS' | 'SIMPAN_SLA_OLA' | 'SIMPAN_KALIBRASI' | 'SYNC_SERVER' | 'RESET_DATA' | 'EXPORT_DATA' | 'LOGIN' | 'LOGOUT' | 'REFRESH_TOKEN';
 export type LogTable = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'master_petugas' | 'master_akun' | 'kalibrasi' | 'sistem' | 'pengaturan' | 'autentikasi';

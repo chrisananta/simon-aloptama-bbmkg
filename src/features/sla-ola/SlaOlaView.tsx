@@ -230,6 +230,23 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
 
+  // Pembanding "bulan kemarin" untuk kolom Analisa Perubahan. Untuk Januari, bulan kemarin
+  // adalah Desember tahun sebelumnya, jadi data tahun sebelumnya ikut diambil (hanya saat Januari).
+  const [prevYearScores, setPrevYearScores] = useState<YearlyScoreMap>({});
+  useEffect(() => {
+    if (monthIdx !== 0) {
+      setPrevYearScores({});
+      return;
+    }
+    let cancelled = false;
+    apiClient.slaOlaSummary.fetch(Number(selectedYear) - 1).then((result) => {
+      if (!cancelled) setPrevYearScores(result ?? {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedYear, monthIdx]);
+
   const olaByCategoryData = useMemo(() => {
     const targetMonthNum = monthIdx + 1;
 
@@ -263,6 +280,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const rekapTableData = useMemo(() => {
     const targetMonthNum = monthIdx + 1;
+    // Bulan kemarin: bulan sebelumnya di tahun yang sama, atau Desember tahun lalu bila sekarang Januari.
+    const prevScores = monthIdx === 0 ? prevYearScores : yearlyScores;
+    const prevMonthNum = monthIdx === 0 ? 12 : monthIdx;
 
     return CATEGORY_DEFS.map((cat) => {
       const catDevs = uptFilteredDevices.filter((d) => isInCategory(d, cat.key));
@@ -272,10 +292,12 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       let totalOla = 0;
       let normalCount = 0;
       let gangguanCount = 0;
+      let reportedNow = 0;
 
       for (const d of catDevs) {
         const sc = pickScore(yearlyScores, d.devicesId, targetMonthNum);
         if (!sc) continue;
+        reportedNow += 1;
         totalSla += sc.sla;
         totalOla += sc.ola;
         const kondisi = classifyScore(sc);
@@ -287,19 +309,38 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       // (jumlah lokasi) dan masuk kolom "Tidak Beroperasi".
       const matiCount = jumlahLokasi - normalCount - gangguanCount;
 
+      const sla = jumlahLokasi > 0 ? Number((totalSla / jumlahLokasi).toFixed(1)) : 0;
+
+      // Analisa perubahan = SLA bulan ini dikurangi SLA bulan kemarin (poin persen, dihitung dari
+      // angka SLA yang tampil di tabel). Hanya dihitung bila kedua bulan sama-sama punya data di
+      // kategori ini; kalau salah satunya kosong, tidak ada pembanding yang adil -> tampil "---".
+      let prevTotalSla = 0;
+      let reportedPrev = 0;
+      for (const d of catDevs) {
+        const psc = pickScore(prevScores, d.devicesId, prevMonthNum);
+        if (!psc) continue;
+        reportedPrev += 1;
+        prevTotalSla += psc.sla;
+      }
+      let diff: number | null = null;
+      if (jumlahLokasi > 0 && reportedNow > 0 && reportedPrev > 0) {
+        const prevSla = Number((prevTotalSla / jumlahLokasi).toFixed(1));
+        diff = Number((sla - prevSla).toFixed(1));
+      }
+
       return {
         no: cat.no,
         name: cat.tableName,
         jumlahLokasi,
-        sla: jumlahLokasi > 0 ? Number((totalSla / jumlahLokasi).toFixed(1)) : 0,
+        sla,
         ola: jumlahLokasi > 0 ? Number((totalOla / jumlahLokasi).toFixed(1)) : 0,
         normalCount,
         gangguanCount,
         matiCount,
-        diff: null as number | null,
+        diff,
       };
     });
-  }, [yearlyScores, monthIdx, uptFilteredDevices]);
+  }, [yearlyScores, prevYearScores, monthIdx, uptFilteredDevices]);
 
   const monthlySlaValue = useMemo(() => {
     const sumSla = rekapTableData.reduce((acc, curr) => acc + curr.sla, 0);

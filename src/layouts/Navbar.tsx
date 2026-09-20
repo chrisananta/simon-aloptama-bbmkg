@@ -29,6 +29,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         return 'Pengelolaan Database Master';
       case 'audit-log':
         return 'Audit Log Aktivitas & Perubahan Sistem';
+      case 'panduan':
+        return 'Panduan Pemeliharaan Peralatan';
       default:
         return 'Perbaikan dan Instalasi Peralatan';
       case 'genset':

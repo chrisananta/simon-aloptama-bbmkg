@@ -168,7 +168,7 @@ export const authService = {
     switch (role) {
       case 'SUPER_ADMIN':
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'audit-log', 'genset', 'perbaikan'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan', 'admin-master', 'audit-log', 'genset', 'perbaikan'],
           canAddCalibration: true,
           canManageMasterData: true,
           canViewAuditLogs: true,
@@ -184,7 +184,7 @@ export const authService = {
 
       case 'ADMIN_INSKAL':
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'admin-master', 'genset', 'perbaikan'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan', 'admin-master', 'genset', 'perbaikan'],
           canAddCalibration: true,
           canManageMasterData: true,
           canViewAuditLogs: false,
@@ -202,7 +202,7 @@ export const authService = {
 
       case 'KAUPT_KABBMKG':
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan'],
           canAddCalibration: false,
           canManageMasterData: false,
           canViewAuditLogs: false,
@@ -220,7 +220,7 @@ export const authService = {
       case 'TEKNISI_UPT':
       default:
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan'],
           canAddCalibration: false,
           canManageMasterData: false,
           canViewAuditLogs: false,

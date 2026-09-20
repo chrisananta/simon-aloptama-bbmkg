@@ -41,6 +41,14 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
   const year = d.getUTCFullYear();
   const dateStrUTC = `${day} ${month} ${year}`;
 
+  // Tanggal "kemarin" dalam format YYYY-MM-DD, dipakai untuk cek siapa yang
+  // BELUM lapor. Laporan WA ini jalan jam 9 pagi — jam yang sama persis
+  // dengan mulainya jendela pelaporan alat hari ini — jadi yang relevan
+  // dicek adalah status pelaporan KEMARIN, bukan hari ini (hari ini belum
+  // mungkin ada laporan sama sekali di jam segitu).
+  const yesterdayStr = `${year}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const belumLaporKemarin = (dev: AloptamaDevice) => (dev.lastReportedDate || '') !== yesterdayStr;
+
   const formatUptName = (uptName: string) => {
     if (!uptName) return '';
     let cleaned = uptName.trim();
@@ -102,25 +110,25 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
     const isCategory = (dev: AloptamaDevice, canonical: string) =>
       normalizeCategory(dev.category) === normalizeCategory(canonical);
 
-    const awosKat1 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.I'));
-    const awosKat2 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.II'));
-    const awosKat3 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.III'));
+    const awosKat1 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.I') && belumLaporKemarin(dev));
+    const awosKat2 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.II') && belumLaporKemarin(dev));
+    const awosKat3 = getUptsForCategory((dev) => isCategory(dev, 'AWOS Kat.III') && belumLaporKemarin(dev));
 
-    const radar = getUptsForCategory((dev) => isCategory(dev, 'Radar Cuaca'));
+    const radar = getUptsForCategory((dev) => isCategory(dev, 'Radar Cuaca') && belumLaporKemarin(dev));
 
-    const aws = getUptsForCategory((dev) => isCategory(dev, 'AWS'));
+    const aws = getUptsForCategory((dev) => isCategory(dev, 'AWS') && belumLaporKemarin(dev));
 
-    const arg = getUptsForCategory((dev) => isCategory(dev, 'ARG'));
+    const arg = getUptsForCategory((dev) => isCategory(dev, 'ARG') && belumLaporKemarin(dev));
 
-    const seismo = getUptsForCategory((dev) => isCategory(dev, 'Seismometer'));
+    const seismo = getUptsForCategory((dev) => isCategory(dev, 'Seismometer') && belumLaporKemarin(dev));
 
-    const lightning = getUptsForCategory((dev) => isCategory(dev, 'Lightning Detector'));
+    const lightning = getUptsForCategory((dev) => isCategory(dev, 'Lightning Detector') && belumLaporKemarin(dev));
 
-    const accel = getUptsForCategory((dev) => isCategory(dev, 'Accelerograph'));
+    const accel = getUptsForCategory((dev) => isCategory(dev, 'Accelerograph') && belumLaporKemarin(dev));
 
-    const wrs = getUptsForCategory((dev) => isCategory(dev, 'WRS NG'));
+    const wrs = getUptsForCategory((dev) => isCategory(dev, 'WRS NG') && belumLaporKemarin(dev));
 
-    const sirene = getUptsForCategory((dev) => isCategory(dev, 'Sirene'));
+    const sirene = getUptsForCategory((dev) => isCategory(dev, 'Sirene') && belumLaporKemarin(dev));
 
     const formatSection = (title: string, list: string[]) => {
       let res = `${title}:\n`;

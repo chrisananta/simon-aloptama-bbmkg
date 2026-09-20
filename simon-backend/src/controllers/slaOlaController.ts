@@ -500,8 +500,13 @@ export const slaOlaController = {
       const where: any = {};
 
       if (bulan && tahun) {
-        const start = new Date(tahun, bulan - 1, 1, 0, 0, 0);
-        const end = new Date(tahun, bulan, 1, 0, 0, 0);
+        // PENTING: pakai Date.UTC eksplisit, BUKAN new Date(tahun, bulan-1, 1, ...)
+        // — constructor itu mengikuti timezone LOKAL SERVER (ambigu, bisa beda
+        // hasil tergantung env TZ), sementara reportDate selalu disimpan UTC
+        // murni. Kalau tidak eksplisit UTC, baris di akhir/awal bulan bisa
+        // "nyasar" ke bulan sebelah tergantung timezone server saat itu.
+        const start = new Date(Date.UTC(tahun, bulan - 1, 1, 0, 0, 0));
+        const end = new Date(Date.UTC(tahun, bulan, 1, 0, 0, 0));
         where.reportDate = { gte: start, lt: end };
       }
 

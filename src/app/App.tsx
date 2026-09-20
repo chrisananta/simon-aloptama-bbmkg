@@ -20,6 +20,7 @@ import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { GensetPage } from '../features/genset/GensetPage';
 import { PerbaikanView } from '../features/perbaikan/PerbaikanView';
+import { PanduanView } from '../features/panduan/PanduanView';
 import { TimeBar } from '../layouts/TimeBar';
 
 function AppContent() {
@@ -257,6 +258,8 @@ function AppContent() {
             )}
 
             {activeMenu === 'sertifikat' && <CertificateRedirectView />}
+
+            {activeMenu === 'panduan' && <PanduanView devices={devicesData} />}
 
             {activeMenu === 'admin-master' && permissions.canManageMasterData && (
               <AdminMasterView

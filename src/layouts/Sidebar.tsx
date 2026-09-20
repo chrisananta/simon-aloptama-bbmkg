@@ -5,6 +5,7 @@ import {
   Calendar, 
   ExternalLink, 
   ChevronLeft, 
+  BookOpen,
   Database,
   ShieldCheck,
   LogOut,
@@ -92,6 +93,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Sertifikat Kalibrasi Lapang',
       icon: ExternalLink,
       badge: 'External',
+    },
+    {
+      id: 'panduan' as ActiveNavMenu,
+      label: 'Panduan Pemeliharaan',
+      icon: BookOpen,
     },
     {
       id: 'admin-master' as ActiveNavMenu,
