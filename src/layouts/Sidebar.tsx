@@ -37,6 +37,8 @@ interface SidebarProps {
   onSelectMenu: (menu: ActiveNavMenu) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  mobileHidden?: boolean;
+  onHideMobile?: () => void;
   totalDevices?: number;
   normalCount?: number;
   gangguanCount?: number;
@@ -49,6 +51,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectMenu,
   collapsed,
   onToggleCollapse,
+  mobileHidden = false,
+  onHideMobile,
   devices,
 }) => {
   const { user, isMenuAllowed, logout } = useAuth();
@@ -119,7 +123,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {!collapsed && (
         <div
-          onClick={onToggleCollapse}
+          onClick={() => {
+            onToggleCollapse();
+            onHideMobile?.();
+          }}
           className="fixed inset-0 bg-slate-900/40 z-20 md:hidden backdrop-blur-xs transition-opacity"
         />
       )}
@@ -127,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         className={`fixed top-9 left-0 bottom-0 z-30 flex flex-col bg-white border-r border-slate-200 text-slate-800 transition-all duration-300 shadow-md ${
           collapsed ? 'w-16 md:w-20' : 'w-64 md:w-72'
-        }`}
+        } ${mobileHidden ? '-translate-x-full sm:translate-x-0' : 'translate-x-0'}`}
       >
         {/* Header sidebar: putih & tinggi sama dengan Navbar (65px = h-16 + border)
             supaya garis bawahnya lurus menyambung dengan Navbar. */}
@@ -187,8 +194,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={item.id}
                 onClick={() => {
                   onSelectMenu(item.id);
-                  if (typeof window !== 'undefined' && window.innerWidth < 768 && !collapsed) {
-                    onToggleCollapse();
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                    if (!collapsed) onToggleCollapse();
+                    onHideMobile?.();
                   }
                 }}
                 className={`w-full flex items-center px-2.5 md:px-3 py-2.5 md:py-3 rounded-xl transition-all duration-200 text-left font-medium text-xs md:text-sm group ${

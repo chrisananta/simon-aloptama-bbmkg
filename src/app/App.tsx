@@ -27,6 +27,10 @@ function AppContent() {
   const { user, permissions, isAuthenticated } = useAuth();
   const [activeMenu, setActiveMenu] = useState<ActiveNavMenu>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  // Khusus tampilan HP: sidebar (bahkan rail ikonnya) tersembunyi total by
+  // default. Baru muncul rail ikon setelah tombol logo di Navbar ditekan.
+  // Tidak berlaku di tablet/PC (di sana sidebar selalu tampil seperti biasa).
+  const [mobileSidebarHidden, setMobileSidebarHidden] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('28 Juli 2026, 10:30 WIT');
   const [isServerModalOpen, setIsServerModalOpen] = useState(false);
   
@@ -217,6 +221,8 @@ function AppContent() {
           onSelectMenu={(menu) => setActiveMenu(menu)}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          mobileHidden={mobileSidebarHidden}
+          onHideMobile={() => setMobileSidebarHidden(true)}
           totalDevices={totalDevices}
           normalCount={normalCount}
           gangguanCount={gangguanCount}
@@ -228,6 +234,8 @@ function AppContent() {
         <Navbar
           activeMenu={activeMenu}
           collapsed={sidebarCollapsed}
+          mobileSidebarHidden={mobileSidebarHidden}
+          onRevealMobileSidebar={() => setMobileSidebarHidden(false)}
           lastUpdate={lastUpdate}
           onOpenServerModal={() => setIsServerModalOpen(true)}
           onOpenSlaOlaModal={permissions.canInputSlaOla ? () => setIsSlaOlaModalOpen(true) : undefined}
@@ -238,7 +246,8 @@ function AppContent() {
         {/* Main Content Workspace */}
         <main
           className={`flex-1 pt-[108px] sm:pt-[116px] pb-10 px-3 sm:px-4 md:px-6 transition-all duration-300 ${
-            sidebarCollapsed ? 'ml-16 md:ml-20' : 'ml-0 md:ml-72'
+            mobileSidebarHidden ? 'ml-0 sm:ml-16' : !sidebarCollapsed ? 'ml-0' : 'ml-16'
+          } ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-72'}
           }`}
         >
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">

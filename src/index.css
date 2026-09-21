@@ -4,13 +4,17 @@
   h1, h2, h3, h4, h5, h6, .font-heading {
     font-family: 'Poppins', sans-serif;
   }
-  html, body {
+  /* Jangan pasang overflow-x: hidden di html DAN body sekaligus. Itu menjadikan body wadah scroll;
+     kalau isinya meluap sedikit saja, scroll mouse tersangkut di body dan tidak sampai ke halaman
+     (scrollbar kanan tetap jalan). body cukup pakai "clip", yang tidak membuat wadah scroll. */
+  html {
     overflow-x: hidden;
     /* Cegah "elastic bounce" scroll iOS Safari yang bikin konten sesaat
        nembus/tampil di atas header fixed saat discroll mentok ke atas. */
     overscroll-behavior-y: none;
   }
   body {
+    overflow-x: clip;
     font-family: 'Inter', sans-serif;
     background-color: #F5F7FA;
     color: #1E293B;
@@ -84,6 +88,10 @@
   animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Selaraskan tampilan kontrol zoom Leaflet dengan tombol custom (fullscreen & layer) */
+/* Catatan: kontrol zoom bawaan Leaflet (.leaflet-control-zoom) SENGAJA
+   tidak dipakai lagi — sering rusak posisinya di mobile. Diganti tombol
+   zoom custom React di MapContainer.tsx (lihat komentar di sana). */
 /* ===== Logo SIMON beranimasi (halaman login) — lihat AnimatedSimonLogo.tsx ===== */
 .simon-logo {
   position: relative;

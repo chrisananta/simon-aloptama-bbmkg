@@ -130,7 +130,7 @@ const BerkalaContent: React.FC<{ tab: PanduanTab }> = ({ tab }) => (
       ))}
 
     {tab.persiapanCatatan && (
-      <p className="mt-2.5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">{tab.persiapanCatatan}</p>
+      <p className="mt-2.5 rounded-lg bg-[#EAF1FF] px-3 py-2 text-xs text-[#0F2D52]">{tab.persiapanCatatan}</p>
     )}
 
     {tab.langkah.length > 0 && (
@@ -482,16 +482,16 @@ export const PanduanView: React.FC<PanduanViewProps> = () => {
           {/* Panel samping */}
           <aside className="flex flex-col gap-6 border-t border-slate-200 bg-slate-50 p-5 sm:p-6 lg:border-l lg:border-t-0">
             {batas ? (
-              <div className="rounded-[14px] border border-amber-300 bg-amber-50 p-4">
-                <div className="flex items-center gap-2 text-[13.5px] font-bold text-amber-900">
-                  <AlertTriangle size={17} className="text-amber-600" />
+              <div className="rounded-[14px] border border-blue-200 bg-[#EAF1FF] p-4">
+                <div className="flex items-center gap-2 text-[13.5px] font-bold text-[#0F2D52]">
+                  <AlertTriangle size={17} className="text-[#0052CC]" />
                   Batas waktu perbaikan
                 </div>
-                <div className="mb-1 mt-2.5 font-heading text-4xl font-bold leading-none text-amber-950">
+                <div className="mb-1 mt-2.5 font-heading text-4xl font-bold leading-none text-[#0F2D52]">
                   {batas.nilai}
                   {batas.satuan && <small className="ml-1 text-[17px] font-semibold">{batas.satuan}</small>}
                 </div>
-                <p className="text-[13px] leading-relaxed text-amber-900/80">
+                <p className="text-[13px] leading-relaxed text-slate-600">
                   Dihitung sejak kerusakan diketahui. Perbaiki mengacu buku manual, catat di log book, lalu laporkan
                   secara hirarki.
                 </p>

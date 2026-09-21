@@ -654,7 +654,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             OLA BULANAN ({selectedMonth} {selectedYear})
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
-            <span className="font-heading text-3xl sm:text-4xl font-black text-indigo-700">
+            <span className="font-heading text-3xl sm:text-4xl font-black text-[#0052CC]">
               {Math.round(monthlyOlaValue)}%
             </span>
             <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -949,7 +949,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 {displayGangguan.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-6 text-slate-400">
-                      🟢 Tidak ada catatan peralatan Gangguan pada periode {activePeriodTarget}.
+                       Tidak ada catatan peralatan Gangguan pada periode {activePeriodTarget}.
                     </td>
                   </tr>
                 ) : (
@@ -1002,7 +1002,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 {displayMati.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-6 text-slate-400">
-                      🟢 Tidak ada catatan peralatan Mati pada periode {activePeriodTarget}.
+                      Tidak ada catatan peralatan Mati pada periode {activePeriodTarget}.
                     </td>
                   </tr>
                 ) : (
