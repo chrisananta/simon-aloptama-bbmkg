@@ -29,7 +29,7 @@ export const DashboardCard: React.FC<DashboardSummaryStats> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-200 flex flex-col justify-between border-l-4 border-l-emerald-500">
+      <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-200 flex flex-col justify-between">
         <div className="flex justify-between items-start">
           <span className="text-[10px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wide">
             NORMAL
@@ -48,7 +48,7 @@ export const DashboardCard: React.FC<DashboardSummaryStats> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-200 flex flex-col justify-between border-l-4 border-l-amber-500">
+      <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-200 flex flex-col justify-between">
         <div className="flex justify-between items-start">
           <span className="text-[10px] sm:text-xs font-bold text-amber-700 uppercase tracking-wide">
             GANGGUAN
@@ -65,7 +65,7 @@ export const DashboardCard: React.FC<DashboardSummaryStats> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-200 flex flex-col justify-between border-l-4 border-l-rose-500">
+      <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-slate-200 flex flex-col justify-between">
         <div className="flex justify-between items-start">
           <span className="text-[10px] sm:text-xs font-bold text-rose-700 uppercase tracking-wide">
             MATI
