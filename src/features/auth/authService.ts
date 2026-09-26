@@ -177,6 +177,7 @@ export const authService = {
           isScopedToOwnUpt: false,
           canViewUnreportedList: true,
           canViewWeeklyReport: true,
+          canViewUptReport: true,
           masterDataScope: 'FULL',
           canManageGenset: true,
           canManagePerbaikan: true,
@@ -193,6 +194,7 @@ export const authService = {
           isScopedToOwnUpt: false,
           canViewUnreportedList: true,
           canViewWeeklyReport: true,
+          canViewUptReport: true,
           canManageGenset: true,
           canManagePerbaikan: true,
           // Database Master dipersempit: hanya monitoring SLA OLA harian,
@@ -214,6 +216,7 @@ export const authService = {
           isScopedToOwnUpt: true,
           canViewUnreportedList: false,
           canViewWeeklyReport: false,
+          canViewUptReport: true,
           masterDataScope: 'FULL',
         };
 
@@ -229,6 +232,7 @@ export const authService = {
           isScopedToOwnUpt: true,
           canViewUnreportedList: false,
           canViewWeeklyReport: false,
+          canViewUptReport: true,
           masterDataScope: 'FULL',
           canManageGenset: false,
           canManagePerbaikan: false,

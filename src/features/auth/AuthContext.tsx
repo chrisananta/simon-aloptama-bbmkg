@@ -31,6 +31,7 @@ const DEFAULT_PERMISSIONS: RBACPermissions = {
   isScopedToOwnUpt: true,
   canViewUnreportedList: false,
   canViewWeeklyReport: false,
+  canViewUptReport: false,
   masterDataScope: 'FULL',
   canManageGenset: false,
   canManagePerbaikan: false,

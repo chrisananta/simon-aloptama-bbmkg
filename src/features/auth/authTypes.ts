@@ -56,6 +56,7 @@ export interface RBACPermissions {
   // di halaman SLA OLA untuk role non-admin.
   canViewUnreportedList: boolean;
   canViewWeeklyReport: boolean;
+  canViewUptReport: boolean;
   // Admin Inskal: menu Database Master dipersempit hanya ke monitoring
   // SLA OLA harian (tab master data lain disembunyikan).
   masterDataScope: 'FULL' | 'SLA_OLA_HARIAN_ONLY';

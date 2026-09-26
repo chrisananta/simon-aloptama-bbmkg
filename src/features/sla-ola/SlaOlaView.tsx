@@ -29,6 +29,7 @@ import { AloptamaDevice, UPTStation, YearlyScoreMap, MonthlyDeviceScore } from '
 import { apiClient } from '../../shared/api';
 import { WaReportModal } from '../monitoring/WaReportModal';
 import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
+import { UptSlaOlaReportModal } from './UptSlaOlaReportModal';
 import { useAuth } from '../auth/AuthContext';
 
 // Kategori resmi sesuai field `category` di database (lihat dropdown di
@@ -121,6 +122,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'NORMAL' | 'GANGGUAN' | 'MATI'>('ALL');
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [isWeeklyReportModalOpen, setIsWeeklyReportModalOpen] = useState(false);
+  const [isUptReportModalOpen, setIsUptReportModalOpen] = useState(false);
 
   // Map pencarian ID Stasiun -> Nama Stasiun
   const stationMap = useMemo(() => {
@@ -608,6 +610,17 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <span>Buat Laporan Mingguan</span>
             </button>
           )}
+
+          {permissions.canViewUptReport && selectedUpt !== 'ALL' && (
+            <button
+              onClick={() => setIsUptReportModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+              title={`Buat Laporan Kinerja Aloptama untuk ${selectedUptName}`}
+            >
+              <FileText size={15} />
+              <span>Laporan UPT Terkait</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -663,12 +676,12 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
 
         <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
           <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
             OLA BULANAN ({selectedMonth} {selectedYear})
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
-            <span className="font-heading text-3xl sm:text-4xl font-black text-indigo-700">
+            <span className="font-heading text-3xl sm:text-4xl font-black text-blue-700">
               {Math.round(monthlyOlaValue)}%
             </span>
             <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -963,7 +976,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 {displayGangguan.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-6 text-slate-400">
-                      🟢 Tidak ada catatan peralatan Gangguan pada periode {activePeriodTarget}.
+                      Tidak ada catatan peralatan Gangguan pada periode {activePeriodTarget}.
                     </td>
                   </tr>
                 ) : (
@@ -1016,7 +1029,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 {displayMati.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-6 text-slate-400">
-                      🟢 Tidak ada catatan peralatan Mati pada periode {activePeriodTarget}.
+                      Tidak ada catatan peralatan Mati pada periode {activePeriodTarget}.
                     </td>
                   </tr>
                 ) : (
@@ -1181,6 +1194,24 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         isOpen={isWeeklyReportModalOpen}
         onClose={() => setIsWeeklyReportModalOpen(false)}
         devices={devices}
+      />
+
+      <UptSlaOlaReportModal
+        isOpen={isUptReportModalOpen}
+        onClose={() => setIsUptReportModalOpen(false)}
+        devices={uptFilteredDevices}
+        uptName={selectedUptName}
+        month={selectedMonth}
+        year={selectedYear}
+        rekapRows={rekapTableData
+          .filter((row) => row.jumlahLokasi > 0)
+          .map((row, idx) => ({ ...row, no: idx + 1 }))}
+        totalLokasi={totalLokasiSum}
+        avgSla={avgSlaTotal}
+        avgOla={avgOlaTotal}
+        totalNormal={totalNormalSum}
+        totalGangguan={totalGangguanSum}
+        totalMati={totalMatiSum}
       />
     </div>
   );
