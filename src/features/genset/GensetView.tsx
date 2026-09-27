@@ -68,7 +68,7 @@ export const GensetView: React.FC = () => {
           </div>
           <button
             onClick={() => setIsReportOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700  text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
           >
             <FileText size={16} /> Laporan Bulanan
           </button>
