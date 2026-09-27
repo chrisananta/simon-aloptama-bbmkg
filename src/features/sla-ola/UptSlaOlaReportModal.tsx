@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import printlogobmkg from '../../assets/images/BMKGLogo.png';
-import { X, Printer, FileText, Eye, Building2 } from 'lucide-react';
+import { X, Printer, FileText, Eye } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 
 export interface UptRekapRow {
@@ -36,6 +36,20 @@ const MONTH_INDEX_MAP: Record<string, number> = {
   Juli: 6, Agustus: 7, September: 8, Oktober: 9, November: 10, Desember: 11,
 };
 
+// Ukuran A4 potrait: 210 x 297mm. Margin cetak 12mm di setiap sisi.
+// Area isi (usable area) = 186mm x 273mm.
+// Lebar "desain" halaman pratinjau di layar (kira-kira sama dengan max-w-4xl).
+// Dipakai untuk menghitung skala pratinjau di HP — TIDAK memengaruhi hasil cetak/PDF.
+const PREVIEW_DESIGN_WIDTH_PX = 900;
+
+const PAGE_MARGIN_MM = 12;
+const USABLE_W_MM = 210 - PAGE_MARGIN_MM * 2; // 186mm -> jadi lebar visual lampiran setelah diputar
+const USABLE_H_MM = 297 - PAGE_MARGIN_MM * 2; // 273mm -> jadi tinggi visual lampiran setelah diputar
+
+// Perkiraan berapa baris alat yang muat dalam satu halaman lampiran (landscape)
+// sebelum tabel perlu lanjut ke halaman berikutnya.
+const ROWS_PER_LANDSCAPE_PAGE = 32;
+
 export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
   isOpen,
   onClose,
@@ -54,6 +68,13 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
   const [jabatanMengetahui, setJabatanMengetahui] = useState<string>('Kepala UPT');
   const [namaMengetahui, setNamaMengetahui] = useState<string>('');
   const [namaPembuat, setNamaPembuat] = useState<string>('');
+
+  // Pratinjau A4 di layar HP disusutkan (scale) supaya pas di lebar layar,
+  // tanpa mengubah hasil cetak/PDF (yang dibaca dari elemen aslinya, bukan versi yang disusutkan).
+  const previewWrapperRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
+  const [previewContentHeight, setPreviewContentHeight] = useState<number | null>(null);
 
   const todayLabel = useMemo(() => {
     const d = new Date();
@@ -81,12 +102,121 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
     [devices]
   );
 
-  const handleOpenPrintWindow = (
-    elementId: 'upt-page1-area' | 'upt-page2-area',
-    orientation: 'portrait' | 'landscape',
-    docTitle: string
-  ) => {
-    const element = document.getElementById(elementId);
+  useEffect(() => {
+    const measure = () => {
+      const wrapperEl = previewWrapperRef.current;
+      const contentEl = previewRef.current;
+      if (!wrapperEl || !contentEl) return;
+      const availableWidth = wrapperEl.clientWidth;
+      const nextScale = availableWidth > 0 ? Math.min(1, availableWidth / PREVIEW_DESIGN_WIDTH_PX) : 1;
+      setPreviewScale(nextScale);
+      setPreviewContentHeight(contentEl.scrollHeight);
+    };
+    const raf = requestAnimationFrame(measure);
+    window.addEventListener('resize', measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', measure);
+    };
+  }, [rekapRows, sortedDevices.length, dayColumns.length, isOpen]);
+
+  // Pecah daftar alat jadi beberapa halaman lampiran supaya tidak terpotong/hilang
+  // ketika alatnya banyak.
+  const deviceChunks = useMemo(() => {
+    if (sortedDevices.length === 0) return [[] as AloptamaDevice[]];
+    const chunks: AloptamaDevice[][] = [];
+    for (let i = 0; i < sortedDevices.length; i += ROWS_PER_LANDSCAPE_PAGE) {
+      chunks.push(sortedDevices.slice(i, i + ROWS_PER_LANDSCAPE_PAGE));
+    }
+    return chunks;
+  }, [sortedDevices]);
+
+  const renderLampiranTable = (chunk: AloptamaDevice[], startIndex: number) => (
+    <table className="w-full border border-black text-[8.5px]">
+      <thead>
+        <tr className="bg-slate-100 font-bold uppercase text-center">
+          <th className="border border-black py-1 px-1 w-6">NO</th>
+          <th className="border border-black py-1 px-1.5 text-left w-[110px]">NAMA ALAT</th>
+          <th className="border border-black py-1 px-1 w-[70px] text-left">KATEGORI</th>
+          {dayColumns.map((d) => (
+            <th key={d} className="border border-black py-1 px-0.5 w-[16px]">{d}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {chunk.map((dev, idx) => (
+          <tr key={dev.devicesId}>
+            <td className="border border-black py-1 px-1 text-center font-semibold">{startIndex + idx + 1}</td>
+            <td className="border border-black py-1 px-1.5 font-semibold">{dev.site}</td>
+            <td className="border border-black py-1 px-1">{dev.category}</td>
+            {dayColumns.map((d) => (
+              <td key={d} className="border border-black py-1 px-0.5">&nbsp;</td>
+            ))}
+          </tr>
+        ))}
+        {chunk.length === 0 && (
+          <tr>
+            <td colSpan={3 + dayColumns.length} className="border border-black py-3 text-center text-slate-400">
+              Tidak ada alat pada UPT ini.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
+
+  // Bungkus konten landscape (lebar) supaya diputar 90 derajat dan pas mengisi
+  // satu halaman A4 potrait secara utuh. Ini teknik standar untuk menyisipkan
+  // "halaman landscape" di tengah dokumen potrait dalam SATU file PDF, karena
+  // mencampur ukuran @page (potrait+landscape) langsung sering tidak konsisten
+  // di berbagai print driver (terutama "Microsoft Print to PDF").
+  // CATATAN: versi diputar ini SENGAJA disembunyikan di layar (lihat class
+  // "print-only-lampiran" di bawah) — yang tampil di pratinjau adalah versi
+  // normal (tidak diputar) supaya enak dibaca. Rotasi hanya aktif saat
+  // dokumen dikirim ke jendela cetak/PDF.
+  const renderRotatedLandscapePage = (content: React.ReactNode, isFirst: boolean) => (
+    <div
+      style={{
+        pageBreakBefore: 'always',
+        breakBefore: 'page',
+        width: `${USABLE_W_MM}mm`,
+        height: `${USABLE_H_MM}mm`,
+        position: 'relative',
+        overflow: 'hidden',
+        margin: '0 auto',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          width: `${USABLE_H_MM}mm`,
+          height: `${USABLE_W_MM}mm`,
+          transform: 'translate(-50%, -50%) rotate(-90deg)',
+          transformOrigin: 'center center',
+        }}
+      >
+        {isFirst && (
+          <div className="text-center mb-3">
+            <h2 className="font-extrabold text-sm tracking-wide text-black uppercase">
+              LAMPIRAN — TABEL PENGISIAN SLA &amp; OLA HARIAN
+            </h2>
+            <h3 className="font-bold text-xs tracking-wide text-black uppercase mt-0.5">
+              {uptName} — {month} {year}
+            </h3>
+            <p className="text-[9.5px] text-slate-600 mt-1 italic">
+              Diisi setiap hari oleh petugas UPT. Format tiap kolom: kondisi SLA / nilai OLA (contoh: 100/100). Kosongkan bila alat belum beroperasi pada hari tersebut.
+            </p>
+          </div>
+        )}
+        {content}
+      </div>
+    </div>
+  );
+
+  const handleOpenPrintWindow = () => {
+    const element = document.getElementById('upt-printable-report-area');
     if (!element) return;
 
     const printWindow = window.open('', '_blank', 'width=1000,height=1000');
@@ -96,9 +226,7 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
     }
 
     const reportHtml = element.outerHTML;
-    const pageSize = orientation === 'landscape' ? 'A4 landscape' : 'A4 portrait';
-    const margin = orientation === 'landscape' ? '10mm' : '12mm';
-    const maxWidth = orientation === 'landscape' ? '297mm' : '210mm';
+    const docTitle = `Laporan Kinerja Aloptama - ${uptName} (${month} ${year})`;
 
     printWindow.document.open();
     printWindow.document.write(`
@@ -109,14 +237,24 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
           <title>${docTitle}</title>
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
-            /* Satu file cetak = SATU orientasi saja, supaya konsisten di semua
-               browser/PDF viewer (mencampur potrait+landscape dalam satu file
-               sering gagal / hasilnya malah terputar). */
-            @page { size: ${pageSize}; margin: ${margin}; }
+            /* Satu dokumen = satu ukuran halaman (A4 potrait) untuk SELURUH
+               print job. Halaman lampiran "landscape" dibuat dengan memutar
+               kontennya 90 derajat di dalam halaman potrait ini (lihat
+               renderRotatedLandscapePage), bukan dengan mengganti ukuran
+               @page per halaman - supaya hasilnya konsisten di semua
+               browser/printer driver. */
+            @page { size: A4 portrait; margin: ${PAGE_MARGIN_MM}mm; }
             * { box-sizing: border-box; }
             body { margin: 0; padding: 20px; background: #f1f5f9; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-            .print-page { background: white; padding: 12mm; max-width: ${maxWidth}; margin: 0 auto; }
+            .print-page { background: white; padding: ${PAGE_MARGIN_MM}mm; max-width: 210mm; margin: 0 auto; }
             table { border-collapse: collapse; }
+            /* Elemen ini punya style scale/width inline untuk pratinjau di HP —
+               dibatalkan di sini supaya hasil cetak/PDF ukuran penuh & tidak ikut mengecil. */
+            #upt-printable-report-area { transform: none !important; width: auto !important; }
+            /* Kebalikan dari tampilan di layar: versi lampiran normal disembunyikan,
+               versi yang diputar 90° yang dipakai untuk dicetak/PDF. */
+            .screen-only-lampiran { display: none !important; }
+            .print-only-lampiran { display: block !important; }
             @media print {
               body { padding: 0; background: white; }
               .no-print { display: none !important; }
@@ -128,7 +266,7 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
           <div class="no-print max-w-4xl mx-auto mb-4 p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-between text-xs font-bold shadow-xl">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
-              <span>Dokumen Siap Dicetak atau Disimpan sebagai PDF (${orientation === 'landscape' ? 'Landscape' : 'Potrait'})</span>
+              <span>Dokumen Siap Dicetak/Disimpan sebagai PDF. Halaman lampiran dicetak menyamping — putar kertas/tampilan 90&deg; untuk membacanya.</span>
             </div>
             <button onclick="window.print()" style="background:#0052CC; color:white; padding:8px 18px; border-radius:10px; border:none; cursor:pointer; font-weight:bold;">
               🖨️ Cetak / Simpan PDF
@@ -154,13 +292,15 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
         @page { size: A4 portrait; margin: 12mm; }
         @media print {
           body * { visibility: hidden !important; }
-          #upt-page1-area, #upt-page1-area *,
-          #upt-page2-area, #upt-page2-area * { visibility: visible !important; }
-          #upt-page1-area, #upt-page2-area {
+          #upt-printable-report-area, #upt-printable-report-area * { visibility: visible !important; }
+          #upt-printable-report-area {
             position: absolute !important; left: 0 !important; top: 0 !important;
             width: 100% !important; margin: 0 !important; background: white !important;
             color: black !important; box-shadow: none !important; border: none !important;
+            transform: none !important;
           }
+          .screen-only-lampiran { display: none !important; }
+          .print-only-lampiran { display: block !important; }
           .no-print { display: none !important; }
         }
       `}</style>
@@ -229,33 +369,35 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
           <div className="no-print mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-900 font-medium max-w-3xl mx-auto">
             <div className="flex items-center gap-2">
               <Eye size={16} className="text-[#0052CC] shrink-0" />
-              <span>Pratinjau Laporanr.</span>
+              <span>1 file PDF: Hal. 1 Rekapitulasi + Lampiran (dicetak menyamping, putar untuk membaca).</span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleOpenPrintWindow('upt-page1-area', 'portrait', `Rekapitulasi Kinerja Aloptama - ${uptName} (${month} ${year})`)}
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Printer size={14} />
-                <span>Cetak Hal. 1</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleOpenPrintWindow('upt-page2-area', 'landscape', `Lampiran Tabel Pengisian SLA OLA - ${uptName} (${month} ${year})`)}
-                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Printer size={14} />
-                <span>Cetak Lampiran</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleOpenPrintWindow}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <Printer size={14} />
+              <span>Cetak / Simpan PDF</span>
+            </button>
           </div>
 
-          <div className="w-full">
-            {/* ===================== HALAMAN 1 — POTRAIT ===================== */}
+          <div
+            ref={previewWrapperRef}
+            className="w-full overflow-hidden"
+            style={{ height: previewContentHeight ? previewContentHeight * previewScale : undefined }}
+          >
             <div
-              id="upt-page1-area"
-              className="bg-white p-6 sm:p-10 shadow-md border border-slate-300 max-w-4xl mx-auto text-slate-900 font-sans leading-normal text-xs mb-6"
+              ref={previewRef}
+              id="upt-printable-report-area"
+              style={{
+                width: `${PREVIEW_DESIGN_WIDTH_PX}px`,
+                transform: `scale(${previewScale})`,
+                transformOrigin: 'top left',
+              }}
+            >
+            {/* ===================== HALAMAN 1 — POTRAIT (REKAPITULASI) ===================== */}
+            <div
+              className="bg-white p-6 sm:p-10 shadow-md border border-slate-300 max-w-4xl mx-auto text-slate-900 font-sans leading-normal text-xs"
               style={{ minHeight: '297mm' }}
             >
               <div className="border-b-4 border-slate-900 pb-3 mb-6">
@@ -302,7 +444,7 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
                   <span className="flex-1 font-bold">{totalLokasi} Unit</span>
                 </div>
                 <div className="flex">
-                  <span className="w-40 shrink-0">Tanggal Laporan</span>
+                  <span className="w-40 shrink-0">Tanggal Cetak</span>
                   <span className="w-4 text-center shrink-0">:</span>
                   <span className="flex-1 font-bold">{todayLabel}</span>
                 </div>
@@ -311,15 +453,15 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
               <div className="grid grid-cols-3 gap-3 my-5 max-w-xl">
                 <div className="border border-black rounded p-2 text-center">
                   <p className="text-[9px] font-bold uppercase text-slate-600">SLA Bulanan</p>
-                  <p className="text-lg font-black text-700">{avgSla.toFixed(1)}%</p>
+                  <p className="text-lg font-black text-blue-700">{avgSla.toFixed(1)}%</p>
                 </div>
                 <div className="border border-black rounded p-2 text-center">
                   <p className="text-[9px] font-bold uppercase text-slate-600">OLA Bulanan</p>
-                  <p className="text-lg font-black text-700">{avgOla.toFixed(1)}%</p>
+                  <p className="text-lg font-black text-indigo-700">{avgOla.toFixed(1)}%</p>
                 </div>
                 <div className="border border-black rounded p-2 text-center">
                   <p className="text-[9px] font-bold uppercase text-slate-600">Normal / Total</p>
-                  <p className="text-lg font-black text-700">{totalNormal}/{totalLokasi}</p>
+                  <p className="text-lg font-black text-emerald-700">{totalNormal}/{totalLokasi}</p>
                 </div>
               </div>
 
@@ -373,67 +515,72 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
               </div>
             </div>
 
-            {/* ===================== HALAMAN 2 — LANDSCAPE (LAMPIRAN) ===================== */}
-            <div
-              id="upt-page2-area"
-              className="bg-white p-6 sm:p-8 shadow-md border border-slate-300 max-w-[297mm] mx-auto text-slate-900 font-sans leading-normal text-xs"
-              style={{ minHeight: '210mm' }}
-            >
-              <div className="text-center mb-4">
+            {/* ===================== LAMPIRAN — VERSI CETAK/PDF (disembunyikan di layar, diputar 90°) ===================== */}
+            <div className="print-only-lampiran" style={{ display: 'none' }}>
+              {deviceChunks.map((chunk, chunkIdx) => {
+                const startIndex = chunkIdx * ROWS_PER_LANDSCAPE_PAGE;
+                const isLastChunk = chunkIdx === deviceChunks.length - 1;
+                return (
+                  <React.Fragment key={chunkIdx}>
+                    {renderRotatedLandscapePage(
+                      <>
+                        {renderLampiranTable(chunk, startIndex)}
+                        {isLastChunk && (
+                          <div className="flex justify-between mt-6" style={{ maxWidth: `${USABLE_H_MM - 10}mm` }}>
+                            <div className="text-center min-w-[160px] text-xs font-semibold text-black space-y-1">
+                              <p>Diisi Oleh,</p>
+                              <p>Teknisi UPT</p>
+                              <div className="h-14" />
+                              <p className="font-extrabold underline text-sm">{namaPembuat || '(...........................)'}</p>
+                            </div>
+                            <div className="text-center min-w-[160px] text-xs font-semibold text-black space-y-1">
+                              <p>Diperiksa Oleh,</p>
+                              <p>{jabatanMengetahui}</p>
+                              <div className="h-14" />
+                              <p className="font-extrabold underline text-sm">{namaMengetahui || '(...........................)'}</p>
+                            </div>
+                          </div>
+                        )}
+                      </>,
+                      chunkIdx === 0
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {/* ===================== LAMPIRAN — VERSI LAYAR (normal, tidak diputar, mudah dibaca) ===================== */}
+            <div className="screen-only-lampiran bg-white p-4 sm:p-6 shadow-md border border-slate-300 mx-auto text-slate-900 font-sans leading-normal text-xs" style={{ minWidth: `${USABLE_H_MM}mm` }}>
+              <div className="text-center mb-3">
                 <h2 className="font-extrabold text-sm tracking-wide text-black uppercase">
-                  TABEL PENGISIAN SLA &amp; OLA HARIAN
+                  LAMPIRAN — TABEL PENGISIAN SLA &amp; OLA HARIAN
                 </h2>
                 <h3 className="font-bold text-xs tracking-wide text-black uppercase mt-0.5">
                   {uptName} — {month} {year}
                 </h3>
+                <p className="text-[9.5px] text-slate-600 mt-1 italic">
+                  Diisi setiap hari oleh petugas UPT. Format tiap kolom: kondisi SLA / nilai OLA (contoh: 100/100). Kosongkan bila alat belum beroperasi pada hari tersebut.
+                </p>
+                <p className="text-[9.5px] text-blue-700 mt-1 font-semibold">
+                  Catatan: saat dicetak/disimpan sebagai PDF, halaman ini otomatis dicetak menyamping (landscape) agar rapi — di layar tetap ditampilkan normal seperti ini.
+                </p>
               </div>
-
-              <table className="w-full border border-black text-[8.5px]">
-                <thead>
-                  <tr className="bg-slate-100 font-bold uppercase text-center">
-                    <th className="border border-black py-1 px-1 w-6">NO</th>
-                    <th className="border border-black py-1 px-1.5 text-left w-[110px]">NAMA ALAT</th>
-                    <th className="border border-black py-1 px-1 w-[70px] text-left">KATEGORI</th>
-                    {dayColumns.map((d) => (
-                      <th key={d} className="border border-black py-1 px-0.5 w-[16px]">{d}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedDevices.map((dev, idx) => (
-                    <tr key={dev.devicesId}>
-                      <td className="border border-black py-1 px-1 text-center font-semibold">{idx + 1}</td>
-                      <td className="border border-black py-1 px-1.5 font-semibold">{dev.site}</td>
-                      <td className="border border-black py-1 px-1">{dev.category}</td>
-                      {dayColumns.map((d) => (
-                        <td key={d} className="border border-black py-1 px-0.5">&nbsp;</td>
-                      ))}
-                    </tr>
-                  ))}
-                  {sortedDevices.length === 0 && (
-                    <tr>
-                      <td colSpan={3 + dayColumns.length} className="border border-black py-3 text-center text-slate-400">
-                        Tidak ada alat pada UPT ini.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-              <div className="flex justify-between mt-8 max-w-[220mm] mx-auto">
-                <div className="text-center min-w-[180px] text-xs font-semibold text-black space-y-1">
+              {renderLampiranTable(sortedDevices, 0)}
+              <div className="flex justify-between mt-6 max-w-xl mx-auto">
+                <div className="text-center min-w-[160px] text-xs font-semibold text-black space-y-1">
                   <p>Diisi Oleh,</p>
                   <p>Teknisi UPT</p>
-                  <div className="h-16" />
+                  <div className="h-14" />
                   <p className="font-extrabold underline text-sm">{namaPembuat || '(...........................)'}</p>
                 </div>
-                <div className="text-center min-w-[180px] text-xs font-semibold text-black space-y-1">
+                <div className="text-center min-w-[160px] text-xs font-semibold text-black space-y-1">
                   <p>Diperiksa Oleh,</p>
                   <p>{jabatanMengetahui}</p>
-                  <div className="h-16" />
+                  <div className="h-14" />
                   <p className="font-extrabold underline text-sm">{namaMengetahui || '(...........................)'}</p>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
