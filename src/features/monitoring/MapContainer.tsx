@@ -9,6 +9,10 @@ interface MapContainerProps {
   onSelectDevice?: (device: AloptamaDevice) => void;
   selectedDeviceId?: string | null;
   uptLabel?: string;
+  /** Kontrol tambahan (mis. tombol filter) yang ditaruh tepat di atas tombol layer peta. */
+  filterControls?: React.ReactNode;
+  /** Kolom pencarian yang ditaruh di pojok kiri atas peta. */
+  searchControl?: React.ReactNode;
 }
 
 export const MapContainer: React.FC<MapContainerProps> = ({
@@ -16,6 +20,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   onSelectDevice,
   selectedDeviceId,
   uptLabel = 'BALAI BESAR MKG WILAYAH V JAYAPURA',
+  filterControls,
+  searchControl,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -24,7 +30,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const provinceLayerRef = useRef<L.GeoJSON | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mapTheme, setMapTheme] = useState<'osm' | 'satellite'>('osm');
+  const [mapTheme, setMapTheme] = useState<'osm' | 'satellite'>('satellite');
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [showProvinceBorders, setShowProvinceBorders] = useState(true);
   const [isMapReady, setIsMapReady] = useState(false);
@@ -156,9 +162,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         attributionControl: false,
       });
 
-      tileLayerRef.current = L.tileLayer(BASEMAPS.osm.url, {
-        maxZoom: BASEMAPS.osm.maxZoom,
-        attribution: BASEMAPS.osm.attribution,
+      tileLayerRef.current = L.tileLayer(BASEMAPS[mapTheme].url, {
+        maxZoom: BASEMAPS[mapTheme].maxZoom,
+        attribution: BASEMAPS[mapTheme].attribution,
       }).addTo(map);
 
       // Kontrol zoom bawaan Leaflet TIDAK dipakai lagi — sering rusak posisinya
@@ -356,6 +362,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       </div>
     )}
 
+      {searchControl && <div className="absolute top-3 left-3 z-10">{searchControl}</div>}
+
       <button
         onClick={toggleFullscreen}
         title={isFullscreen ? 'Keluar dari tampilan penuh' : 'Tampilan penuh'}
@@ -365,6 +373,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       </button>
 
       <div className="absolute left-[18px] bottom-[18px] z-10 flex flex-col gap-2">
+        {filterControls}
+
         <div className="relative">
           <button
             onClick={() => setIsThemeMenuOpen((prev) => !prev)}
