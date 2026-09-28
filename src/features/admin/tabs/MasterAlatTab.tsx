@@ -15,6 +15,13 @@ interface MasterAlatTabProps {
   handleOpenAddDevice: () => void;
   handleOpenEditDevice: (dev: AloptamaDevice) => void;
   setDeleteConfirmTarget: (target: { type: 'stasiun' | 'alat'; id: string; name: string } | null) => void;
+  // Mode Teknisi UPT: tanpa tombol Tambah & Hapus, filter UPT disembunyikan
+  // (data sudah dibatasi ke UPT sendiri oleh parent).
+  canAdd?: boolean;
+  canDelete?: boolean;
+  showUptFilter?: boolean;
+  // Search & filter kategori: disembunyikan untuk selain Super Admin.
+  showSearchAndCategory?: boolean;
 }
 
 export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
@@ -30,11 +37,16 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
   handleOpenAddDevice,
   handleOpenEditDevice,
   setDeleteConfirmTarget,
+  canAdd = true,
+  canDelete = true,
+  showUptFilter = true,
+  showSearchAndCategory = true,
 }) => {
   return (
         <div className="space-y-4">
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col md:flex-row gap-3 justify-between items-center shadow-2xs">
             <div className="flex flex-1 flex-wrap items-center gap-3 w-full md:w-auto">
+              {showSearchAndCategory && (
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
@@ -45,7 +57,9 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-[#0052CC] focus:bg-white"
                 />
               </div>
+              )}
 
+              {showUptFilter && (
               <div className="flex items-center gap-1.5">
                 <select
                   value={alatUptFilter}
@@ -58,7 +72,9 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                   ))}
                 </select>
               </div>
+              )}
 
+              {showSearchAndCategory && (
               <div className="flex items-center gap-1.5">
                 <select
                   value={alatCategoryFilter}
@@ -71,8 +87,10 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                   ))}
                 </select>
               </div>
+              )}
             </div>
 
+            {canAdd && (
             <button
               onClick={handleOpenAddDevice}
               className="flex items-center gap-1.5 px-4 py-2 bg-[#0052CC] hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
@@ -80,6 +98,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
               <Plus size={16} />
               <span>Tambah Alat Master</span>
             </button>
+            )}
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
@@ -94,7 +113,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                     <th className="p-3.5 text-center">PIC Kalibrasi</th>
                     <th className="p-3.5 text-center">Status Kalibrasi</th>
                     <th className="p-3.5">Masa Berlaku</th>
-                    <th className="p-3.5 pr-4 text-center">Aksi Master</th>
+                    <th className="p-3.5 pr-4 text-center">{canDelete ? 'Aksi Master' : 'Aksi'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -162,6 +181,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                             >
                               <Edit2 size={15} />
                             </button>
+                            {canDelete && (
                             <button
                               onClick={() => setDeleteConfirmTarget({ type: 'alat', id: dev.devicesId, name: dev.site })}
                               className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
@@ -169,6 +189,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                             >
                               <Trash2 size={15} />
                             </button>
+                            )}
                           </div>
                         </td>
                       </tr>

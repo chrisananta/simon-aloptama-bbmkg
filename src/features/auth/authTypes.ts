@@ -59,5 +59,7 @@ export interface RBACPermissions {
   canViewUptReport: boolean;
   // Admin Inskal: menu Database Master dipersempit hanya ke monitoring
   // SLA OLA harian (tab master data lain disembunyikan).
-  masterDataScope: 'FULL' | 'SLA_OLA_HARIAN_ONLY';
+  // Teknisi UPT: hanya tab master_alat milik UPT sendiri, aksi EDIT saja
+  // (tanpa tambah/hapus, ID alat & UPT terkunci).
+  masterDataScope: 'FULL' | 'SLA_OLA_HARIAN_ONLY' | 'ALAT_OWN_UPT_EDIT_ONLY';
 }

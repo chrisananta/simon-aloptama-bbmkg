@@ -115,3 +115,20 @@ export function requireSuperAdmin(req: AuthRequest, res: Response, next: NextFun
   }
   next();
 }
+
+/**
+ * Dipasang SETELAH verifyToken. Mengizinkan SUPER_ADMIN dan TEKNISI_UPT.
+ * Dipakai HANYA untuk edit master alat (PUT /devices/:id). Pembatasan lanjutan
+ * untuk Teknisi (hanya alat UPT sendiri, hanya field tertentu, ID tidak bisa
+ * diubah) dilakukan di deviceController.updateDevice.
+ * Tambah & hapus alat tetap khusus Super Admin (requireSuperAdmin).
+ */
+export function requireSuperAdminOrTeknisi(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user || (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'TEKNISI_UPT')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Akses ditolak. Aksi ini hanya diizinkan untuk Super Admin atau Teknisi UPT.',
+    });
+  }
+  next();
+}

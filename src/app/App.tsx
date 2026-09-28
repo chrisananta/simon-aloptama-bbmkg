@@ -161,33 +161,42 @@ function AppContent() {
   };
 
   // Handlers for Master Alat CRUD via Centralized API
-  const handleAddDevice = async (device: AloptamaDevice, actor: string) => {
+  // Handler alat mengembalikan true jika sukses, false jika gagal (alert error
+  // sudah ditampilkan di sini) - dipakai UI untuk menampilkan notifikasi
+  // "berhasil" dan menahan modal tetap terbuka saat gagal.
+  const handleAddDevice = async (device: AloptamaDevice, actor: string): Promise<boolean> => {
     try {
       await apiClient.devices.add(device, actor || currentActor);
       setDevicesData(apiClient.devices.getAll());
       refreshAuditLogs();
+      return true;
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal menyimpan alat ke server.');
+      return false;
     }
   };
 
-  const handleUpdateDevice = async (device: AloptamaDevice, details: string, actor: string) => {
+  const handleUpdateDevice = async (device: AloptamaDevice, details: string, actor: string): Promise<boolean> => {
     try {
       await apiClient.devices.update(device, details, actor || currentActor);
       setDevicesData(apiClient.devices.getAll());
       refreshAuditLogs();
+      return true;
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal memperbarui alat di server.');
+      return false;
     }
   };
 
-  const handleDeleteDevice = async (deviceId: string, deviceName: string, actor: string) => {
+  const handleDeleteDevice = async (deviceId: string, deviceName: string, actor: string): Promise<boolean> => {
     try {
       await apiClient.devices.delete(deviceId, deviceName, actor || currentActor);
       setDevicesData(apiClient.devices.getAll());
       refreshAuditLogs();
+      return true;
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal menghapus alat di server.');
+      return false;
     }
   };
 

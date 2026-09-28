@@ -105,9 +105,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'admin-master' as ActiveNavMenu,
-      label: 'Database Master',
+      label: user?.role === 'TEKNISI_UPT' ? 'Master Alat' : 'Database Master',
       icon: Database,
-      badge: 'Admin',
+      badge: user?.role === 'TEKNISI_UPT' ? null : 'Admin',
     },
     {
       id: 'audit-log' as ActiveNavMenu,

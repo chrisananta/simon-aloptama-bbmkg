@@ -8,6 +8,7 @@ import {
   Activity,
   Users,
   UserCheck,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   UPTStation,
@@ -24,6 +25,7 @@ import { useAuth } from '../auth/AuthContext';
 import { apiClient } from '../../shared/api';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 import { SlaOlaLogRow } from './types';
+import { isSameUpt, findStation } from '../../shared/utils/uptMatch';
 
 import { MasterStasiunTab } from './tabs/MasterStasiunTab';
 import { MasterAlatTab } from './tabs/MasterAlatTab';
@@ -52,9 +54,10 @@ interface AdminMasterViewProps {
   onAddStation: (station: UPTStation, actor: string) => void;
   onUpdateStation: (station: UPTStation, changesDetail: string, actor: string) => void;
   onDeleteStation: (stationId: string, stationName: string, actor: string) => void;
-  onAddDevice: (device: AloptamaDevice, actor: string) => void | Promise<void>;
-  onUpdateDevice: (device: AloptamaDevice, changesDetail: string, actor: string) => void | Promise<void>;
-  onDeleteDevice: (deviceId: string, deviceName: string, actor: string) => void | Promise<void>;
+  // Mengembalikan false jika gagal (undefined/true = sukses).
+  onAddDevice: (device: AloptamaDevice, actor: string) => void | boolean | Promise<void | boolean>;
+  onUpdateDevice: (device: AloptamaDevice, changesDetail: string, actor: string) => void | boolean | Promise<void | boolean>;
+  onDeleteDevice: (deviceId: string, deviceName: string, actor: string) => void | boolean | Promise<void | boolean>;
   onClearLogs?: () => void;
   onSyncDevicesFromServer?: (devices: AloptamaDevice[]) => void;
 }
@@ -62,8 +65,8 @@ interface AdminMasterViewProps {
 type TabType = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'monitoring_sla_ola' | 'master_petugas' | 'master_akun' | 'Log_Perubahan';
 
 export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
-  stations,
-  devices,
+  stations: stationsProp,
+  devices: devicesProp,
   changeLogs,
   onAddStation,
   onUpdateStation,
@@ -76,9 +79,39 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 }) => {
   const { user, permissions } = useAuth();
   const isFullMasterAccess = permissions.masterDataScope === 'FULL';
+  // Teknisi UPT: hanya melihat & MENGEDIT alat milik UPT sendiri (tanpa
+  // tambah/hapus; ID alat & UPT terkunci). Dibatasi juga di backend.
+  const isTeknisiAlatMode = permissions.masterDataScope === 'ALAT_OWN_UPT_EDIT_ONLY';
 
-  const [activeTab, setActiveTab] = useState<TabType>(isFullMasterAccess ? 'master_stasiun' : 'monitoring_sla_ola');
-  const [adminActor, setAdminActor] = useState<string>('Admin INSKAL BBMKG V');
+  const devices = React.useMemo(
+    () =>
+      isTeknisiAlatMode
+        ? devicesProp.filter((d) => isSameUpt(d.uptStation, user?.uptStation, stationsProp))
+        : devicesProp,
+    [devicesProp, stationsProp, isTeknisiAlatMode, user?.uptStation]
+  );
+  const stations = React.useMemo(
+    () =>
+      isTeknisiAlatMode
+        ? stationsProp.filter((st) => isSameUpt(st.stationid, user?.uptStation, stationsProp))
+        : stationsProp,
+    [stationsProp, isTeknisiAlatMode, user?.uptStation]
+  );
+
+  const [activeTab, setActiveTab] = useState<TabType>(
+    isTeknisiAlatMode ? 'master_alat' : isFullMasterAccess ? 'master_stasiun' : 'monitoring_sla_ola'
+  );
+  const [adminActor, setAdminActor] = useState<string>(
+    isTeknisiAlatMode ? (user?.name || 'Teknisi UPT') : 'Admin INSKAL BBMKG V'
+  );
+
+  // Notifikasi sukses (toast) - hilang otomatis setelah 4 detik.
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   // --- MASTER PETUGAS MONITORING STATES ---
   const [petugasList, setPetugasList] = useState<PetugasItem[]>(() => petugasService.getAll());
@@ -344,6 +377,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   };
 
   useEffect(() => {
+    // Teknisi UPT tidak punya tab master_sla_ola & endpoint ini khusus admin (403).
+    if (isTeknisiAlatMode) return;
     const bulanNum = MONTH_NAME_TO_NUMBER[selectedMonthSlaOla];
     const tahunNum = Number(selectedYearSlaOla);
     if (!bulanNum || !tahunNum) return;
@@ -359,7 +394,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       });
 
     return () => { cancelled = true; };
-  }, [selectedMonthSlaOla, selectedYearSlaOla]);
+  }, [selectedMonthSlaOla, selectedYearSlaOla, isTeknisiAlatMode]);
 
   const [isSlaOlaEditModalOpen, setIsSlaOlaEditModalOpen] = useState<boolean>(false);
   const [editingSlaDevice, setEditingSlaDevice] = useState<AloptamaDevice | null>(null);
@@ -687,6 +722,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
     setDeviceForm({
       ...dev,
+      // Data lama bisa menyimpan KODE stasiun (mis. MET001); dropdown memakai NAMA.
+      uptStation: findStation(dev.uptStation, stationsProp)?.name || dev.uptStation,
       picKalibrasi: existingPic,
       slaScore: Math.round(dev.slaScore ?? 100),
       olaScore: Math.round(dev.olaScore ?? 100),
@@ -694,9 +731,17 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     setIsDeviceModalOpen(true);
   };
 
-  const handleSaveDevice = () => {
+  const handleSaveDevice = async (e?: React.FormEvent) => {
+    // Cegah submit bawaan form (akan me-reload halaman selagi modal masih terbuka).
+    e?.preventDefault();
     if (!deviceForm.devicesId || !deviceForm.site) {
       alert('ID Alat dan Nama Alat wajib diisi.');
+      return;
+    }
+
+    // Teknisi UPT hanya boleh mengedit alat yang sudah ada di UPT-nya sendiri.
+    if (isTeknisiAlatMode && (!editingDevice || !isSameUpt(editingDevice.uptStation, user?.uptStation, stationsProp))) {
+      alert('Anda hanya dapat mengedit alat milik UPT Anda sendiri.');
       return;
     }
 
@@ -704,7 +749,10 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     const ola = Math.min(100, Math.max(0, Math.round(Number(deviceForm.olaScore ?? 100))));
 
     let autoStatus: EquipmentStatus = deviceForm.conditionStatus as EquipmentStatus || 'NORMAL';
-    if (sla === 0 || ola === 0) {
+    if (isTeknisiAlatMode && editingDevice) {
+      // Status kondisi dikelola lewat pengisian SLA/OLA, bukan dari form master.
+      autoStatus = editingDevice.conditionStatus;
+    } else if (sla === 0 || ola === 0) {
       autoStatus = 'MATI';
     } else if (ola < 100) {
       autoStatus = 'GANGGUAN';
@@ -718,11 +766,12 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     if (editingDevice) {
       const updated: AloptamaDevice = {
         ...editingDevice,
-        devicesId: deviceForm.devicesId,
+        // ID alat tidak pernah berubah saat edit.
+        devicesId: editingDevice.devicesId,
         site: deviceForm.site,
         category: (deviceForm.category as EquipmentCategory) || 'AWS',
         merk: deviceForm.merk || '',
-        uptStation: deviceForm.uptStation || stations[0]?.name || '',
+        uptStation: isTeknisiAlatMode ? editingDevice.uptStation : (deviceForm.uptStation || stations[0]?.name || ''),
         picKalibrasi: deviceForm.picKalibrasi || 'Balai',
         locationName: deviceForm.locationName || '',
         latitude: Number(deviceForm.latitude) || 0,
@@ -730,15 +779,20 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         conditionStatus: autoStatus,
         calibrationStatus: (deviceForm.calibrationStatus as CalibrationStatus) || 'VALID',
         lastCalibrated: deviceForm.lastCalibrated || '2026-07-08',
-        calibrationValidUntil: deviceForm.calibrationValidUntil || '2027-07-07',
+        calibrationValidUntil: isTeknisiAlatMode ? editingDevice.calibrationValidUntil : (deviceForm.calibrationValidUntil || '2027-07-07'),
         timkalibrasi: deviceForm.timkalibrasi || (deviceForm.picKalibrasi === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'),
-        slaScore: sla,
-        olaScore: ola,
+        slaScore: isTeknisiAlatMode ? editingDevice.slaScore : sla,
+        olaScore: isTeknisiAlatMode ? editingDevice.olaScore : ola,
       };
 
       const changes: string[] = [];
       if (editingDevice.site !== updated.site) changes.push(`Nama: "${editingDevice.site}" -> "${updated.site}"`);
       if (editingDevice.category !== updated.category) changes.push(`Kategori: "${editingDevice.category}" -> "${updated.category}"`);
+      if (editingDevice.calibrationStatus !== updated.calibrationStatus) changes.push(`Status Kalibrasi: "${editingDevice.calibrationStatus}" -> "${updated.calibrationStatus}"`);
+      if (editingDevice.lastCalibrated !== updated.lastCalibrated) changes.push(`Terakhir Kalibrasi: "${editingDevice.lastCalibrated}" -> "${updated.lastCalibrated}"`);
+      if ((editingDevice.merk || '') !== (updated.merk || '')) changes.push(`Merk: "${editingDevice.merk || '-'}" -> "${updated.merk || '-'}"`);
+      if ((editingDevice.locationName || '') !== (updated.locationName || '')) changes.push(`Lokasi: "${editingDevice.locationName || '-'}" -> "${updated.locationName || '-'}"`);
+      if (editingDevice.picKalibrasi !== updated.picKalibrasi) changes.push(`PIC Kalibrasi: "${editingDevice.picKalibrasi || '-'}" -> "${updated.picKalibrasi || '-'}"`);
       if (editingDevice.uptStation !== updated.uptStation) changes.push(`UPT: "${editingDevice.uptStation}" -> "${updated.uptStation}"`);
       if (editingDevice.conditionStatus !== updated.conditionStatus) changes.push(`Status: "${editingDevice.conditionStatus}" -> "${updated.conditionStatus}"`);
       if (editingDevice.slaScore !== updated.slaScore) changes.push(`SLA: ${editingDevice.slaScore ?? 100}% -> ${updated.slaScore}%`);
@@ -748,7 +802,12 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       }
 
       const detailStr = changes.length > 0 ? changes.join('; ') : 'Pembaruan parameter data master alat & SLA OLA.';
-      onUpdateDevice(updated, detailStr, adminActor);
+      const ok = await onUpdateDevice(updated, detailStr, adminActor);
+      // Gagal: alert error sudah tampil, modal dibiarkan terbuka agar isian tidak hilang.
+      if (ok === false) return;
+      setIsDeviceModalOpen(false);
+      setNotice(`Data alat ${updated.site} (${updated.devicesId}) berhasil disimpan.`);
+      return;
     } else {
       const newDev: AloptamaDevice = {
         devicesId: deviceForm.devicesId || `ALT${Date.now()}`,
@@ -769,22 +828,30 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         olaScore: ola,
       };
 
-      onAddDevice(newDev, adminActor);
+      const ok = await onAddDevice(newDev, adminActor);
+      if (ok === false) return;
+      setIsDeviceModalOpen(false);
+      setNotice(`Alat ${newDev.site} (${newDev.devicesId}) berhasil ditambahkan.`);
     }
-
-    setIsDeviceModalOpen(false);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteConfirmTarget) return;
-
-    if (deleteConfirmTarget.type === 'stasiun') {
-      onDeleteStation(deleteConfirmTarget.id, deleteConfirmTarget.name, adminActor);
-    } else {
-      onDeleteDevice(deleteConfirmTarget.id, deleteConfirmTarget.name, adminActor);
+    if (isTeknisiAlatMode) {
+      setDeleteConfirmTarget(null);
+      return;
     }
 
+    const target = deleteConfirmTarget;
+    if (target.type === 'stasiun') {
+      onDeleteStation(target.id, target.name, adminActor);
+      setDeleteConfirmTarget(null);
+      return;
+    }
+
+    const ok = await onDeleteDevice(target.id, target.name, adminActor);
     setDeleteConfirmTarget(null);
+    if (ok !== false) setNotice(`Alat ${target.name} (${target.id}) berhasil dihapus.`);
   };
 
   const handleExportLogsCSV = () => {
@@ -817,6 +884,24 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
+      {notice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-[88px] left-3 right-3 sm:left-auto sm:right-6 z-[4000] sm:max-w-sm flex items-start gap-2.5 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-xl shadow-emerald-900/20 text-xs font-bold animate-fadeIn"
+        >
+          <CheckCircle2 size={18} className="shrink-0 mt-px" />
+          <span className="leading-snug flex-1">{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="text-white/80 hover:text-white cursor-pointer leading-none text-base"
+            aria-label="Tutup notifikasi"
+          >
+            ×
+          </button>
+        </div>
+      )}
       {/* 1. TOP TITLE HEADER */}
       <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3.5">
         <div className="flex items-start gap-3 sm:gap-4">
@@ -827,16 +912,22 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] sm:text-[10px] font-extrabold uppercase rounded-full tracking-wider flex items-center gap-1 shrink-0">
                 <ShieldCheck size={11} className="sm:w-3 sm:h-3" />
-                Akses Hanya Admin
+                {isTeknisiAlatMode ? 'Akses Teknisi UPT' : 'Akses Hanya Admin'}
               </span>
               <span className="text-xs text-slate-400 hidden xs:inline">• BBMKG Wilayah V Papua</span>
             </div>
             <h1 className="text-base sm:text-2xl font-black text-slate-900 tracking-tight mt-1 leading-snug">
-              Pengelolaan Database Master
+              {isTeknisiAlatMode ? 'Master Alat' : 'Pengelolaan Database Master'}
             </h1>
+            {isTeknisiAlatMode ? (
+              <p className="text-slate-500 text-[11px] sm:text-xs mt-0.5 leading-relaxed">
+                Perbarui data <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_alat</code> milik {stations[0]?.name || user?.uptStation || 'UPT Anda'} jika ada perubahan. ID Alat tidak dapat diubah.
+              </p>
+            ) : (
             <p className="text-slate-500 text-[11px] sm:text-xs mt-0.5 leading-relaxed">
               Ubah data <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_stasiun</code>, <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_alat</code>, serta audit jejak perubahan pada <code className="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">Log_Perubahan</code>.
             </p>
+            )}
           </div>
         </div>
 
@@ -849,6 +940,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                 type="text" 
                 value={adminActor} 
                 onChange={(e) => setAdminActor(e.target.value)}
+                readOnly={isTeknisiAlatMode}
                 className="text-xs font-bold text-slate-800 bg-transparent outline-none border-b border-dashed border-slate-300 focus:border-[#0052CC] w-32 sm:w-40"
                 title="Nama Pengguna/Admin yang tercatat pada Log_Perubahan"
               />
@@ -859,6 +951,19 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
       {/* 2. NAVIGATION TABS */}
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 border-b border-slate-200 pb-2">
+        {isTeknisiAlatMode && (
+          <button
+            onClick={() => setActiveTab('master_alat')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer bg-[#0052CC] text-white shadow-md shadow-blue-500/20"
+          >
+            <Radio size={16} />
+            <span>master_alat</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white">
+              {devices.length} Alat
+            </span>
+          </button>
+        )}
+
         {isFullMasterAccess && (
         <>
         <button
@@ -914,6 +1019,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         </>
         )}
 
+        {!isTeknisiAlatMode && (
         <button
           onClick={() => setActiveTab('monitoring_sla_ola')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
@@ -930,6 +1036,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
             Harian
           </span>
         </button>
+        )}
 
         {isFullMasterAccess && (
         <>
@@ -1002,7 +1109,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         />
       )}
 
-      {activeTab === 'master_alat' && isFullMasterAccess && (
+      {activeTab === 'master_alat' && (isFullMasterAccess || isTeknisiAlatMode) && (
         <MasterAlatTab
           stations={stations}
           categories={categories}
@@ -1016,6 +1123,10 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           handleOpenAddDevice={handleOpenAddDevice}
           handleOpenEditDevice={handleOpenEditDevice}
           setDeleteConfirmTarget={setDeleteConfirmTarget}
+          canAdd={!isTeknisiAlatMode}
+          canDelete={!isTeknisiAlatMode}
+          showUptFilter={!isTeknisiAlatMode}
+          showSearchAndCategory={!isTeknisiAlatMode}
         />
       )}
 
@@ -1040,7 +1151,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         />
       )}
 
-      {activeTab === 'monitoring_sla_ola' && (
+      {activeTab === 'monitoring_sla_ola' && !isTeknisiAlatMode && (
         <MonitoringSlaOlaTab
           filteredMonitoringLogs={filteredMonitoringLogs}
           isLoadingMonitoringLogs={isLoadingMonitoringLogs}
@@ -1114,6 +1225,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           setDeviceForm={setDeviceForm}
           setIsDeviceModalOpen={setIsDeviceModalOpen}
           handleSaveDevice={handleSaveDevice}
+          restrictedMode={isTeknisiAlatMode}
         />
       )}
 

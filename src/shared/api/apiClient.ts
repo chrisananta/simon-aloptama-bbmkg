@@ -356,6 +356,13 @@ export const apiClient = {
           try {
             const errData = await response.json();
             if (errData?.message) message = errData.message;
+            // Sertakan rincian field yang gagal validasi (400) supaya mudah dilacak.
+            if (errData?.errors && typeof errData.errors === "object") {
+              const detail = Object.entries(errData.errors as Record<string, string[]>)
+                .map(([field, msgs]) => `${field}: ${(msgs || []).join(", ")}`)
+                .join("; ");
+              if (detail) message += ` (${detail})`;
+            }
           } catch {
             // ignore
           }

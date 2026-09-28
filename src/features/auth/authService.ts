@@ -223,9 +223,11 @@ export const authService = {
       case 'TEKNISI_UPT':
       default:
         return {
-          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan'],
+          allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan', 'admin-master'],
           canAddCalibration: false,
-          canManageMasterData: false,
+          // Teknisi boleh membuka Database Master, tapi HANYA tab master_alat
+          // milik UPT-nya sendiri dan HANYA aksi edit (lihat masterDataScope).
+          canManageMasterData: true,
           canViewAuditLogs: false,
           canClearAuditLogs: false,
           canInputSlaOla: true,
@@ -233,7 +235,7 @@ export const authService = {
           canViewUnreportedList: false,
           canViewWeeklyReport: false,
           canViewUptReport: true,
-          masterDataScope: 'FULL',
+          masterDataScope: 'ALAT_OWN_UPT_EDIT_ONLY',
           canManageGenset: false,
           canManagePerbaikan: false,
         };

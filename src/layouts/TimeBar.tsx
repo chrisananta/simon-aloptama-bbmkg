@@ -49,7 +49,7 @@ export const TimeBar: React.FC = () => {
       <button
         type="button"
         onClick={() => setShowTimeDetail((v) => !v)}
-        className="w-full h-9 flex items-center justify-center gap-1.5 sm:gap-2.5 bg-slate-50 border-b border-slate-200 text-slate-600 cursor-pointer active:bg-slate-100 sm:cursor-default"
+        className="w-full h-9 flex items-center justify-center gap-1.5 sm:gap-2.5 bg-white border-b border-slate-200 text-slate-600 cursor-pointer active:bg-slate-50 sm:cursor-default"
       >
         <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wide">
           {dateStr || "Memuat..."}

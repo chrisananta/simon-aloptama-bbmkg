@@ -9,7 +9,9 @@ interface DeviceFormModalProps {
   deviceForm: Partial<AloptamaDevice>;
   setDeviceForm: (form: Partial<AloptamaDevice>) => void;
   setIsDeviceModalOpen: (open: boolean) => void;
-  handleSaveDevice: () => void;
+  handleSaveDevice: (e?: React.FormEvent) => void | Promise<void>;
+  // Mode Teknisi UPT: stasiun UPT & data kalibrasi hanya-baca.
+  restrictedMode?: boolean;
 }
 
 export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
@@ -20,7 +22,11 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
   setDeviceForm,
   setIsDeviceModalOpen,
   handleSaveDevice,
+  restrictedMode = false,
 }) => {
+  // ID alat adalah kunci data: selalu terkunci saat mengedit alat yang sudah ada.
+  const lockId = !!editingDevice;
+  const lockedInputCls = 'opacity-70 cursor-not-allowed bg-slate-100';
   return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh] overflow-hidden">
@@ -50,8 +56,14 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                     value={deviceForm.devicesId || ''}
                     onChange={(e) => setDeviceForm({ ...deviceForm, devicesId: e.target.value })}
                     placeholder="Contoh: ALT0191"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-mono font-bold"
+                    readOnly={lockId}
+                    disabled={lockId}
+                    title={lockId ? 'ID Alat tidak dapat diubah' : undefined}
+                    className={`w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-mono font-bold ${lockId ? lockedInputCls : ''}`}
                   />
+                  {lockId && (
+                    <p className="text-[10px] text-slate-400 mt-1">ID Alat tidak dapat diubah.</p>
+                  )}
                 </div>
 
                 <div>
@@ -99,7 +111,8 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                   <select
                     value={deviceForm.uptStation || ''}
                     onChange={(e) => setDeviceForm({ ...deviceForm, uptStation: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-semibold"
+                    disabled={restrictedMode}
+                    className={`w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-semibold ${restrictedMode ? lockedInputCls : ''}`}
                   >
                     {stations.map((s) => (
                       <option key={s.id} value={s.name}>{s.name}</option>
@@ -170,7 +183,8 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                     type="date"
                     value={deviceForm.calibrationValidUntil || '2027-07-07'}
                     onChange={(e) => setDeviceForm({ ...deviceForm, calibrationValidUntil: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white"
+                    disabled={restrictedMode}
+                    className={`w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white ${restrictedMode ? lockedInputCls : ''}`}
                   />
                 </div>
               </div>
@@ -201,6 +215,11 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
 
               <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-[11px] text-blue-800">
                 Pembaruan alat ini akan langsung memperbarui pemetaan peta interaktif dan tercatat pada <strong className="font-bold">Log_Perubahan</strong>.
+                {restrictedMode && (
+                  <span className="block mt-1 text-blue-700">
+                    Stasiun UPT dan Masa Berlaku Sertifikat dikelola oleh Admin dan tidak dapat diubah dari akun Teknisi.
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 shrink-0">
