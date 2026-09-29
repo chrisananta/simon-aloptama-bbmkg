@@ -8,7 +8,9 @@ import {
   ShieldCheck,
   Users,
   Plus,
-  Archive
+  Archive,
+  Filter,
+  X
 } from 'lucide-react';
 import { AloptamaDevice, CalibrationStatus, UPTStation } from '../../shared/types';
 import { apiClient } from '../../shared/api';
@@ -43,6 +45,21 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
   const [selectedUpt, setSelectedUpt] = useState<string>('ALL');
   const [selectedAgency, setSelectedAgency] = useState<string>('ALL');
   const [activeTab, setActiveTab] = useState<'latest' | 'repository'>('latest');
+  // Semua filter diringkas ke 1 tombol yang membuka panel ini.
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const activeFilterCount =
+    (searchQuery.trim() ? 1 : 0) +
+    (selectedStatus !== 'ALL' ? 1 : 0) +
+    (selectedYear !== 'ALL' ? 1 : 0) +
+    (selectedUpt !== 'ALL' ? 1 : 0) +
+    (selectedAgency !== 'ALL' ? 1 : 0);
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedStatus('ALL');
+    setSelectedYear('ALL');
+    setSelectedUpt('ALL');
+    setSelectedAgency('ALL');
+  };
 
   // Map pencarian ID Stasiun -> Nama Stasiun
   const stationMap = useMemo(() => {
@@ -193,86 +210,114 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
-        <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-          <div className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#0052CC] text-white shadow-2xs flex items-center gap-1.5">
-            <ShieldCheck size={14} />
-            Status Kalibrasi Aktif ({devices.length})
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="relative md:col-span-1">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari alat, stasiun, atau personel..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white"
-            />
-          </div>
-
-          <div>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-            >
-              <option value="ALL">Semua Status Kalibrasi</option>
-              <option value="VALID">🟢 Valid</option>
-              <option value="SEGERA_DIKALIBRASI">🟡 Segera Dikalibrasi</option>
-              <option value="KADALUWARSA">🔴 Kadaluwarsa</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-            >
-              <option value="ALL">Semua Tahun Kalibrasi</option>
-              <option value="2026">Tahun 2026</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              value={selectedUpt}
-              onChange={(e) => setSelectedUpt(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-            >
-              <option value="ALL">Semua Stasiun UPT</option>
-              {uptOptions.map((upt) => (
-                <option key={upt.id} value={upt.id}>
-                  {upt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <select
-              value={selectedAgency}
-              onChange={(e) => setSelectedAgency(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-            >
-              <option value="ALL">Semua PIC Kalibrasi</option>
-              <option value="Balai">🏢 Balai (BBMKG Wilayah V)</option>
-              <option value="Pusat">🏛️ Pusat (BMKG Pusat)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center flex-wrap gap-2">
           <span className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
             {activeTab === 'latest' ? 'HASIL MONITORING STATUS AKTIF' : 'RIWAYAT PENGISIAN KALIBRASI'} 
             ({filteredRecords.length} DATA)
           </span>
-          
+
+          <div className="flex items-center gap-2">
+          {/* Semua filter (search, status, tahun, UPT, PIC) diringkas ke 1 tombol ini. */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowFilterPanel((v) => !v)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100"
+            >
+              <Filter size={14} />
+              <span>Filter</span>
+              {activeFilterCount > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#0052CC] text-white text-[10px] font-bold flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+
+            {showFilterPanel && (
+              <>
+                {/* Lapisan transparan: klik di luar panel akan menutupnya. */}
+                <div className="fixed inset-0 z-40" onClick={() => setShowFilterPanel(false)} />
+                <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Filter Data</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowFilterPanel(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                      aria-label="Tutup filter"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Cari alat, stasiun, atau personel..."
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white"
+                    />
+                  </div>
+
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                  >
+                    <option value="ALL">Semua Status Kalibrasi</option>
+                    <option value="VALID">🟢 Valid</option>
+                    <option value="SEGERA_DIKALIBRASI">🟡 Segera Dikalibrasi</option>
+                    <option value="KADALUWARSA">🔴 Kadaluwarsa</option>
+                  </select>
+
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                  >
+                    <option value="ALL">Semua Tahun Kalibrasi</option>
+                    <option value="2026">Tahun 2026</option>
+                  </select>
+
+                  <select
+                    value={selectedUpt}
+                    onChange={(e) => setSelectedUpt(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                  >
+                    <option value="ALL">Semua Stasiun UPT</option>
+                    {uptOptions.map((upt) => (
+                      <option key={upt.id} value={upt.id}>
+                        {upt.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={selectedAgency}
+                    onChange={(e) => setSelectedAgency(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                  >
+                    <option value="ALL">Semua PIC Kalibrasi</option>
+                    <option value="Balai">🏢 Balai (BBMKG Wilayah V)</option>
+                    <option value="Pusat">🏛️ Pusat (BMKG Pusat)</option>
+                  </select>
+
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="w-full text-center text-xs font-bold text-rose-600 hover:text-rose-700 py-1.5 cursor-pointer"
+                    >
+                      Reset Semua Filter
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         {permissions.canAddCalibration && (
           <button
             onClick={onOpenAddCalibrationModal}
@@ -284,7 +329,8 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
           </button>
         )}
         </div>
-        
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs text-slate-700">
             <thead className="bg-slate-100/80 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
@@ -319,18 +365,13 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                       <div className="text-[11px] text-[#0052CC] font-semibold mt-0.5">
                         {rec.category} • {rec.deviceId}
                       </div>
-                      {rec.notes && (
-                        <div className="text-[10px] text-slate-500 italic mt-0.5 max-w-xs">
-                          "{rec.notes}"
-                        </div>
-                      )}
                     </td>
                     <td className="p-3.5 font-medium text-slate-800">
                       {stationMap.get(rec.uptStation) || rec.uptStation}
                     </td>
                     <td className="p-3.5 font-medium text-slate-700">
                       {formatDateIndo(rec.lastCalibrated)}
-                      <span className="block text-[10px] text-slate-400">Tahun: {rec.lastCalibrated ? rec.lastCalibrated.split('-')[0] : '2026'}</span>
+                      <span className="block text-[10px] text-slate-400"></span>
                     </td>
                     <td className="p-3.5 font-semibold text-slate-900">
                       {formatDateIndo(rec.calibrationValidUntil)}

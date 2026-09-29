@@ -220,7 +220,7 @@ function AppContent() {
 
   return (
     <ProtectedRoute activeMenu={activeMenu} onRedirectToDashboard={() => setActiveMenu('dashboard')}>
-      <div className="min-h-screen bg-[#F5F7FA] font-['Inter',sans-serif] text-slate-800 flex flex-col">
+      <div className="min-h-screen bg-white font-['Inter',sans-serif] text-slate-800 flex flex-col">
         {/* Bar tanggal & jam — full-width dari ujung ke ujung, di atas Sidebar & Navbar */}
         <TimeBar />
 

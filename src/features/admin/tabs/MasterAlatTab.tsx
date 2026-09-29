@@ -42,8 +42,12 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
   showUptFilter = true,
   showSearchAndCategory = true,
 }) => {
+  // Kotak search/filter/tambah disembunyikan total (bukan cuma isinya) kalau
+  // tidak ada satu pun yang ditampilkan - contoh: Teknisi UPT.
+  const hasToolbar = showSearchAndCategory || showUptFilter || canAdd;
   return (
         <div className="space-y-4">
+          {hasToolbar && (
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col md:flex-row gap-3 justify-between items-center shadow-2xs">
             <div className="flex flex-1 flex-wrap items-center gap-3 w-full md:w-auto">
               {showSearchAndCategory && (
@@ -100,6 +104,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
             </button>
             )}
           </div>
+          )}
 
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">

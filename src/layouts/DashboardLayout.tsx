@@ -29,7 +29,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
 }) => {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 flex flex-col">
+    <div className="min-h-screen bg-white font-sans text-slate-800 flex flex-col">
       <Navbar activeMenu={activeMenu} collapsed={collapsed} />
 
       <Sidebar

@@ -695,7 +695,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
         <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
-          <span className="text-[10px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wide">
+          <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
             KONDISI KALIBRASI (BALAI)
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
@@ -875,7 +875,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           <div className="flex justify-between items-center mb-4">
             <div>
               <h3 className="font-heading font-bold text-base text-slate-800">
-                Grafik OLA Berdasarkan Jenis Peralatan ({selectedMonth} {selectedYear})
+                Grafik OLA Berdasarkan Jenis Peralatan
               </h3>
             </div>
             <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
@@ -912,42 +912,40 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0052CC] flex items-center justify-center shrink-0">
-              <Clock size={18} />
-            </div>
             <div>
               <h3 className="font-bold text-xs sm:text-sm text-slate-900">
-                Filter Riwayat Log Gangguan &amp; Alat Mati
+                Riwayat Log Gangguan &amp; Alat Mati
               </h3>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-slate-50 p-2 sm:p-3 rounded-xl border border-slate-200 gap-2">
-          <span className="text-xs font-bold text-slate-700 shrink-0">
-            Periode Tabel:
-          </span>
+          {/* Filter periode */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-xs font-bold text-slate-700 shrink-0 hidden sm:inline">
+              Periode Tabel:
+            </span>
 
-          <select
-            value={tableFilterMonth}
-            onChange={(e) => setTableFilterMonth(e.target.value)}
-            className="w-full sm:w-auto bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] cursor-pointer"
-          >
-            <option value="REALTIME">⚡ Real-Time (Status Terkini Hari Ini)</option>
-            <option value="HEADER_SYNC">🔄 Mengikuti Filter Header ({selectedMonth} {selectedYear})</option>
-            <optgroup label="Bulan Tahun 2026">
-              <option value="Juli 2026">Juli 2026</option>
-              <option value="Juni 2026">Juni 2026</option>
-              <option value="Mei 2026">Mei 2026</option>
-              <option value="April 2026">April 2026</option>
-              <option value="Maret 2026">Maret 2026</option>
-              <option value="Februari 2026">Februari 2026</option>
-              <option value="Januari 2026">Januari 2026</option>
-            </optgroup>
-            <optgroup label="Arsip Rekap">
-              <option value="ALL">Semua Rekam Historis (≥ 2026)</option>
-            </optgroup>
-          </select>
+            <select
+              value={tableFilterMonth}
+              onChange={(e) => setTableFilterMonth(e.target.value)}
+              className="w-full sm:w-auto bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] cursor-pointer"
+            >
+              <option value="REALTIME">⚡ Real-Time (Status Terkini Hari Ini)</option>
+              <option value="HEADER_SYNC">🔄 Mengikuti Filter Header ({selectedMonth} {selectedYear})</option>
+              <optgroup label="Bulan Tahun 2026">
+                <option value="Juli 2026">Juli 2026</option>
+                <option value="Juni 2026">Juni 2026</option>
+                <option value="Mei 2026">Mei 2026</option>
+                <option value="April 2026">April 2026</option>
+                <option value="Maret 2026">Maret 2026</option>
+                <option value="Februari 2026">Februari 2026</option>
+                <option value="Januari 2026">Januari 2026</option>
+              </optgroup>
+              <optgroup label="Arsip Rekap">
+                <option value="ALL">Semua Rekam Historis (≥ 2026)</option>
+              </optgroup>
+            </select>
+          </div>
         </div>
       </div>
 

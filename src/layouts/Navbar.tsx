@@ -45,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header
-      className={`fixed top-9 right-0 z-20 bg-white border-b border-slate-200 shadow-xs transition-all duration-300 ${
+      className={`fixed top-7 right-0 z-20 bg-white border-b border-slate-200 shadow-xs transition-all duration-300 ${
         mobileSidebarHidden ? 'left-0 sm:left-16' : 'left-16'
       } ${collapsed ? 'md:left-20' : 'md:left-72'}`}
     >
