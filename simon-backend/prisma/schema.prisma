@@ -51,8 +51,8 @@ model Device {
   picKalibrasi          String?             @default("Balai")
   conditionStatus       EquipmentStatus     @default(NORMAL)
   calibrationStatus     CalibrationStatus   @default(VALID)
-  lastCalibrated        DateTime            @db.Date
-  calibrationValidUntil DateTime            @db.Date
+  lastCalibrated        DateTime?           @db.Date
+  calibrationValidUntil DateTime?           @db.Date
   timkalibrasi          String
   lastReportedDate      DateTime?           @db.Date
   downtimeDuration      String?
@@ -181,6 +181,7 @@ enum CalibrationStatus {
   VALID
   SEGERA_DIKALIBRASI
   KADALUWARSA
+  TIDAK_DIKALIBRASI
 }
 
 enum LogAction {

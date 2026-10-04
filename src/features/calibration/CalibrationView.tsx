@@ -5,6 +5,7 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   XCircle, 
+  MinusCircle,
   ShieldCheck,
   Users,
   Plus,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AloptamaDevice, CalibrationStatus, UPTStation } from '../../shared/types';
 import { apiClient } from '../../shared/api';
+import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../shared/utils/calibration';
 import { CalibrationRecord } from './CalibrationTypes';
 import { useAuth } from '../auth/AuthContext';
 import { UserRole } from '../auth/authTypes';
@@ -100,9 +102,13 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       calibrationValidUntil: dev.calibrationValidUntil,
       calibrationStatus: dev.calibrationStatus,
       calibrationAgency: dev.timkalibrasi,
-      picKalibrasi: dev.picKalibrasi || ((dev.timkalibrasi || '').toLowerCase().includes('pusat') ? 'Pusat' : 'Balai'),
-      notes: dev.calibrationStatus === 'VALID' ? 'Kalibrasi Berkala Operasional' : 'Perlu Re-Kalibrasi INSKAL',
-      yearCreated: dev.lastCalibrated ? dev.lastCalibrated.split('-')[0] : '2026',
+      picKalibrasi: isNotCalibrated(dev)
+        ? PIC_TIDAK_DIKALIBRASI
+        : dev.picKalibrasi || ((dev.timkalibrasi || '').toLowerCase().includes('pusat') ? 'Pusat' : 'Balai'),
+      notes: isNotCalibrated(dev)
+        ? 'Alat tidak dikalibrasi'
+        : dev.calibrationStatus === 'VALID' ? 'Kalibrasi Berkala Operasional' : 'Perlu Re-Kalibrasi INSKAL',
+      yearCreated: dev.lastCalibrated ? dev.lastCalibrated.split('-')[0] : '',
       createdAt: dev.lastCalibrated,
       isRepository: false,
     })),
@@ -128,9 +134,10 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     const matchesStatus =
       selectedStatus === 'ALL' || rec.calibrationStatus === selectedStatus;
 
-    const yearVal = rec.lastCalibrated ? rec.lastCalibrated.split('-')[0] : '2026';
+    // Alat tanpa tanggal kalibrasi (tidak dikalibrasi) tidak punya tahun kalibrasi.
+    const yearVal = rec.lastCalibrated ? rec.lastCalibrated.split('-')[0] : '';
     const matchesYear =
-      selectedYear === 'ALL' || (rec.lastCalibrated && rec.lastCalibrated.startsWith(selectedYear)) || yearVal === selectedYear;
+      selectedYear === 'ALL' || (!!yearVal && (rec.lastCalibrated?.startsWith(selectedYear) || yearVal === selectedYear));
 
     const matchesUpt = selectedUpt === 'ALL' || rec.uptStation === selectedUpt;
 
@@ -139,7 +146,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     return matchesSearch && matchesStatus && matchesYear && matchesUpt && matchesAgency;
   });
 
-  const formatDateIndo = (dateStr: string) => {
+  const formatDateIndo = (dateStr?: string | null) => {
     if (!dateStr) return '-';
     const parts = dateStr.split('-');
     if (parts.length !== 3) return dateStr;
@@ -174,12 +181,20 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
             Kadaluwarsa
           </span>
         );
+      case 'TIDAK_DIKALIBRASI':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-300">
+            <MinusCircle size={15} />
+            Tidak Dikalibrasi
+          </span>
+        );
     }
   };
 
   const validCount = devices.filter((d) => d.calibrationStatus === 'VALID').length;
   const warningCount = devices.filter((d) => d.calibrationStatus === 'SEGERA_DIKALIBRASI').length;
   const expiredCount = devices.filter((d) => d.calibrationStatus === 'KADALUWARSA').length;
+  const notCalibratedCount = devices.filter((d) => isNotCalibrated(d)).length;
 
   return (
     <div className="space-y-6">
@@ -207,6 +222,12 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
             <span>🔴 Kadaluwarsa:</span>
             <span className="font-bold">{expiredCount}</span>
           </div>
+          {notCalibratedCount > 0 && (
+            <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 text-slate-600 border border-slate-300 flex items-center gap-1">
+              <span>⚪ Tidak Dikalibrasi:</span>
+              <span className="font-bold">{notCalibratedCount}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -271,6 +292,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     <option value="VALID">🟢 Valid</option>
                     <option value="SEGERA_DIKALIBRASI">🟡 Segera Dikalibrasi</option>
                     <option value="KADALUWARSA">🔴 Kadaluwarsa</option>
+                    <option value="TIDAK_DIKALIBRASI">⚪ Tidak Dikalibrasi</option>
                   </select>
 
                   <select
@@ -303,6 +325,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     <option value="ALL">Semua PIC Kalibrasi</option>
                     <option value="Balai">🏢 Balai (BBMKG Wilayah V)</option>
                     <option value="Pusat">🏛️ Pusat (BMKG Pusat)</option>
+                    <option value={PIC_TIDAK_DIKALIBRASI}>⚪ Tidak Dikalibrasi</option>
                   </select>
 
                   {activeFilterCount > 0 && (

@@ -77,7 +77,7 @@ export const deviceSchema = z.object({
   olaScore: z.number().min(0).max(100).optional(),
   lastCalibrated: z.string().optional(),
   calibrationValidUntil: z.string().optional(),
-  calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA']).optional(),
+  calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA', 'TIDAK_DIKALIBRASI']).optional(),
   calibrationAgency: z.string().optional(),
   issueDescription: z.string().optional(),
 });

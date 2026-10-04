@@ -35,6 +35,12 @@ export const calibrationController = {
       const body = parsed.data;
       const device = await prisma.device.findUnique({ where: { devicesId: body.deviceId } });
       if (!device) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+      if (device.calibrationStatus === 'TIDAK_DIKALIBRASI' || (device.picKalibrasi || '').toLowerCase() === 'tidak dikalibrasi') {
+        return res.status(400).json({
+          success: false,
+          message: 'Alat ini ditandai "Tidak Dikalibrasi". Ubah PIC Kalibrasi di Master Alat jika alat ini akan dikalibrasi.',
+        });
+      }
       
       const lastCalibratedDate = parseDateOnly(body.lastCalibrated);
       const calibrationValidUntilDate = parseDateOnly(body.calibrationValidUntil);

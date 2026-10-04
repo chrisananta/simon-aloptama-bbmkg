@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
@@ -15,14 +15,18 @@ import {
 } from 'lucide-react';
 import { calibrationSchema } from '../../shared/schemas';
 import { CalibrationModalProps } from './CalibrationTypes';
+import { isNotCalibrated } from '../../shared/utils/calibration';
 
 export const CalibrationModal: React.FC<CalibrationModalProps> = ({
   isOpen,
   onClose,
-  devices,
+  devices: allDevices,
   onAddCalibrationRecord,
 }) => {
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+
+  // Alat yang ditandai "Tidak Dikalibrasi" (mis. sirene) tidak bisa diinput kalibrasinya.
+  const devices = useMemo(() => allDevices.filter((d) => !isNotCalibrated(d)), [allDevices]);
 
   const getNextYearDate = (dateStr: string) => {
     if (!dateStr) return '';

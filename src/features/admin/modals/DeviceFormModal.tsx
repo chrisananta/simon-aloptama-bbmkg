@@ -1,6 +1,8 @@
 import React from 'react';
 import { Radio, X } from 'lucide-react';
 import { UPTStation, AloptamaDevice, EquipmentCategory, CalibrationStatus } from '../../../shared/types';
+import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../../shared/utils/calibration';
+import { getTodayIsoWIT } from '../../../shared/utils/dateUtils';
 
 interface DeviceFormModalProps {
   stations: UPTStation[];
@@ -27,6 +29,35 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
   // ID alat adalah kunci data: selalu terkunci saat mengedit alat yang sudah ada.
   const lockId = !!editingDevice;
   const lockedInputCls = 'opacity-70 cursor-not-allowed bg-slate-100';
+  const notCalibrated = isNotCalibrated(deviceForm);
+
+  const handlePicChange = (selectedPic: string) => {
+    if (selectedPic === PIC_TIDAK_DIKALIBRASI) {
+      // Alat tidak dikalibrasi: kosongkan tanggal & status kalibrasi.
+      setDeviceForm({
+        ...deviceForm,
+        picKalibrasi: selectedPic,
+        timkalibrasi: PIC_TIDAK_DIKALIBRASI,
+        calibrationStatus: 'TIDAK_DIKALIBRASI',
+        lastCalibrated: null,
+        calibrationValidUntil: null,
+      });
+      return;
+    }
+    // Kembali ke Balai/Pusat: pulihkan status & tanggal bila sebelumnya kosong.
+    const wasNotCalibrated = isNotCalibrated(deviceForm);
+    const today = getTodayIsoWIT();
+    const nextYear = `${Number(today.slice(0, 4)) + 1}${today.slice(4)}`;
+    setDeviceForm({
+      ...deviceForm,
+      picKalibrasi: selectedPic,
+      timkalibrasi: selectedPic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V',
+      calibrationStatus: wasNotCalibrated ? 'VALID' : deviceForm.calibrationStatus,
+      lastCalibrated: deviceForm.lastCalibrated || today,
+      calibrationValidUntil: deviceForm.calibrationValidUntil || nextYear,
+    });
+  };
+
   return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh] overflow-hidden">
@@ -137,21 +168,16 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                   <label className="block font-bold text-slate-800 mb-1">PIC Kalibrasi</label>
                   <select
                     value={deviceForm.picKalibrasi || 'Balai'}
-                    onChange={(e) => {
-                      const selectedPic = e.target.value;
-                      setDeviceForm({
-                        ...deviceForm,
-                        picKalibrasi: selectedPic,
-                        timkalibrasi: selectedPic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'
-                      });
-                    }}
+                    onChange={(e) => handlePicChange(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-bold"
                   >
                     <option value="Balai">Balai (BBMKG Wilayah V)</option>
                     <option value="Pusat">Pusat (BMKG Pusat)</option>
+                    <option value={PIC_TIDAK_DIKALIBRASI}>Tidak Dikalibrasi</option>
                   </select>
                 </div>
 
+                {!notCalibrated && (
                 <div>
                   <label className="block font-bold text-slate-800 mb-1">Status Kalibrasi</label>
                   <select
@@ -164,30 +190,37 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                     <option value="KADALUWARSA">KADALUWARSA</option>
                   </select>
                 </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">Tanggal Terakhir Kalibrasi</label>
-                  <input
-                    type="date"
-                    value={deviceForm.lastCalibrated || '2026-07-08'}
-                    onChange={(e) => setDeviceForm({ ...deviceForm, lastCalibrated: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white"
-                  />
+              {notCalibrated ? (
+                <div className="px-3 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-[11px] font-semibold text-slate-600 leading-relaxed">
+                  Alat ini ditandai <span className="font-extrabold text-slate-800">Tidak Dikalibrasi</span>.
                 </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Tanggal Terakhir Kalibrasi</label>
+                    <input
+                      type="date"
+                      value={deviceForm.lastCalibrated || ''}
+                      onChange={(e) => setDeviceForm({ ...deviceForm, lastCalibrated: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">Masa Berlaku Sertifikat Valid Until</label>
-                  <input
-                    type="date"
-                    value={deviceForm.calibrationValidUntil || '2027-07-07'}
-                    onChange={(e) => setDeviceForm({ ...deviceForm, calibrationValidUntil: e.target.value })}
-                    disabled={restrictedMode}
-                    className={`w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white ${restrictedMode ? lockedInputCls : ''}`}
-                  />
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Masa Berlaku Sertifikat Valid Until</label>
+                    <input
+                      type="date"
+                      value={deviceForm.calibrationValidUntil || ''}
+                      onChange={(e) => setDeviceForm({ ...deviceForm, calibrationValidUntil: e.target.value })}
+                      disabled={restrictedMode}
+                      className={`w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white ${restrictedMode ? lockedInputCls : ''}`}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>

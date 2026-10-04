@@ -203,6 +203,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           return '🟡 Segera Dikalibrasi';
         case 'KADALUWARSA':
           return '🔴 Kadaluwarsa';
+        case 'TIDAK_DIKALIBRASI':
+          return '⚪ Tidak Dikalibrasi';
         default:
           return '🟢 Valid';
       }
@@ -291,7 +293,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             </div>
             <div class="flex justify-between items-center pt-1 border-t border-slate-100 mt-1">
               <span class="text-slate-500">Kalibrasi Terakhir:</span>
-              <span class="font-semibold text-slate-800">${formatDateIndo(device.lastCalibrated)}</span>
+              <span class="font-semibold text-slate-800">${device.lastCalibrated ? formatDateIndo(device.lastCalibrated) : '-'}</span>
             </div>
           </div>
 

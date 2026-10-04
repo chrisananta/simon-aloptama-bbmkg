@@ -45,6 +45,7 @@ import { UserFormModal } from './modals/UserFormModal';
 import { DeleteUserModal } from './modals/DeleteUserModal';
 import { PetugasFormModal } from './modals/PetugasFormModal';
 import { DeletePetugasModal } from './modals/DeletePetugasModal';
+import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../shared/utils/calibration';
 
 
 interface AdminMasterViewProps {
@@ -717,8 +718,10 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
 
   const handleOpenEditDevice = (dev: AloptamaDevice) => {
     setEditingDevice(dev);
-    const existingPic = dev.picKalibrasi 
-      || (dev.timkalibrasi?.toLowerCase().includes('pusat') ? 'Pusat' : 'Balai');
+    const existingPic = isNotCalibrated(dev)
+      ? PIC_TIDAK_DIKALIBRASI
+      : dev.picKalibrasi
+        || (dev.timkalibrasi?.toLowerCase().includes('pusat') ? 'Pusat' : 'Balai');
 
     setDeviceForm({
       ...dev,
@@ -761,7 +764,17 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     }
 
     const pic = deviceForm.picKalibrasi || 'Balai';
-    const defaultAgency = pic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V';
+    const notCalibrated = pic === PIC_TIDAK_DIKALIBRASI;
+    const defaultAgency = notCalibrated
+      ? PIC_TIDAK_DIKALIBRASI
+      : pic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V';
+    // Status kalibrasi yang dikirim: alat tidak dikalibrasi selalu TIDAK_DIKALIBRASI;
+    // sebaliknya, status TIDAK_DIKALIBRASI tidak boleh "bocor" ke alat Balai/Pusat.
+    const resolvedCalibrationStatus: CalibrationStatus = notCalibrated
+      ? 'TIDAK_DIKALIBRASI'
+      : deviceForm.calibrationStatus && deviceForm.calibrationStatus !== 'TIDAK_DIKALIBRASI'
+        ? (deviceForm.calibrationStatus as CalibrationStatus)
+        : 'VALID';
 
     if (editingDevice) {
       const updated: AloptamaDevice = {
@@ -772,15 +785,19 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         category: (deviceForm.category as EquipmentCategory) || 'AWS',
         merk: deviceForm.merk || '',
         uptStation: isTeknisiAlatMode ? editingDevice.uptStation : (deviceForm.uptStation || stations[0]?.name || ''),
-        picKalibrasi: deviceForm.picKalibrasi || 'Balai',
+        picKalibrasi: pic,
         locationName: deviceForm.locationName || '',
         latitude: Number(deviceForm.latitude) || 0,
         longitude: Number(deviceForm.longitude) || 0,
         conditionStatus: autoStatus,
-        calibrationStatus: (deviceForm.calibrationStatus as CalibrationStatus) || 'VALID',
-        lastCalibrated: deviceForm.lastCalibrated || '2026-07-08',
-        calibrationValidUntil: isTeknisiAlatMode ? editingDevice.calibrationValidUntil : (deviceForm.calibrationValidUntil || '2027-07-07'),
-        timkalibrasi: deviceForm.timkalibrasi || (deviceForm.picKalibrasi === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V'),
+        calibrationStatus: resolvedCalibrationStatus,
+        lastCalibrated: notCalibrated ? null : (deviceForm.lastCalibrated || '2026-07-08'),
+        calibrationValidUntil: notCalibrated
+          ? null
+          : isTeknisiAlatMode
+            ? (deviceForm.calibrationValidUntil || editingDevice.calibrationValidUntil)
+            : (deviceForm.calibrationValidUntil || '2027-07-07'),
+        timkalibrasi: notCalibrated ? PIC_TIDAK_DIKALIBRASI : (deviceForm.timkalibrasi || defaultAgency),
         slaScore: isTeknisiAlatMode ? editingDevice.slaScore : sla,
         olaScore: isTeknisiAlatMode ? editingDevice.olaScore : ola,
       };
@@ -820,10 +837,10 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         latitude: Number(deviceForm.latitude) || 0,
         longitude: Number(deviceForm.longitude) || 0,
         conditionStatus: autoStatus,
-        calibrationStatus: (deviceForm.calibrationStatus as CalibrationStatus) || 'VALID',
-        lastCalibrated: deviceForm.lastCalibrated || '2026-07-08',
-        calibrationValidUntil: deviceForm.calibrationValidUntil || '2027-07-07',
-        timkalibrasi: deviceForm.timkalibrasi || defaultAgency,
+        calibrationStatus: resolvedCalibrationStatus,
+        lastCalibrated: notCalibrated ? null : (deviceForm.lastCalibrated || '2026-07-08'),
+        calibrationValidUntil: notCalibrated ? null : (deviceForm.calibrationValidUntil || '2027-07-07'),
+        timkalibrasi: notCalibrated ? PIC_TIDAK_DIKALIBRASI : (deviceForm.timkalibrasi || defaultAgency),
         slaScore: sla,
         olaScore: ola,
       };

@@ -1,5 +1,5 @@
 export type EquipmentStatus = 'NORMAL' | 'GANGGUAN' | 'MATI';
-export type CalibrationStatus = 'VALID' | 'SEGERA_DIKALIBRASI' | 'KADALUWARSA';
+export type CalibrationStatus = 'VALID' | 'SEGERA_DIKALIBRASI' | 'KADALUWARSA' | 'TIDAK_DIKALIBRASI';
 
 export type EquipmentCategory = 
   | 'AWOS' 
@@ -25,9 +25,10 @@ export interface AloptamaDevice {
   picKalibrasi?: string; 
   conditionStatus: EquipmentStatus;
   calibrationStatus: CalibrationStatus;
-  lastCalibrated: string;
+  /** null = alat memang tidak dikalibrasi (mis. sirene). */
+  lastCalibrated: string | null;
   lastReportedDate?: string;
-  calibrationValidUntil: string;
+  calibrationValidUntil: string | null;
   timkalibrasi: string;    
   downtimeDuration?: string;
   issueDescription?: string;

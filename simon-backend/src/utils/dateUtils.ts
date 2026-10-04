@@ -58,7 +58,7 @@ export function diffDaysDateOnly(from: string, to: string): number {
  * sebagai Date) balik ke bentuk string "YYYY-MM-DD" untuk response API, supaya
  * frontend yang mengonsumsi field ini sebagai string tidak perlu berubah.
  */
-export function serializeDeviceDates<T extends { lastCalibrated: Date; calibrationValidUntil: Date; lastReportedDate: Date | null }>(
+export function serializeDeviceDates<T extends { lastCalibrated: Date | null; calibrationValidUntil: Date | null; lastReportedDate: Date | null }>(
   device: T
 ) {
   return {

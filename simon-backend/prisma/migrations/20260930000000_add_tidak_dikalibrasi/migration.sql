@@ -1,0 +1,4 @@
+ALTER TYPE "CalibrationStatus" ADD VALUE IF NOT EXISTS 'TIDAK_DIKALIBRASI';
+
+ALTER TABLE "devices" ALTER COLUMN "lastCalibrated" DROP NOT NULL;
+ALTER TABLE "devices" ALTER COLUMN "calibrationValidUntil" DROP NOT NULL;

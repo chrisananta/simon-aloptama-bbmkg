@@ -21,9 +21,9 @@ const deviceInput = z.object({
   latitude: z.coerce.number().finite().min(-90).max(90),
   longitude: z.coerce.number().finite().min(-180).max(180),
   conditionStatus: z.enum(['NORMAL', 'GANGGUAN', 'MATI']).optional(),
-  calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA']).optional(),
-  lastCalibrated: dateOnlyString.optional(),
-  calibrationValidUntil: dateOnlyString.optional(),
+  calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA', 'TIDAK_DIKALIBRASI']).optional(),
+  lastCalibrated: dateOnlyString.nullable().optional(),
+  calibrationValidUntil: dateOnlyString.nullable().optional(),
   timkalibrasi: z.string().trim().min(1).max(200).optional(),
   calibrationAgency: z.string().trim().min(1).max(200).optional(), // Alias kompatibilitas
   issueDescription: z.string().trim().max(2000).nullable().optional(),
@@ -47,6 +47,19 @@ function databaseError(res: Response, error: unknown, fallback: string) {
 }
 
 const serializeDevice = serializeDeviceDates;
+
+/** Nilai PIC Kalibrasi untuk alat yang memang tidak dikalibrasi (mis. sirene). */
+const PIC_TIDAK_DIKALIBRASI = 'Tidak Dikalibrasi';
+
+/**
+ * Alat dianggap "tidak dikalibrasi" berdasarkan PIC Kalibrasi (sumber kebenaran).
+ * Status hanya dipakai kalau PIC tidak dikirim di request.
+ */
+function isNotCalibrated(pic?: string | null, status?: string | null): boolean {
+  const p = (pic || '').trim();
+  if (p) return p.toLowerCase() === PIC_TIDAK_DIKALIBRASI.toLowerCase();
+  return status === 'TIDAK_DIKALIBRASI';
+}
 
 /** Cari stasiun lewat KODE (mis. "MET004") atau NAMA - data lama menyimpan salah satunya. */
 function findStationByNameOrCode(value: string) {
@@ -137,7 +150,10 @@ export const deviceController = {
       const devicesId = body.devicesId || body.id || `ALT-${randomUUID()}`;
       const site = body.site || body.name || '';
       const merk = body.merk !== undefined ? body.merk : (body.subCategory || null);
-      const timkalibrasi = body.timkalibrasi || body.calibrationAgency || 'INSKAL BBMKG V';
+      const notCalibrated = isNotCalibrated(body.picKalibrasi, body.calibrationStatus);
+      const timkalibrasi = notCalibrated
+        ? PIC_TIDAK_DIKALIBRASI
+        : body.timkalibrasi || body.calibrationAgency || 'INSKAL BBMKG V';
 
       const newDevice = await prisma.$transaction(async (tx) => {
         const created = await tx.device.create({
@@ -147,14 +163,14 @@ export const deviceController = {
             category: body.category,
             merk,
             uptStation: body.uptStation,
-            picKalibrasi: body.picKalibrasi || 'Balai',
+            picKalibrasi: notCalibrated ? PIC_TIDAK_DIKALIBRASI : body.picKalibrasi || 'Balai',
             locationName: body.locationName || body.uptStation,
             latitude: body.latitude,
             longitude: body.longitude,
             conditionStatus: body.conditionStatus || 'NORMAL',
-            calibrationStatus: body.calibrationStatus || 'VALID',
-            lastCalibrated: parseDateOnly(body.lastCalibrated || today),
-            calibrationValidUntil: parseDateOnly(body.calibrationValidUntil || today),
+            calibrationStatus: notCalibrated ? 'TIDAK_DIKALIBRASI' : body.calibrationStatus || 'VALID',
+            lastCalibrated: notCalibrated ? null : parseDateOnly(body.lastCalibrated || today),
+            calibrationValidUntil: notCalibrated ? null : parseDateOnly(body.calibrationValidUntil || today),
             timkalibrasi,
             issueDescription: body.issueDescription || null,
             downtimeDuration: body.downtimeDuration || null,
@@ -225,7 +241,26 @@ export const deviceController = {
 
       const site = body.site !== undefined ? body.site : body.name;
       const merk = body.merk !== undefined ? body.merk : body.subCategory;
-      const timkalibrasi = body.timkalibrasi !== undefined ? body.timkalibrasi : body.calibrationAgency;
+      let timkalibrasi = body.timkalibrasi !== undefined ? body.timkalibrasi : body.calibrationAgency;
+
+      // Alat ditandai "tidak dikalibrasi": paksa status konsisten & kosongkan tanggal.
+      const markNotCalibrated = isNotCalibrated(body.picKalibrasi, body.calibrationStatus);
+      if (!markNotCalibrated && body.calibrationStatus === 'TIDAK_DIKALIBRASI') {
+        return res.status(400).json({
+          success: false,
+          message: 'Status "Tidak Dikalibrasi" tidak cocok dengan PIC Kalibrasi Balai/Pusat. Pilih status kalibrasi yang sesuai.',
+        });
+      }
+      if (markNotCalibrated) {
+        body = {
+          ...body,
+          picKalibrasi: PIC_TIDAK_DIKALIBRASI,
+          calibrationStatus: 'TIDAK_DIKALIBRASI',
+          lastCalibrated: null,
+          calibrationValidUntil: null,
+        };
+        timkalibrasi = PIC_TIDAK_DIKALIBRASI;
+      }
 
       const updated = await prisma.$transaction(async (tx) => {
         const device = await tx.device.update({
@@ -241,8 +276,9 @@ export const deviceController = {
             longitude: body.longitude,
             conditionStatus: body.conditionStatus,
             calibrationStatus: body.calibrationStatus,
-            lastCalibrated: body.lastCalibrated ? parseDateOnly(body.lastCalibrated) : undefined,
-            calibrationValidUntil: body.calibrationValidUntil ? parseDateOnly(body.calibrationValidUntil) : undefined,
+            // null = kosongkan (alat tidak dikalibrasi); undefined = tidak diubah
+            lastCalibrated: body.lastCalibrated === null ? null : body.lastCalibrated ? parseDateOnly(body.lastCalibrated) : undefined,
+            calibrationValidUntil: body.calibrationValidUntil === null ? null : body.calibrationValidUntil ? parseDateOnly(body.calibrationValidUntil) : undefined,
             timkalibrasi: timkalibrasi !== undefined ? timkalibrasi : undefined,
             issueDescription: body.issueDescription,
             downtimeDuration: body.downtimeDuration,

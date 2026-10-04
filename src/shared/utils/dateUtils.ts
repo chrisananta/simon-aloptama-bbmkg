@@ -1,4 +1,4 @@
-export function formatDateIndo(dateStr?: string): string {
+export function formatDateIndo(dateStr?: string | null): string {
   if (!dateStr) return 'Belum Diisi';
   try {
     const months = [

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { UPTStation, AloptamaDevice, EquipmentCategory } from '../../../shared/types';
+import { isNotCalibrated } from '../../../shared/utils/calibration';
 
 interface MasterAlatTabProps {
   stations: UPTStation[];
@@ -147,7 +148,11 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                           {dev.uptStation}
                         </td>
                         <td className="p-3.5 text-center whitespace-nowrap">
-                          {(dev.picKalibrasi === 'Pusat' || dev.picKalibrasi === 'PUSAT') ? (
+                          {isNotCalibrated(dev) ? (
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 font-extrabold text-[10px] rounded-full border border-slate-300">
+                              TIDAK DIKALIBRASI
+                            </span>
+                          ) : (dev.picKalibrasi === 'Pusat' || dev.picKalibrasi === 'PUSAT') ? (
                             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] rounded-full border border-emerald-200">
                               PUSAT
                             </span>
@@ -168,6 +173,11 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                               SEGERA
                             </span>
                           )}
+                          {dev.calibrationStatus === 'TIDAK_DIKALIBRASI' && (
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 font-extrabold text-[10px] rounded-full border border-slate-300">
+                              N/A
+                            </span>
+                          )}
                           {dev.calibrationStatus === 'KADALUWARSA' && (
                             <span className="px-2 py-0.5 bg-rose-50 text-rose-700 font-extrabold text-[10px] rounded-full border border-rose-200">
                               KADALUWARSA
@@ -175,7 +185,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                           )}
                         </td>
                         <td className="p-3.5 font-mono text-[11px] text-slate-600 whitespace-nowrap">
-                          s/d {dev.calibrationValidUntil}
+                          {dev.calibrationValidUntil ? `s/d ${dev.calibrationValidUntil}` : '-'}
                         </td>
                         <td className="p-3.5 pr-4 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
