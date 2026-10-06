@@ -135,6 +135,14 @@ model CalibrationRecord {
   @@map("calibration_records")
 }
 
+model CalibrationListedDevice {
+  deviceId String   @id
+  listedBy String
+  listedAt DateTime @default(now())
+
+  @@map("calibration_listed_devices")
+}
+
 model Petugas {
   id        String   @id @default(uuid())
   name      String

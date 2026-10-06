@@ -29,6 +29,14 @@ export function parseDateOnlyOptional(value: string | null | undefined): Date | 
   return parseDateOnly(value);
 }
 
+/**
+ * Tanggal penanda untuk alat "Tidak Dikalibrasi" (mis. sirene). Kolom
+ * lastCalibrated/calibrationValidUntil di tabel devices bisa masih NOT NULL di
+ * database, jadi alat yang tidak dikalibrasi disimpan dengan tanggal penanda ini
+ * dan diubah kembali menjadi null saat dikirim ke frontend (lihat serializeDeviceDates).
+ */
+export const NOT_CALIBRATED_DATE = '1970-01-01';
+
 /** Date dari Prisma -> string "YYYY-MM-DD" untuk response API. */
 export function formatDateOnly(value: Date | null | undefined): string | null {
   if (!value || isNaN(value.getTime())) return null;
@@ -58,13 +66,18 @@ export function diffDaysDateOnly(from: string, to: string): number {
  * sebagai Date) balik ke bentuk string "YYYY-MM-DD" untuk response API, supaya
  * frontend yang mengonsumsi field ini sebagai string tidak perlu berubah.
  */
+function formatCalibrationDate(value: Date | null | undefined): string | null {
+  const formatted = formatDateOnly(value);
+  return formatted === NOT_CALIBRATED_DATE ? null : formatted;
+}
+
 export function serializeDeviceDates<T extends { lastCalibrated: Date | null; calibrationValidUntil: Date | null; lastReportedDate: Date | null }>(
   device: T
 ) {
   return {
     ...device,
-    lastCalibrated: formatDateOnly(device.lastCalibrated),
-    calibrationValidUntil: formatDateOnly(device.calibrationValidUntil),
+    lastCalibrated: formatCalibrationDate(device.lastCalibrated),
+    calibrationValidUntil: formatCalibrationDate(device.calibrationValidUntil),
     lastReportedDate: formatDateOnly(device.lastReportedDate),
   };
 }

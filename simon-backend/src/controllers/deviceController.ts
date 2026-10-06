@@ -3,7 +3,8 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-import { parseDateOnly, formatDateOnly, serializeDeviceDates } from '../utils/dateUtils.js';
+import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE } from '../utils/dateUtils.js';
+import { syncCalibrationListing } from '../utils/calibrationList.js';
 
 const dateOnlyString = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal wajib "YYYY-MM-DD".');
 
@@ -169,8 +170,8 @@ export const deviceController = {
             longitude: body.longitude,
             conditionStatus: body.conditionStatus || 'NORMAL',
             calibrationStatus: notCalibrated ? 'TIDAK_DIKALIBRASI' : body.calibrationStatus || 'VALID',
-            lastCalibrated: notCalibrated ? null : parseDateOnly(body.lastCalibrated || today),
-            calibrationValidUntil: notCalibrated ? null : parseDateOnly(body.calibrationValidUntil || today),
+            lastCalibrated: notCalibrated ? parseDateOnly(NOT_CALIBRATED_DATE) : parseDateOnly(body.lastCalibrated || today),
+            calibrationValidUntil: notCalibrated ? parseDateOnly(NOT_CALIBRATED_DATE) : parseDateOnly(body.calibrationValidUntil || today),
             timkalibrasi,
             issueDescription: body.issueDescription || null,
             downtimeDuration: body.downtimeDuration || null,
@@ -191,6 +192,8 @@ export const deviceController = {
         });
         return created;
       });
+      // Alat baru yang dikalibrasi langsung tampil di halaman Kalibrasi.
+      if (!notCalibrated) await syncCalibrationListing(newDevice.devicesId, true, actorName(req));
       return res.status(201).json({ success: true, data: serializeDevice(newDevice) });
     } catch (error) {
       console.error('Error createDevice:', error);
@@ -276,9 +279,9 @@ export const deviceController = {
             longitude: body.longitude,
             conditionStatus: body.conditionStatus,
             calibrationStatus: body.calibrationStatus,
-            // null = kosongkan (alat tidak dikalibrasi); undefined = tidak diubah
-            lastCalibrated: body.lastCalibrated === null ? null : body.lastCalibrated ? parseDateOnly(body.lastCalibrated) : undefined,
-            calibrationValidUntil: body.calibrationValidUntil === null ? null : body.calibrationValidUntil ? parseDateOnly(body.calibrationValidUntil) : undefined,
+            // null = alat tidak dikalibrasi (disimpan sebagai tanggal penanda NOT_CALIBRATED_DATE); undefined = tidak diubah
+            lastCalibrated: body.lastCalibrated === null ? parseDateOnly(NOT_CALIBRATED_DATE) : body.lastCalibrated ? parseDateOnly(body.lastCalibrated) : undefined,
+            calibrationValidUntil: body.calibrationValidUntil === null ? parseDateOnly(NOT_CALIBRATED_DATE) : body.calibrationValidUntil ? parseDateOnly(body.calibrationValidUntil) : undefined,
             timkalibrasi: timkalibrasi !== undefined ? timkalibrasi : undefined,
             issueDescription: body.issueDescription,
             downtimeDuration: body.downtimeDuration,
@@ -299,6 +302,16 @@ export const deviceController = {
         });
         return device;
       });
+      // Sinkronkan daftar halaman Kalibrasi: alat tidak dikalibrasi dikeluarkan; alat yang
+      // data kalibrasinya diperbarui dari Master Alat dimasukkan ke daftar.
+      const touchesCalibration = [
+        body.picKalibrasi, body.calibrationStatus, body.lastCalibrated, body.calibrationValidUntil, timkalibrasi,
+      ].some((v) => v !== undefined);
+      if (isNotCalibrated(updated.picKalibrasi, updated.calibrationStatus)) {
+        await syncCalibrationListing(updated.devicesId, false, actorName(req));
+      } else if (touchesCalibration) {
+        await syncCalibrationListing(updated.devicesId, true, actorName(req));
+      }
       return res.json({ success: true, data: serializeDevice(updated) });
     } catch (error) {
       console.error('Error updateDevice:', error);
@@ -323,6 +336,7 @@ export const deviceController = {
           }
         });
       });
+      await syncCalibrationListing(device.devicesId, false, actorName(req));
       return res.json({ success: true, message: 'Perangkat berhasil dihapus.' });
     } catch (error) {
       console.error('Error deleteDevice:', error);

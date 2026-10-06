@@ -622,6 +622,20 @@ export const apiClient = {
 
       return { record: newRecord, updatedDevices: memoryCache.devices };
     },
+
+    // ID alat yang tampil di halaman Kalibrasi. null = gagal dimuat.
+    getListed: async (): Promise<string[] | null> => {
+      try {
+        const res = await authFetch("/api/calibration/listed");
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json?.data)) return json.data;
+        }
+      } catch (e) {
+        console.warn("apiClient.calibration.getListed failed:", e);
+      }
+      return null;
+    },
   },
 
 // ----------------------------------------------------

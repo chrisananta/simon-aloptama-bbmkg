@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Calendar, 
   Search, 
@@ -46,6 +46,10 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
   const [selectedUpt, setSelectedUpt] = useState<string>('ALL');
   const [selectedAgency, setSelectedAgency] = useState<string>('ALL');
+  // Hanya alat yang sudah ditambahkan lewat tombol "Tambah Data Kalibrasi" atau
+  // diperbarui dari Master Alat yang tampil di halaman ini.
+  const [listedIds, setListedIds] = useState<string[]>([]);
+  const [listedStatus, setListedStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [activeTab, setActiveTab] = useState<'latest' | 'repository'>('latest');
   // Semua filter diringkas ke 1 tombol yang membuka panel ini.
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -62,6 +66,28 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     setSelectedUpt('ALL');
     setSelectedAgency('ALL');
   };
+
+  // Muat ulang daftar setiap kali data alat berubah (mis. setelah simpan kalibrasi).
+  useEffect(() => {
+    let cancelled = false;
+    apiClient.calibration.getListed().then((ids) => {
+      if (cancelled) return;
+      if (ids) {
+        setListedIds(ids);
+        setListedStatus('ready');
+      } else {
+        setListedStatus('error');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [devices]);
+
+  const listedDevices = useMemo(
+    () => devices.filter((d) => listedIds.includes(d.devicesId)),
+    [devices, listedIds]
+  );
 
   // Map pencarian ID Stasiun -> Nama Stasiun
   const stationMap = useMemo(() => {
@@ -92,7 +118,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
   }, [devices, stationMap]);
 
   const allRecords = [
-    ...devices.map((dev) => ({
+    ...listedDevices.map((dev) => ({
       id: `latest-${dev.devicesId}`,
       deviceId: dev.devicesId,
       deviceName: dev.site,
@@ -191,10 +217,10 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     }
   };
 
-  const validCount = devices.filter((d) => d.calibrationStatus === 'VALID').length;
-  const warningCount = devices.filter((d) => d.calibrationStatus === 'SEGERA_DIKALIBRASI').length;
-  const expiredCount = devices.filter((d) => d.calibrationStatus === 'KADALUWARSA').length;
-  const notCalibratedCount = devices.filter((d) => isNotCalibrated(d)).length;
+  const validCount = listedDevices.filter((d) => d.calibrationStatus === 'VALID').length;
+  const warningCount = listedDevices.filter((d) => d.calibrationStatus === 'SEGERA_DIKALIBRASI').length;
+  const expiredCount = listedDevices.filter((d) => d.calibrationStatus === 'KADALUWARSA').length;
+  const notCalibratedCount = listedDevices.filter((d) => isNotCalibrated(d)).length;
 
   return (
     <div className="space-y-6">
@@ -374,6 +400,18 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                       <div className="space-y-2">
                         <p className="font-semibold text-slate-600">Belum ada catatan histori tambahan di Repository.</p>
                         <p className="text-xs">Klik tombol <strong className="text-purple-700">Tambah Data Kalibrasi</strong> di atas untuk menambahkan catatan pelaksanaan kalibrasi oleh personel INSKAL.</p>
+                      </div>
+                    ) : activeTab === 'latest' && listedStatus === 'error' ? (
+                      <div className="space-y-1">
+                        <p className="font-semibold text-rose-600">Daftar alat kalibrasi tidak dapat dimuat.</p>
+                        <p className="text-xs">Pastikan migration database sudah dijalankan, lalu muat ulang halaman.</p>
+                      </div>
+                    ) : activeTab === 'latest' && listedStatus === 'ready' && listedIds.length === 0 ? (
+                      <div className="space-y-2">
+                        <p className="font-semibold text-slate-600">Belum ada data kalibrasi yang ditampilkan.</p>
+                        <p className="text-xs">
+                          Klik <strong className="text-[#0052CC]">Tambah Data Kalibrasi</strong> di atas, atau perbarui data alat dari Master Alat.
+                        </p>
                       </div>
                     ) : (
                       'Tidak ada data kalibrasi yang memenuhi kriteria filter.'

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 import { parseDateOnly, formatDateOnly, serializeDeviceDates } from '../utils/dateUtils.js';
+import { syncCalibrationListing } from '../utils/calibrationList.js';
 
 const dateOnlyString = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal wajib "YYYY-MM-DD".');
 
@@ -85,12 +86,25 @@ export const calibrationController = {
         return created;
       });
 
+      // Alat yang baru diisi kalibrasinya masuk ke daftar halaman Kalibrasi.
+      await syncCalibrationListing(device.devicesId, true, req.user?.name || 'System');
+
       const devices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
       const serializedDevices = devices.map(serializeDeviceDates);
       return res.json({ success: true, message: 'Data kalibrasi berhasil disimpan.', data: serializeRecord(record), devices: serializedDevices });
     } catch (error) {
       console.error('Error saveCalibration:', error);
       return res.status(500).json({ success: false, message: 'Gagal menyimpan data kalibrasi.' });
+    }
+  },
+
+  getListedDevices: async (_req: AuthRequest, res: Response) => {
+    try {
+      const rows = await prisma.calibrationListedDevice.findMany();
+      return res.json({ success: true, data: rows.map((r) => r.deviceId) });
+    } catch (error) {
+      console.error('Error getListedDevices:', error);
+      return res.status(503).json({ success: false, message: 'Daftar alat kalibrasi tidak dapat dimuat.' });
     }
   },
 
