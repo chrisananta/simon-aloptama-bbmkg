@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { AloptamaDevice, UPTStation, YearlyScoreMap, MonthlyDeviceScore } from '../../shared/types';
 import { apiClient } from '../../shared/api';
+import { isSameUpt, findStation } from '../../shared/utils/uptMatch';
 import { WaReportModal } from '../monitoring/WaReportModal';
 import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
 import { UptSlaOlaReportModal } from './UptSlaOlaReportModal';
@@ -124,33 +125,38 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const [isWeeklyReportModalOpen, setIsWeeklyReportModalOpen] = useState(false);
   const [isUptReportModalOpen, setIsUptReportModalOpen] = useState(false);
 
+  const stationList = useMemo(
+    () => (stations && stations.length > 0 ? stations : apiClient.stations.getAll()),
+    [stations]
+  );
+
   // Map pencarian ID Stasiun -> Nama Stasiun
   const stationMap = useMemo(() => {
     const map = new Map<string, string>();
-    const stationList = stations && stations.length > 0 ? stations : apiClient.stations.getAll();
     stationList.forEach((s) => {
       if (s.stationid) map.set(s.stationid, s.name);
       if (s.id) map.set(s.id, s.name);
     });
     return map;
-  }, [stations]);
+  }, [stationList]);
 
-  // Opsi dropdown dengan ID sebagai value dan Nama Stasiun sebagai tampilan label
+  // Opsi dropdown: SATU opsi per stasiun. Kolom uptStation alat bisa berisi KODE atau
+  // NAMA stasiun, jadi keduanya digabung lewat findStation supaya alat satu stasiun
+  // tidak terpecah ke dua opsi (yang membuat sebagian alat "hilang" saat difilter).
   const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
-    const stationIds = new Set<string>();
+    const options = new Map<string, { id: string; name: string }>();
     devices.forEach((d) => {
-      if (d.uptStation) {
-        const idStr = typeof d.uptStation === 'string' 
-          ? d.uptStation 
-          : (d.uptStation as any).stationid || (d.uptStation as any).id;
-        if (idStr) stationIds.add(idStr);
-      }
+      const raw =
+        typeof d.uptStation === 'string'
+          ? d.uptStation
+          : (d.uptStation as any)?.stationid || (d.uptStation as any)?.id;
+      if (!raw) return;
+      const st = findStation(String(raw), stationList);
+      const id = st ? st.stationid || st.id || String(raw) : String(raw);
+      if (!options.has(id)) options.set(id, { id, name: st?.name || String(raw) });
     });
-    return Array.from(stationIds).sort().map((id) => ({
-      id: String(id),
-      name: stationMap.get(String(id)) || String(id),
-    }));
-  }, [devices, stationMap]);
+    return Array.from(options.values()).sort((a, b) => a.id.localeCompare(b.id));
+  }, [devices, stationList]);
 
   // Nama Stasiun Terpilih untuk Tampilan UI
   const selectedUptName = useMemo(() => {
@@ -160,8 +166,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const uptFilteredDevices = useMemo(() => {
     if (selectedUpt === 'ALL') return devices;
-    return devices.filter((d) => d.uptStation === selectedUpt);
-  }, [devices, selectedUpt]);
+    return devices.filter((d) => isSameUpt(d.uptStation, selectedUpt, stationList));
+  }, [devices, selectedUpt, stationList]);
 
   const [reportedTodayIds, setReportedTodayIds] = useState<string[]>([]);
 
@@ -394,7 +400,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       return false;
     }
 
-    const matchesUpt = selectedUpt === 'ALL' || dev.uptStation === selectedUpt;
+    const matchesUpt = selectedUpt === 'ALL' || isSameUpt(dev.uptStation, selectedUpt, stationList);
 
     const matchesSearch =
       searchQuery === '' ||
@@ -461,7 +467,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   }> = [];
 
   if (tableFilterMonth === 'REALTIME') {
-    const baseDevs = selectedUpt === 'ALL' ? devices : devices.filter((d) => d.uptStation === selectedUpt);
+    const baseDevs = selectedUpt === 'ALL' ? devices : devices.filter((d) => isSameUpt(d.uptStation, selectedUpt, stationList));
 
     displayGangguan = baseDevs
       .filter((d) => d.conditionStatus === 'GANGGUAN' && (d.slaScore === undefined || d.slaScore < 100))
@@ -490,7 +496,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       }));
   } else {
     const filteredHist = HISTORICAL_DISRUPTIONS.filter((item) => {
-      const matchesUpt = selectedUpt === 'ALL' || item.uptStation === selectedUpt;
+      const matchesUpt = selectedUpt === 'ALL' || isSameUpt(item.uptStation, selectedUpt, stationList);
       if (!matchesUpt) return false;
       if (activePeriodTarget === 'ALL') return true;
       return item.period.toLowerCase() === activePeriodTarget.toLowerCase();
