@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import { slaOlaSchema, SLA_OLA_MAX_BACKDATE_DAYS } from "../../shared/schemas";
 import { getTodayIsoWIT, getIsoDaysAgoWIT, formatDateIndo } from "../../shared/utils/dateUtils";
 import { SlaOlaModalProps } from "./SlaOlaTypes";
+import { isSameUpt } from "../../shared/utils/uptMatch";
 import {
   X as XIcon,
   Percent as PercentIcon,
@@ -180,6 +181,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     return devices.filter((d) => {
       // Cocokkan berdasarkan ID Stasiun maupun Nama Stasiun
       const matchesUpt =
+        isSameUpt(d.uptStation, watchUptStation, stationsList) ||
         d.uptStation === watchUptStation ||
         (targetStationId && d.uptStation === targetStationId) ||
         (targetStationName && d.uptStation === targetStationName);
@@ -232,7 +234,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
       return devCat.includes(selCat) || selCat.includes(devCat);
     });
-  }, [devices, watchUptStation, targetStationId, targetStationName, watchCategory]);
+  }, [devices, stationsList, watchUptStation, targetStationId, targetStationName, watchCategory]);
 
   useEffect(() => {
     setErrorMessage(null);

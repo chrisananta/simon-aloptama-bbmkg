@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Building2, LayoutGrid, Activity, X } from 'lucide-react';
+import { Search, Building2, LayoutGrid, Activity, X, MapPin } from 'lucide-react';
 
-type FilterKey = 'upt' | 'category' | 'status';
+type FilterKey = 'region' | 'upt' | 'category' | 'status';
 
 interface MapFilterControlsProps {
   /** 'search' = hanya ikon cari (pojok kiri atas peta); 'filters' = UPT, jenis alat, status (di atas tombol layer). */
   part: 'search' | 'filters';
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  /** Filter wilayah (provinsi). Opsional supaya pemakai lama komponen ini tidak rusak. */
+  selectedRegion?: string;
+  onRegionChange?: (value: string) => void;
+  regionOptions?: { name: string; count: number }[];
   selectedUpt: string;
   onUptChange: (value: string) => void;
   uptOptions: { id: string; name: string }[];
@@ -46,6 +50,9 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
   part,
   searchQuery,
   onSearchChange,
+  selectedRegion = 'ALL',
+  onRegionChange,
+  regionOptions = [],
   selectedUpt,
   onUptChange,
   uptOptions,
@@ -111,6 +118,44 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
       {/* UPT */}
       {part === 'filters' && (
       <>
+      {/* Wilayah (Provinsi) */}
+      {onRegionChange && (
+      <div className="relative">
+        <button
+          onClick={() => toggle('region')}
+          title={selectedRegion === 'ALL' ? 'Filter wilayah' : `Wilayah: ${selectedRegion}`}
+          className={iconButtonClass(selectedRegion !== 'ALL', openKey === 'region')}
+        >
+          <MapPin size={16} />
+          {selectedRegion !== 'ALL' && openKey !== 'region' && (
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#0052CC] border border-white" />
+          )}
+        </button>
+        {openKey === 'region' && (
+          <div className={popoverClass}>
+            <div className="max-h-56 overflow-y-auto">
+              <button
+                onClick={() => pick(() => onRegionChange('ALL'))}
+                className={optionClass(selectedRegion === 'ALL')}
+              >
+                Semua Wilayah ({regionOptions.length} Provinsi)
+              </button>
+              {regionOptions.map((reg) => (
+                <button
+                  key={reg.name}
+                  onClick={() => pick(() => onRegionChange(reg.name))}
+                  className={`${optionClass(selectedRegion === reg.name)} flex items-center justify-between gap-2`}
+                >
+                  <span>{reg.name}</span>
+                  <span className="text-[10px] font-bold text-slate-400">{reg.count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      )}
+
       <div className="relative">
         <button
           onClick={() => toggle('upt')}

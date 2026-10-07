@@ -15,6 +15,7 @@ import { CalibrationInputModal } from '../features/calibration/CalibrationInputM
 import { CalibrationRecord } from '../features/calibration/CalibrationTypes';
 import { ErrorBoundary } from '../shared/components/ErrorBoundary';
 import { apiClient } from '../shared/api';
+import { isSameUpt } from '../shared/utils/uptMatch';
 import { ServerFetchResult } from '../shared/api/serverDataService';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
@@ -64,10 +65,11 @@ function AppContent() {
   // nasional (semua UPT) untuk semua role, sesuai arahan pimpinan.
   const ownUptInputDevices = React.useMemo(() => {
     if (permissions.isScopedToOwnUpt && user?.uptStation) {
-      return devicesData.filter((d) => d.uptStation === user.uptStation);
+      // isSameUpt: UPT bisa tersimpan sebagai KODE (GEO001) atau NAMA stasiun.
+      return devicesData.filter((d) => isSameUpt(d.uptStation, user.uptStation, stationsData));
     }
     return devicesData;
-  }, [devicesData, permissions.isScopedToOwnUpt, user?.uptStation]);
+  }, [devicesData, stationsData, permissions.isScopedToOwnUpt, user?.uptStation]);
 
   // Calculate high-level totals (data NASIONAL - semua UPT, untuk semua role)
   const totalDevices = devicesData.length;

@@ -13,6 +13,9 @@ interface MasterAlatTabProps {
   setAlatUptFilter: (value: string) => void;
   alatCategoryFilter: string;
   setAlatCategoryFilter: (value: string) => void;
+  alatRegionFilter?: string;
+  setAlatRegionFilter?: (value: string) => void;
+  regionOptions?: string[];
   handleOpenAddDevice: () => void;
   handleOpenEditDevice: (dev: AloptamaDevice) => void;
   setDeleteConfirmTarget: (target: { type: 'stasiun' | 'alat'; id: string; name: string } | null) => void;
@@ -42,6 +45,9 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
   setAlatUptFilter,
   alatCategoryFilter,
   setAlatCategoryFilter,
+  alatRegionFilter = 'ALL',
+  setAlatRegionFilter,
+  regionOptions = [],
   handleOpenAddDevice,
   handleOpenEditDevice,
   setDeleteConfirmTarget,
@@ -109,6 +115,21 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                   onChange={(e) => setAlatSearch(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 placeholder:font-semibold placeholder:text-slate-400 outline-none focus:border-[#0052CC] focus:bg-white"
                 />
+              </div>
+              )}
+
+              {showUptFilter && setAlatRegionFilter && (
+              <div className="flex items-center gap-1.5 flex-1 min-w-[160px] lg:flex-none">
+                <select
+                  value={alatRegionFilter}
+                  onChange={(e) => setAlatRegionFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#0052CC] lg:max-w-[180px] truncate"
+                >
+                  <option value="ALL">Semua Provinsi</option>
+                  {regionOptions.map((reg) => (
+                    <option key={reg} value={reg}>{reg}</option>
+                  ))}
+                </select>
               </div>
               )}
 

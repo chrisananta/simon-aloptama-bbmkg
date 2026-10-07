@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { EquipmentCategory, UPTStation } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 import { MapContainer } from '../monitoring/MapContainer';
 import { DashboardPageProps } from './DashboardTypes';
 import { DashboardCard } from './DashboardCard';
 import { MapFilterControls } from './MapFilterControls';
+import { findStation } from '../../shared/utils/uptMatch';
+import { loadPapuaProvinces, findProvince, ProvinceShape } from '../../shared/utils/provinceLookup';
 
 interface ExtendedDashboardProps extends DashboardPageProps {
   stations?: UPTStation[];
@@ -12,6 +14,7 @@ interface ExtendedDashboardProps extends DashboardPageProps {
 
 export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stations }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('ALL');
   const [selectedUpt, setSelectedUpt] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
@@ -28,10 +31,44 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
     return map;
   }, [stations]);
 
+  const stationList = useMemo(
+    () => (stations && stations.length > 0 ? stations : apiClient.stations.getAll()),
+    [stations]
+  );
+
+  // Batas provinsi (GeoJSON) untuk menentukan wilayah dari KOORDINAT alat.
+  const [provinceShapes, setProvinceShapes] = useState<ProvinceShape[]>([]);
+  useEffect(() => {
+    loadPapuaProvinces().then(setProvinceShapes);
+  }, []);
+
+  // Wilayah (provinsi) alat = lokasi fisik alat (titik koordinat di dalam batas
+  // provinsi). Satu UPT bisa mengelola alat di banyak provinsi, jadi provinsi
+  // kantor UPT TIDAK dipakai - kecuali GeoJSON belum termuat / koordinat tidak valid.
+  const regionOfDevice = (dev: { uptStation?: string; latitude?: number; longitude?: number }): string => {
+    if (provinceShapes.length > 0) {
+      const byCoord = findProvince(Number(dev.latitude), Number(dev.longitude), provinceShapes);
+      if (byCoord) return byCoord;
+    }
+    return findStation(dev.uptStation, stationList)?.regionGroup || '';
+  };
+
+  const regionOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    devices.forEach((d) => {
+      const reg = regionOfDevice(d);
+      if (reg) counts.set(reg, (counts.get(reg) || 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [devices, stationList, provinceShapes]);
+
   // List opsi dropdown { id, name }
   const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
     const stationIds = new Set<string>();
     devices.forEach((d) => {
+      if (selectedRegion !== 'ALL' && regionOfDevice(d) !== selectedRegion) return;
       if (d.uptStation) {
         const idStr = typeof d.uptStation === 'string' 
           ? d.uptStation 
@@ -43,7 +80,7 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
       id: String(id),
       name: stationMap.get(String(id)) || String(id),
     }));
-  }, [devices, stationMap]);
+  }, [devices, stationMap, selectedRegion, stationList, provinceShapes]);
 
   const filteredDevices = devices.filter((dev) => {
     const matchesSearch =
@@ -53,11 +90,12 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
       (dev.locationName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.category || '').toLowerCase().includes(searchQuery.toLowerCase());
 
+    const matchesRegion = selectedRegion === 'ALL' || regionOfDevice(dev) === selectedRegion;
     const matchesUpt = selectedUpt === 'ALL' || dev.uptStation === selectedUpt;
     const matchesCategory = selectedCategory === 'ALL' || dev.category === selectedCategory;
     const matchesStatus = selectedStatus === 'ALL' || dev.conditionStatus === selectedStatus;
 
-    return matchesSearch && matchesUpt && matchesCategory && matchesStatus;
+    return matchesSearch && matchesRegion && matchesUpt && matchesCategory && matchesStatus;
   });
 
   const totalCount = filteredDevices.length;
@@ -115,6 +153,13 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
                 part="filters"
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                selectedRegion={selectedRegion}
+                onRegionChange={(region) => {
+                  setSelectedRegion(region);
+                  // UPT yang dipilih sebelumnya bisa jadi bukan di wilayah baru.
+                  setSelectedUpt('ALL');
+                }}
+                regionOptions={regionOptions}
                 selectedUpt={selectedUpt}
                 onUptChange={setSelectedUpt}
                 uptOptions={uptOptions}

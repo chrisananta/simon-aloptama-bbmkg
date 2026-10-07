@@ -26,6 +26,7 @@ import { apiClient } from '../../shared/api';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 import { SlaOlaLogRow } from './types';
 import { isSameUpt, findStation } from '../../shared/utils/uptMatch';
+import { loadPapuaProvinces, findProvince, ProvinceShape } from '../../shared/utils/provinceLookup';
 
 import { MasterStasiunTab } from './tabs/MasterStasiunTab';
 import { MasterAlatTab } from './tabs/MasterAlatTab';
@@ -355,6 +356,29 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   const [alatSearch, setAlatSearch] = useState('');
   const [alatUptFilter, setAlatUptFilter] = useState('ALL');
   const [alatCategoryFilter, setAlatCategoryFilter] = useState('ALL');
+  const [alatRegionFilter, setAlatRegionFilter] = useState('ALL');
+
+  // Provinsi alat ditentukan dari KOORDINAT (batas provinsi GeoJSON), sama seperti
+  // filter wilayah di dashboard - bukan dari provinsi kantor UPT pengelolanya.
+  const [provinceShapes, setProvinceShapes] = useState<ProvinceShape[]>([]);
+  useEffect(() => {
+    loadPapuaProvinces().then(setProvinceShapes);
+  }, []);
+  const deviceRegionMap = React.useMemo(() => {
+    const map = new Map<string, string>();
+    devices.forEach((d) => {
+      const byCoord = provinceShapes.length > 0
+        ? findProvince(Number(d.latitude), Number(d.longitude), provinceShapes)
+        : null;
+      const region = byCoord || findStation(d.uptStation, stations)?.regionGroup || '';
+      if (region) map.set(d.devicesId, region);
+    });
+    return map;
+  }, [devices, stations, provinceShapes]);
+  const alatRegionOptions = React.useMemo(
+    () => Array.from(new Set(deviceRegionMap.values())).sort((a, b) => a.localeCompare(b)),
+    [deviceRegionMap]
+  );
   const [alatSortOrder, setAlatSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // --- LOG SEARCH & FILTERS ---
@@ -612,7 +636,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       (d.locationName || '').toLowerCase().includes(alatSearch.toLowerCase());
     const matchesUpt = alatUptFilter === 'ALL' || d.uptStation === alatUptFilter;
     const matchesCat = alatCategoryFilter === 'ALL' || d.category === alatCategoryFilter;
-    return matchesSearch && matchesUpt && matchesCat;
+    const matchesRegion = alatRegionFilter === 'ALL' || deviceRegionMap.get(d.devicesId) === alatRegionFilter;
+    return matchesSearch && matchesUpt && matchesCat && matchesRegion;
   })
   .sort((a, b) => {
     const result = (a.devicesId || '').localeCompare(b.devicesId || '', undefined, { numeric: true, sensitivity: 'base' });
@@ -1137,6 +1162,9 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           setAlatUptFilter={setAlatUptFilter}
           alatCategoryFilter={alatCategoryFilter}
           setAlatCategoryFilter={setAlatCategoryFilter}
+          alatRegionFilter={alatRegionFilter}
+          setAlatRegionFilter={setAlatRegionFilter}
+          regionOptions={alatRegionOptions}
           handleOpenAddDevice={handleOpenAddDevice}
           handleOpenEditDevice={handleOpenEditDevice}
           setDeleteConfirmTarget={setDeleteConfirmTarget}
