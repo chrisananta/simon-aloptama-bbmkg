@@ -94,6 +94,7 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
             devices={filteredDevices}
             onSelectDevice={(device) => setSelectedDeviceId(device.devicesId)}
             selectedDeviceId={selectedDeviceId}
+            titleLabel={selectedCategory === 'ALL' ? 'ALOPTAMA' : selectedCategory}
             searchControl={
               <MapFilterControls
                 part="search"

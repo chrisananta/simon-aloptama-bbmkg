@@ -9,6 +9,8 @@ interface MapContainerProps {
   onSelectDevice?: (device: AloptamaDevice) => void;
   selectedDeviceId?: string | null;
   uptLabel?: string;
+  /** Nama pada judul tampilan penuh; default 'ALOPTAMA', berubah mengikuti filter jenis alat. */
+  titleLabel?: string;
   /** Kontrol tambahan (mis. tombol filter) yang ditaruh tepat di atas tombol layer peta. */
   filterControls?: React.ReactNode;
   /** Kolom pencarian yang ditaruh di pojok kiri atas peta. */
@@ -20,6 +22,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   onSelectDevice,
   selectedDeviceId,
   uptLabel = 'BALAI BESAR MKG WILAYAH V JAYAPURA',
+  titleLabel = 'ALOPTAMA',
   filterControls,
   searchControl,
 }) => {
@@ -356,7 +359,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     {isFullscreen && (
       <div className="absolute top-12 left-1/2 -translate-x-1/2 z-10 bg-white/95 backdrop-blur-md px-8 py-3.5 rounded-2xl shadow-lg border border-slate-200 text-center">
         <p className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-wide leading-tight">
-          DASHBOARD MONITORING ALOPTAMA
+          DASHBOARD MONITORING {titleLabel.toUpperCase()}
         </p>
         <p className="text-sm sm:text-base md:text-lg font-bold text-slate-600 leading-tight mt-0.5">
           {uptLabel.toUpperCase()}
