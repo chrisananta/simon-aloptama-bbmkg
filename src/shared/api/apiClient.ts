@@ -451,6 +451,28 @@ export const apiClient = {
   },
 
   // ----------------------------------------------------
+  // SLA/OLA HARIAN API (tabel pengisian harian: alat x tanggal 1-31)
+  // ----------------------------------------------------
+  slaOlaDaily: {
+    /** deviceId -> tanggal -> { sla, ola }. null kalau gagal dimuat ({} = memang belum ada isian). */
+    fetch: async (
+      bulan: number,
+      tahun: number
+    ): Promise<Record<string, Record<number, { sla: boolean; ola: number }>> | null> => {
+      try {
+        const res = await authFetch(`/api/sla-ola/daily?bulan=${bulan}&tahun=${tahun}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success) return json.data || {};
+        }
+      } catch (e) {
+        console.warn("apiClient.slaOlaDaily.fetch failed:", e);
+      }
+      return null;
+    },
+  },
+
+  // ----------------------------------------------------
   // SLA/OLA LOG MONITORING API (tabel monitoring pengisian — Admin)
   // ----------------------------------------------------
   slaOlaLogs: {

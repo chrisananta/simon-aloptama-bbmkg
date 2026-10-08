@@ -349,7 +349,7 @@ function AppContent() {
             Disembunyikan untuk KaUPT/KaBBMKG - role ini tidak berwenang
             mengisi SLA OLA, hanya memantau. */}
         {permissions.canInputSlaOla && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100]">
+        <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+2rem)] right-4 sm:bottom-6 sm:right-6 z-[100]">
           <button
             onClick={() => setIsSlaOlaModalOpen(true)}
             className="flex items-center gap-2 px-3 py-2.5 sm:px-4.5 sm:py-3.5 bg-[#0052CC] hover:bg-blue-700 active:bg-blue-800 text-white font-extrabold text-[11px] sm:text-xs rounded-full shadow-2xl hover:shadow-blue-500/30 transition-all border-2 border-white/20 ring-4 ring-blue-500/20 cursor-pointer"

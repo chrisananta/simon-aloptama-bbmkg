@@ -31,6 +31,7 @@ import { isSameUpt, findStation } from '../../shared/utils/uptMatch';
 import { WaReportModal } from '../monitoring/WaReportModal';
 import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
 import { UptSlaOlaReportModal } from './UptSlaOlaReportModal';
+import { SlaOlaHarianTable } from './SlaOlaHarianTable';
 import { useAuth } from '../auth/AuthContext';
 
 // Kategori resmi sesuai field `category` di database (lihat dropdown di
@@ -428,106 +429,40 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     return timeA - timeB;
   });
 
-  const [tableFilterMonth, setTableFilterMonth] = useState<string>('REALTIME');
+  // Daftar Gangguan & Mati mengikuti filter header (UPT + Bulan + Tahun): diambil dari
+  // nilai SLA/OLA bulanan alat (aturan klasifikasi sama dengan tabel rekap di atas).
+  // Alat yang belum punya isian di bulan itu tidak dimasukkan ke daftar.
+  const periodLabel = `${selectedMonth} ${selectedYear}`;
 
-  const HISTORICAL_DISRUPTIONS: Array<{
-    id: string;
-    name: string;
-    category: string;
-    uptStation: string;
-    status: 'GANGGUAN' | 'MATI';
-    downtimeDuration: string;
-    period: string;
-    reportedDate: string;
-    issue: string;
-  }> = [];
+  const { displayGangguan, displayMati } = useMemo(() => {
+    type ListRow = {
+      id: string;
+      name: string;
+      category: string;
+      uptStation: string;
+      keterangan: string;
+    };
+    const gangguan: ListRow[] = [];
+    const mati: ListRow[] = [];
 
-  const activePeriodTarget = tableFilterMonth === 'HEADER_SYNC' ? `${selectedMonth} ${selectedYear}` : tableFilterMonth;
-
-  let displayGangguan: Array<{
-    id: string;
-    name: string;
-    category: string;
-    uptStation: string;
-    status: string;
-    downtimeDuration: string;
-    keterangan: string;
-    reportedDate?: string;
-  }> = [];
-
-  let displayMati: Array<{
-    id: string;
-    name: string;
-    category: string;
-    uptStation: string;
-    status: string;
-    downtimeDuration: string;
-    keterangan: string;
-    reportedDate?: string;
-  }> = [];
-
-  if (tableFilterMonth === 'REALTIME') {
-    const baseDevs = selectedUpt === 'ALL' ? devices : devices.filter((d) => isSameUpt(d.uptStation, selectedUpt, stationList));
-
-    displayGangguan = baseDevs
-      .filter((d) => d.conditionStatus === 'GANGGUAN' && (d.slaScore === undefined || d.slaScore < 100))
-      .map((d) => ({
+    for (const d of uptFilteredDevices) {
+      const sc = pickScore(yearlyScores, d.devicesId, monthIdx + 1);
+      if (!sc) continue;
+      const kondisi = classifyScore(sc);
+      if (kondisi === 'NORMAL') continue;
+      const row: ListRow = {
         id: d.devicesId,
         name: d.site,
         category: d.category,
         uptStation: d.uptStation,
-        status: 'GANGGUAN',
-        downtimeDuration: d.downtimeDuration || '2 Jam',
-        keterangan: d.issueDescription || '-',
-        reportedDate: d.lastCalibrated || '28 Juli 2026',
-      }));
+        keterangan: `SLA ${sc.sla}% • OLA ${sc.ola}%`,
+      };
+      (kondisi === 'MATI' ? mati : gangguan).push(row);
+    }
 
-    displayMati = baseDevs
-      .filter((d) => d.conditionStatus === 'MATI' && (d.slaScore === undefined || d.slaScore < 100))
-      .map((d) => ({
-        id: d.devicesId,
-        name: d.site,
-        category: d.category,
-        uptStation: d.uptStation,
-        status: 'MATI',
-        downtimeDuration: d.downtimeDuration || '18 Hari',
-        keterangan: d.issueDescription || '-',
-        reportedDate: d.lastCalibrated || '28 Juli 2026',
-      }));
-  } else {
-    const filteredHist = HISTORICAL_DISRUPTIONS.filter((item) => {
-      const matchesUpt = selectedUpt === 'ALL' || isSameUpt(item.uptStation, selectedUpt, stationList);
-      if (!matchesUpt) return false;
-      if (activePeriodTarget === 'ALL') return true;
-      return item.period.toLowerCase() === activePeriodTarget.toLowerCase();
-    });
-
-    displayGangguan = filteredHist
-      .filter((h) => h.status === 'GANGGUAN')
-      .map((h) => ({
-        id: h.id,
-        name: h.name,
-        category: h.category,
-        uptStation: h.uptStation,
-        status: 'GANGGUAN',
-        downtimeDuration: h.downtimeDuration,
-        keterangan: h.issue || '-',
-        reportedDate: h.reportedDate,
-      }));
-
-    displayMati = filteredHist
-      .filter((h) => h.status === 'MATI')
-      .map((h) => ({
-        id: h.id,
-        name: h.name,
-        category: h.category,
-        uptStation: h.uptStation,
-        status: 'MATI',
-        downtimeDuration: h.downtimeDuration,
-        keterangan: h.issue || '-',
-        reportedDate: h.reportedDate,
-      }));
-  }
+    const byName = (x: ListRow, y: ListRow) => x.name.localeCompare(y.name);
+    return { displayGangguan: gangguan.sort(byName), displayMati: mati.sort(byName) };
+  }, [uptFilteredDevices, yearlyScores, monthIdx]);
 
   const hasDataForSelectedFilter = useMemo(
     () => uptFilteredDevices.some((d) => pickScore(yearlyScores, d.devicesId, monthIdx + 1) !== undefined),
@@ -649,15 +584,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           <Info size={18} className="shrink-0 text-amber-600" />
           <span>
             Belum ada data pengisian atau rekapitulasi historis untuk <strong>{selectedMonth} {selectedYear}</strong>{selectedUpt !== 'ALL' ? ` (${selectedUptName})` : ''}.
-          </span>
-        </div>
-      )}
-
-      {selectedYear === '2026' && selectedUpt !== 'ALL' && monthIdx <= 6 && (
-        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-2.5 text-xs font-medium shadow-2xs">
-          <Info size={16} className="shrink-0 text-amber-600" />
-          <span>
-            <strong>Informasi Data Filter 2026:</strong> Rekapitulasi historis Januari - Juli 2026 tersaji untuk gabungan seluruh Stasiun UPT. Data pengisian individual per UPT tersedia dan dimulai dari <strong>1 Agustus 2026</strong>.
           </span>
         </div>
       )}
@@ -914,47 +840,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
       </div>
 
-      {/* FILTER TUNGGAL & RESPONSIF DI MOBILE: RIWAYAT LOG GANGGUAN & ALAT MATI */}
-      <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div>
-              <h3 className="font-bold text-xs sm:text-sm text-slate-900">
-                Riwayat Log Gangguan &amp; Alat Mati
-              </h3>
-            </div>
-          </div>
-
-          {/* Filter periode */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs font-bold text-slate-700 shrink-0 hidden sm:inline">
-              Periode Tabel:
-            </span>
-
-            <select
-              value={tableFilterMonth}
-              onChange={(e) => setTableFilterMonth(e.target.value)}
-              className="w-full sm:w-auto bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] cursor-pointer"
-            >
-              <option value="REALTIME">⚡ Real-Time (Status Terkini Hari Ini)</option>
-              <option value="HEADER_SYNC">🔄 Mengikuti Filter Header ({selectedMonth} {selectedYear})</option>
-              <optgroup label="Bulan Tahun 2026">
-                <option value="Juli 2026">Juli 2026</option>
-                <option value="Juni 2026">Juni 2026</option>
-                <option value="Mei 2026">Mei 2026</option>
-                <option value="April 2026">April 2026</option>
-                <option value="Maret 2026">Maret 2026</option>
-                <option value="Februari 2026">Februari 2026</option>
-                <option value="Januari 2026">Januari 2026</option>
-              </optgroup>
-              <optgroup label="Arsip Rekap">
-                <option value="ALL">Semua Rekam Historis (≥ 2026)</option>
-              </optgroup>
-            </select>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
@@ -972,15 +857,14 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 <tr>
                   <th className="p-2.5">Nama Alat</th>
                   <th className="p-2.5">Lokasi / UPT</th>
-                  <th className="p-2.5">Status</th>
                   <th className="p-2.5">Keterangan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {displayGangguan.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-6 text-slate-400">
-                      Tidak ada catatan peralatan Gangguan pada periode {activePeriodTarget}.
+                    <td colSpan={3} className="text-center py-6 text-slate-400">
+                      Tidak ada catatan peralatan Gangguan pada periode {periodLabel}.
                     </td>
                   </tr>
                 ) : (
@@ -988,15 +872,10 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     <tr key={dev.id} className="hover:bg-amber-50/40 transition-colors">
                       <td className="p-2.5 font-semibold text-slate-900">
                         {dev.name}
-                        <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {dev.reportedDate}</span>
+                        <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {periodLabel}</span>
                       </td>
                       <td className="p-2.5 text-slate-600 font-medium">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
-                      </td>
-                      <td className="p-2.5">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                          🟡 Gangguan
-                        </span>
                       </td>
                       <td className="p-2.5 font-medium text-slate-800">
                         {dev.keterangan}
@@ -1025,15 +904,14 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 <tr>
                   <th className="p-2.5">Nama Alat</th>
                   <th className="p-2.5">Lokasi / UPT</th>
-                  <th className="p-2.5">Status</th>
                   <th className="p-2.5">Keterangan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {displayMati.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-6 text-slate-400">
-                      Tidak ada catatan peralatan Mati pada periode {activePeriodTarget}.
+                    <td colSpan={3} className="text-center py-6 text-slate-400">
+                      Tidak ada catatan peralatan Mati pada periode {periodLabel}.
                     </td>
                   </tr>
                 ) : (
@@ -1041,15 +919,10 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     <tr key={dev.id} className="hover:bg-rose-50/40 transition-colors">
                       <td className="p-2.5 font-semibold text-slate-900">
                         {dev.name}
-                        <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {dev.reportedDate}</span>
+                        <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {periodLabel}</span>
                       </td>
                       <td className="p-2.5 text-slate-600 font-medium">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
-                      </td>
-                      <td className="p-2.5">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                          🔴 Mati
-                        </span>
                       </td>
                       <td className="p-2.5 font-bold text-rose-600">
                         {dev.keterangan}
@@ -1062,6 +935,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           </div>
         </div>
       </div>
+
+      {/* TABEL PENGISIAN SLA & OLA HARIAN (alat x tanggal) */}
+      <SlaOlaHarianTable devices={uptFilteredDevices} />
 
       {permissions.canViewUnreportedList && (
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">

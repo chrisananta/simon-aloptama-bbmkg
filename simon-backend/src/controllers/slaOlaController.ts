@@ -481,6 +481,61 @@ export const slaOlaController = {
   },
 
   /**
+   * Isian SLA/OLA HARIAN satu bulan, per alat per tanggal — sumber tabel
+   * "Tabel Pengisian SLA & OLA Harian" di halaman SLA & OLA (cukup login).
+   * Log rekap bulanan input Admin TIDAK ikut (itu nilai rata-rata bulan, bukan
+   * isian harian). Bila satu alat diisi lebih dari sekali pada tanggal laporan
+   * yang sama, hanya isian terakhir yang dipakai.
+   */
+  getDailyFilling: async (req: AuthRequest, res: Response) => {
+    const parsedQuery = z
+      .object({
+        bulan: z.coerce.number().int().min(1).max(12),
+        tahun: z.coerce.number().int().min(2000).max(2100),
+      })
+      .safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({ success: false, message: 'Query bulan/tahun wajib diisi dengan benar.' });
+    }
+    try {
+      const { bulan, tahun } = parsedQuery.data;
+      const start = new Date(Date.UTC(tahun, bulan - 1, 1));
+      const end = new Date(Date.UTC(tahun, bulan, 1));
+
+      const [logs, adminActors] = await Promise.all([
+        prisma.slaOlaLog.findMany({
+          where: { deviceId: { not: null }, reportDate: { gte: start, lt: end } },
+          select: {
+            id: true,
+            deviceId: true,
+            kondisiSla: true,
+            kondisiOla: true,
+            actor: true,
+            reportDate: true,
+            timestamp: true,
+          },
+          orderBy: { timestamp: 'asc' },
+        }),
+        loadAdminActorSet(),
+      ]);
+
+      // deviceId -> tanggal (1-31) -> { sla, ola }. Urut timestamp naik, jadi isian terakhir menimpa.
+      const data: Record<string, Record<number, { sla: boolean; ola: number }>> = {};
+      for (const log of logs) {
+        if (!log.deviceId) continue;
+        if (adminActors.has(normalizeActor(log.actor))) continue;
+        const day = log.reportDate.getUTCDate();
+        if (!data[log.deviceId]) data[log.deviceId] = {};
+        data[log.deviceId][day] = { sla: log.kondisiSla, ola: log.kondisiOla };
+      }
+      return res.json({ success: true, bulan, tahun, data });
+    } catch (error) {
+      console.error('Error getDailyFilling:', error);
+      return res.status(500).json({ success: false, message: 'Gagal mengambil isian SLA/OLA harian.' });
+    }
+  },
+
+  /**
    * Mengambil Riwayat Log SLA/OLA — untuk tabel monitoring pengisian di Admin.
    * Mendukung filter opsional bulan & tahun (berdasarkan reportDate), dan
    * menyertakan nama alat (site) hasil join ke tabel Device.

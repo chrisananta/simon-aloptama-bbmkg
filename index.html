@@ -36,11 +36,47 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
+
+    <!-- Splash awal: tampil seketika (sebelum JS/CSS selesai dimuat) supaya layar tidak putih kosong.
+         Otomatis tergantikan saat React mount ke #root. -->
+    <link rel="preload" as="image" href="/icons/icon-192.png" />
+    <style>
+      html, body { margin: 0; background: #F5F7FA; }
+      .simon-splash {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 18px; background: #F5F7FA;
+        font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+      }
+      .simon-splash img {
+        width: 96px; height: 96px; object-fit: contain;
+        animation: simon-pulse 1.6s ease-in-out infinite;
+      }
+      .simon-splash-text { font-size: 13px; font-weight: 700; letter-spacing: .18em; color: #003366; }
+      .simon-splash-bar {
+        width: 120px; height: 3px; border-radius: 3px; background: #dbe4ef; overflow: hidden; position: relative;
+      }
+      .simon-splash-bar::after {
+        content: ''; position: absolute; top: 0; left: -40%; width: 40%; height: 100%;
+        background: #0052CC; border-radius: 3px; animation: simon-slide 1.2s ease-in-out infinite;
+      }
+      @keyframes simon-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.07); opacity: .85; } }
+      @keyframes simon-slide { 0% { left: -40%; } 100% { left: 100%; } }
+      @media (prefers-reduced-motion: reduce) {
+        .simon-splash img, .simon-splash-bar::after { animation: none; }
+      }
+    </style>
   </head>
   <body
     class="bg-[#F5F7FA] text-slate-800 font-['Inter',sans-serif] antialiased"
   >
-    <div id="root"></div>
+    <div id="root">
+      <div class="simon-splash" role="status" aria-live="polite">
+        <img src="/icons/icon-192.png" alt="SIMON" width="96" height="96" />
+        <span class="simon-splash-text">SIMON BMKG</span>
+        <div class="simon-splash-bar"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

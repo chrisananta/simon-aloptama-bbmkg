@@ -1,3 +1,4 @@
+import simonLogo from '../../assets/images/simonlogo.png';
 import React from 'react';
 import { useAuth } from './AuthContext';
 import { ActiveNavMenu } from '../../shared/types';
@@ -31,11 +32,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // tidak ikut hilang di tengah proses submit.
   if (isInitializing) {
     return (
-      <div className="min-h-screen bg-[#0A203C] text-white flex flex-col items-center justify-center p-4">
-        <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="font-heading font-bold text-sm text-slate-200">
-          Memverifikasi Sesi Autentikasi SIMON...
-        </p>
+      // Tampilan sama dengan splash di index.html supaya peralihan dari splash awal mulus.
+      <div className="fixed inset-0 bg-[#F5F7FA] flex flex-col items-center justify-center gap-4 p-4">
+        <img src={simonLogo} alt="SIMON" className="h-24 w-24 object-contain animate-pulse" />
+        <span className="font-heading font-bold text-[13px] tracking-[0.18em] text-[#003366]">SIMON BMKG</span>
+        <p className="text-[11px] font-medium text-slate-500">Memverifikasi sesi...</p>
       </div>
     );
   }
