@@ -963,7 +963,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
             </h1>
             {isTeknisiAlatMode ? (
               <p className="text-slate-500 text-[11px] sm:text-xs mt-0.5 leading-relaxed">
-                Perbarui data <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_alat</code> milik {stations[0]?.name || user?.uptStation || 'UPT Anda'} jika ada perubahan.
+                Perbarui data master alat milik <span className="font-bold text-slate-700">{stations[0]?.name || user?.uptStation || 'UPT Anda'}</span> jika ada perubahan.
               </p>
             ) : (
             <p className="text-slate-500 text-[11px] sm:text-xs mt-0.5 leading-relaxed">

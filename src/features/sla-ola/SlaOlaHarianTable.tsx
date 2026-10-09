@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Loader2 } from 'lucide-react';
+import { Activity, Calendar, CalendarDays, Layers, Loader2 } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 
@@ -15,8 +15,11 @@ interface SlaOlaHarianTableProps {
   devices: AloptamaDevice[];
 }
 
+// Gaya sama dengan filter di header halaman SLA & OLA (SlaOlaView).
+const filterBoxClass =
+  'flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700';
 const selectClass =
-  'bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#0052CC] cursor-pointer';
+  'bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer';
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -117,50 +120,58 @@ export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices })
     <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs space-y-3">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div>
-          <h3 className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-2">
+          <h3 className="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
             <CalendarDays size={16} className="text-[#0052CC]" />
             Tabel Pengisian {jenis} Harian — {MONTHS[month]} {year}
           </h3>
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            {isLoading ? 'Memuat data...' : `${filledDevices} dari ${rows.length} alat sudah ada isian bulan ini.`}
-            {' '}Kotak kosong = belum diisi.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={jenis}
-            onChange={(e) => setJenis(e.target.value as 'SLA' | 'OLA')}
-            className={selectClass}
-            aria-label="Jenis tabel"
-          >
-            <option value="SLA">SLA (ON / OFF)</option>
-            <option value="OLA">OLA (%)</option>
-          </select>
+          <div className={filterBoxClass}>
+            <Activity size={14} className="text-[#0052CC] shrink-0" />
+            <select
+              value={jenis}
+              onChange={(e) => setJenis(e.target.value as 'SLA' | 'OLA')}
+              className={selectClass}
+              aria-label="Jenis tabel"
+            >
+              <option value="SLA">SLA (ON / OFF)</option>
+              <option value="OLA">OLA (%)</option>
+            </select>
+          </div>
 
-          <select
-            value={activeCategory}
-            onChange={(e) => setCategory(e.target.value)}
-            className={`${selectClass} max-w-[190px] truncate`}
-            aria-label="Kategori peralatan"
-          >
-            <option value="ALL">Semua Kategori Alat</option>
-            {categoryOptions.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+          <div className={`${filterBoxClass} max-w-full`}>
+            <Layers size={14} className="text-[#0052CC] shrink-0" />
+            <select
+              value={activeCategory}
+              onChange={(e) => setCategory(e.target.value)}
+              className={`${selectClass} max-w-[190px] truncate`}
+              aria-label="Kategori peralatan"
+            >
+              <option value="ALL">Semua Kategori Alat</option>
+              {categoryOptions.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
 
-          <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className={selectClass} aria-label="Bulan">
-            {MONTHS.map((m, i) => (
-              <option key={m} value={i}>{m}</option>
-            ))}
-          </select>
+          <div className={filterBoxClass}>
+            <Calendar size={14} className="text-[#0052CC] shrink-0" />
+            <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className={selectClass} aria-label="Bulan">
+              {MONTHS.map((m, i) => (
+                <option key={m} value={i}>{m}</option>
+              ))}
+            </select>
+          </div>
 
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={selectClass} aria-label="Tahun">
-            {Array.from({ length: 3 }, (_, i) => 2026 + i).map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+          <div className={filterBoxClass}>
+            <span>Tahun:</span>
+            <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={selectClass} aria-label="Tahun">
+              {Array.from({ length: 3 }, (_, i) => 2026 + i).map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

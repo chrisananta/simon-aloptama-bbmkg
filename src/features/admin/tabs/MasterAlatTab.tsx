@@ -219,7 +219,6 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                         </td>
                         <td className="p-3.5 font-bold text-slate-900">
                           <div>{dev.site}</div>
-                          <span className="text-[10px] text-slate-400 font-normal">{dev.locationName}</span>
                         </td>
                         <td className="p-3.5 whitespace-nowrap">
                           <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold text-[11px] rounded-md border border-slate-200">

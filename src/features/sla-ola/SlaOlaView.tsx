@@ -559,7 +559,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               title={`Buat Laporan Kinerja Aloptama untuk ${selectedUptName}`}
             >
               <FileText size={15} />
-              <span>Laporan UPT Terkait</span>
+              <span>Laporan UPT</span>
             </button>
           )}
         </div>
@@ -648,7 +648,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 pb-4 border-b border-slate-100">
           <div>
-            <h3 className="font-heading font-bold text-lg text-slate-900 flex items-center gap-2.5">
+            <h3 className="font-heading font-bold text-base text-slate-900 flex items-center gap-2.5">
               <span className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 shadow-xs">
                 <BarChart2 className="w-5 h-5" />
               </span>
@@ -767,7 +767,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="font-heading font-bold text-base text-slate-800">
+              <h3 className="font-heading font-bold text-base text-slate-900">
                 Grafik Tren SLA Bulanan {selectedYear}
               </h3>
               <p className="text-xs text-slate-500">
@@ -806,7 +806,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="font-heading font-bold text-base text-slate-800">
+              <h3 className="font-heading font-bold text-base text-slate-900">
                 Grafik OLA Berdasarkan Jenis Peralatan
               </h3>
             </div>
@@ -845,7 +845,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-              <h3 className="font-heading font-bold text-sm text-slate-900">
+              <h3 className="font-heading font-bold text-base text-slate-900">
                 Daftar Alat Gangguan ({displayGangguan.length})
               </h3>
             </div>
@@ -892,7 +892,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-rose-600"></div>
-              <h3 className="font-heading font-bold text-sm text-slate-900">
+              <h3 className="font-heading font-bold text-base text-slate-900">
                 Daftar Alat Mati ({displayMati.length})
               </h3>
             </div>

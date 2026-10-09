@@ -67,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <img src={simonLogo} alt="SIMON" draggable={false} className="h-8 w-8 object-contain select-none" />
             </button>
           )}
-          <h1 className="font-heading font-bold text-xs sm:text-sm md:text-base text-slate-800 leading-tight truncate">
+          <h1 className="font-heading font-bold text-base sm:text-lg md:text-xl text-slate-800 leading-tight truncate">
             {getMenuTitle()}
           </h1>
         </div>

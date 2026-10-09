@@ -434,7 +434,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                       {formatDateIndo(rec.lastCalibrated)}
                       <span className="block text-[10px] text-slate-400"></span>
                     </td>
-                    <td className="p-3.5 font-semibold text-slate-900">
+                    <td className="p-3.5 font-medium text-slate-700">
                       {formatDateIndo(rec.calibrationValidUntil)}
                     </td>
                     <td className="p-3.5 text-center">
