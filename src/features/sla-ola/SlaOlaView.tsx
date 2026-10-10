@@ -125,6 +125,10 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [isWeeklyReportModalOpen, setIsWeeklyReportModalOpen] = useState(false);
   const [isUptReportModalOpen, setIsUptReportModalOpen] = useState(false);
+  // Daftar Alat Gangguan / Mati: tampilkan 10 teratas, sisanya lewat "Lihat selengkapnya"
+  const LIST_PREVIEW_LIMIT = 10;
+  const [showAllGangguan, setShowAllGangguan] = useState(false);
+  const [showAllMati, setShowAllMati] = useState(false);
 
   const stationList = useMemo(
     () => (stations && stations.length > 0 ? stations : apiClient.stations.getAll()),
@@ -463,6 +467,15 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     const byName = (x: ListRow, y: ListRow) => x.name.localeCompare(y.name);
     return { displayGangguan: gangguan.sort(byName), displayMati: mati.sort(byName) };
   }, [uptFilteredDevices, yearlyScores, monthIdx]);
+
+  const visibleGangguan = showAllGangguan ? displayGangguan : displayGangguan.slice(0, LIST_PREVIEW_LIMIT);
+  const visibleMati = showAllMati ? displayMati : displayMati.slice(0, LIST_PREVIEW_LIMIT);
+
+  // Kembali ke ringkasan 10 teratas saat periode / UPT / kategori diganti
+  useEffect(() => {
+    setShowAllGangguan(false);
+    setShowAllMati(false);
+  }, [selectedMonth, selectedYear, selectedUpt, statusFilter]);
 
   const hasDataForSelectedFilter = useMemo(
     () => uptFilteredDevices.some((d) => pickScore(yearlyScores, d.devicesId, monthIdx + 1) !== undefined),
@@ -868,7 +881,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     </td>
                   </tr>
                 ) : (
-                  displayGangguan.map((dev) => (
+                  visibleGangguan.map((dev) => (
                     <tr key={dev.id} className="hover:bg-amber-50/40 transition-colors">
                       <td className="p-2.5 font-semibold text-slate-900">
                         {dev.name}
@@ -886,6 +899,20 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               </tbody>
             </table>
           </div>
+
+          {displayGangguan.length > LIST_PREVIEW_LIMIT && (
+            <div className="pt-3 mt-1 border-t border-slate-100 text-center">
+              <button
+                type="button"
+                onClick={() => setShowAllGangguan((v) => !v)}
+                className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                {showAllGangguan
+                  ? 'Tampilkan lebih sedikit'
+                  : `Lihat selengkapnya (${displayGangguan.length - LIST_PREVIEW_LIMIT} lainnya)`}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
@@ -915,7 +942,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     </td>
                   </tr>
                 ) : (
-                  displayMati.map((dev) => (
+                  visibleMati.map((dev) => (
                     <tr key={dev.id} className="hover:bg-rose-50/40 transition-colors">
                       <td className="p-2.5 font-semibold text-slate-900">
                         {dev.name}
@@ -933,6 +960,20 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               </tbody>
             </table>
           </div>
+
+          {displayMati.length > LIST_PREVIEW_LIMIT && (
+            <div className="pt-3 mt-1 border-t border-slate-100 text-center">
+              <button
+                type="button"
+                onClick={() => setShowAllMati((v) => !v)}
+                className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                {showAllMati
+                  ? 'Tampilkan lebih sedikit'
+                  : `Lihat selengkapnya (${displayMati.length - LIST_PREVIEW_LIMIT} lainnya)`}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

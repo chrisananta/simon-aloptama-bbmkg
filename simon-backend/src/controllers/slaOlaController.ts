@@ -9,6 +9,7 @@ import {
   getTodayDateOnlyWIT,
   diffDaysDateOnly,
 } from '../utils/dateUtils.js';
+import { isSameUptStation } from '../utils/uptMatch.js';
 import {
   ADMIN_ACTOR_FALLBACK,
   normalizeActor,
@@ -115,7 +116,7 @@ export const slaOlaController = {
       // Teknisi UPT hanya boleh mengisi untuk UPT sendiri. Admin Inskal &
       // Super Admin boleh mengisi untuk UPT mana pun.
       const isFullAccessRole = req.user.role === 'ADMIN_INSKAL' || req.user.role === 'SUPER_ADMIN';
-      if (!isFullAccessRole && req.user.uptStation !== uptStation) {
+      if (!isFullAccessRole && !(await isSameUptStation(req.user.uptStation, uptStation))) {
         return res.status(403).json({ success: false, message: 'Anda hanya dapat mengisi SLA/OLA untuk UPT sendiri.' });
       }
 
@@ -124,7 +125,7 @@ export const slaOlaController = {
         if (!targetDevice) {
           return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
         }
-        if (!isFullAccessRole && targetDevice.uptStation !== req.user.uptStation) {
+        if (!isFullAccessRole && !(await isSameUptStation(targetDevice.uptStation, req.user.uptStation))) {
           return res.status(403).json({ success: false, message: 'Perangkat bukan milik UPT Anda.' });
         }
       }

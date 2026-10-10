@@ -58,10 +58,42 @@ const LOCATION_TO_DEVICE_ID: Record<string, string> = {
   'AWS Staklim Jayapura IKRO': 'ALT0076',
   'AWS Stamet Fakfak': 'ALT0013',
   'AWS Stamet Kaimana': 'ALT0015',
-  'AWS Stamet Manokwari Rekayasa': 'ALT0079',
+  'AWS Stamet Manokwari Rekayasa': 'ALT0033', // = "AWS Rekayasa Stamet Manokwari" (urutan kata beda); sebelumnya salah ke ALT0079
   'Mako Lantamal X': 'ALT0146',
+  // Nama di CSV yang tidak ketemu di Master Alat database (ID dari master-peralatan.csv):
+  'AWS Nimboran.Staklim Papua': 'ALT0072',
+  'AWS Manokwari Selatan Rekayasa': 'ALT0079',
+  'AWS Raisei': 'ALT0082',
+  'AWS Stamet DIgi Enarotali': 'ALT0050',
+  'AWS Mesonet (STR I ) Sorong': 'ALT0010',
+  'AWS Stamet Digi Timika': 'ALT0038',
+  'BPBD Kab. Keerom ( Relokasi Ke lantamal X)': 'ALT0146',
+  'BPBD Kab. Keerom (Relokasi Ke lantamalX)': 'ALT0146',
+  // Nama di AWS.csv versi baru:
+  'AWS Nimboran Staklim Papua': 'ALT0072',
+  'AWS IKRO Staklim Papua': 'ALT0076',
+  'AWS IKRO Staklim Papua Barat': 'ALT0081',
+  'AWS IKRO Staklim Tanah Miring': 'ALT0094',
+  'AWS Digi Stamet Enarotali': 'ALT0050',
+  'AWS Mesonet (STR I) Kab. Sorong': 'ALT0010',
+  'AWS Digi Stamet Timika': 'ALT0038',
 };
 // ============================================================================
+
+const AWOS_II_III = 'AWOS Kat. II & III';
+
+// Bandingkan kategori tanpa peduli spasi/titik/huruf besar-kecil
+// ("AWOS Kat. I" = "AWOS Kat.I" = "AWOS KAT I") dan sinonim penulisan.
+function catKey(c: string): string {
+  const k = (c || '').toLowerCase().replace(/[.\s]/g, '');
+  if (k === 'sirine') return 'sirene';
+  if (k === 'seismo') return 'seismometer';
+  return k;
+}
+function categoryMatches(dbCategory: string, scriptCategory: string): boolean {
+  if (scriptCategory === AWOS_II_III) return catKey(dbCategory).startsWith('awoskatii'); // II dan III
+  return catKey(dbCategory) === catKey(scriptCategory);
+}
 
 function normalizeName(s: string): string {
   return s
@@ -72,21 +104,36 @@ function normalizeName(s: string): string {
     .toLowerCase();
 }
 
-function splitCsvLine(line: string): string[] {
-  const cols: string[] = [];
-  let current = '';
+/**
+ * Parser CSV penuh: aman untuk sel berkutip yang berisi baris baru
+ * (kolom KETERANGAN sering diisi multi-baris). Parser lama memecah per baris
+ * dulu, sehingga sel multi-baris memotong tabel dan sisa lokasi di bulan
+ * itu ikut terbuang.
+ */
+function parseCsv(content: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cur = '';
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
-      else inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      cols.push(current); current = '';
-    } else current += char;
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (content[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = false;
+      } else cur += ch;
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      row.push(cur); cur = '';
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && content[i + 1] === '\n') i++;
+      row.push(cur); cur = '';
+      rows.push(row); row = [];
+    } else cur += ch;
   }
-  cols.push(current);
-  return cols;
+  if (cur !== '' || row.length > 0) { row.push(cur); rows.push(row); }
+  return rows;
 }
 
 interface DayEntry {
@@ -106,7 +153,7 @@ function parseDailyEntries(content: string, defaultCategory: string | 'PER_ROW')
   entries: DayEntry[];
   deviceIdByLocation: Map<string, string>;
 } {
-  const rows = content.split(/\r?\n/).map((l) => splitCsvLine(l));
+  const rows = parseCsv(content);
   const n = rows.length;
   const MONTHS = Object.keys(MONTH_NUMBER);
   const entries: DayEntry[] = [];
@@ -115,7 +162,7 @@ function parseDailyEntries(content: string, defaultCategory: string | 'PER_ROW')
   let i = 0;
   while (i < n) {
     const cell0 = (rows[i][0] || '').trim().toUpperCase();
-    if (cell0.startsWith('DATA ')) {
+    if (cell0.startsWith('DATA ') || cell0.includes('MONITORING') || cell0.includes('AGREEMENT')) {
       let bulan: string | null = null;
       if (rows[i + 1] && (rows[i + 1][0] || '').trim().toUpperCase().startsWith('BULAN')) {
         const line = rows[i + 1][0].toUpperCase();
@@ -137,8 +184,12 @@ function parseDailyEntries(content: string, defaultCategory: string | 'PER_ROW')
 
       const header = rows[headerIdx];
       const isPerRow = defaultCategory === 'PER_ROW';
-      const locIdx = isPerRow ? 2 : 1;
-      const catIdx = isPerRow ? 1 : -1;
+      // File AWOS II & III: format lama punya kolom kategori (No, Merk, Lokasi, Status...),
+      // format baru tidak (No, Stasiun, Status/Kondisi...) -> kategori ditandai AWOS_II_III
+      // dan dipilih lewat Master Alat (AWOS Kat. II atau III).
+      const hasCatCol = isPerRow && String(header[1] || '').toLowerCase().includes('merk');
+      const locIdx = hasCatCol ? 2 : 1;
+      const catIdx = hasCatCol ? 1 : -1;
 
       let pctIdx = -1;
       let dailyStartIdx = -1;
@@ -154,18 +205,26 @@ function parseDailyEntries(content: string, defaultCategory: string | 'PER_ROW')
 
       while (k < n) {
         const r = rows[k];
-        if (!r || !(r[0] || '').trim()) break;
-        const first = r[0].trim();
-        if (/^(TOTAL|DATA|BULAN)/i.test(first)) break;
-        if (!/^\d+$/.test(first) && !/^(SLA|OLA)$/i.test(first)) break;
+        if (!r) break;
+        const first = (r[0] || '').trim();
+        const lokasiCell = (r[locIdx] || '').trim();
+        if (/^(TOTAL|DATA|BULAN|OPERATIONAL|SERVICE)/i.test(first)) break;
+        // Tabel berakhir di baris tanpa lokasi (baris kosong/penutup). Kolom
+        // "No" sengaja TIDAK dipakai sebagai syarat: sering kosong atau salah
+        // ketik (mis. "m" alih-alih "24"), dan itu dulu memotong sisa tabel.
+        if (!lokasiCell) break;
 
-        const lokasi = (r[locIdx] || '').trim();
+        const lokasi = lokasiCell;
         if (!lokasi) { k++; continue; }
 
         let kategori = defaultCategory;
         if (isPerRow) {
-          const raw = (r[catIdx] || '').trim().toUpperCase();
-          kategori = SUBCATEGORY_MAP[raw] || raw;
+          if (hasCatCol) {
+            const raw = (r[catIdx] || '').trim().toUpperCase();
+            kategori = SUBCATEGORY_MAP[raw] || raw;
+          } else {
+            kategori = AWOS_II_III;
+          }
         }
 
         // Deteksi jenis (SLA/OLA) dari isi kolom hari pertama yang terisi.
@@ -173,7 +232,7 @@ function parseDailyEntries(content: string, defaultCategory: string | 'PER_ROW')
         for (let d = dailyStartIdx; d < pctIdx; d++) {
           const v = (r[d] || '').trim().toUpperCase();
           if (v === 'ON' || v === 'OFF') { jenis = 'sla'; break; }
-          if (v.endsWith('%')) { jenis = 'ola'; break; }
+          if (v.endsWith('%') || /^\d+(\.\d+)?$/.test(v)) { jenis = 'ola'; break; }
         }
         if (!jenis) { k++; continue; }
 
@@ -234,13 +293,20 @@ async function main() {
       let device = explicitId ? deviceById.get(explicitId) : undefined;
       if (!device) {
         const candidates = devicesByName.get(normalizeName(e.lokasi)) || [];
-        if (candidates.length === 1) {
+        // Utamakan alat yang kategorinya cocok (nama yang sama bisa dipakai
+        // beberapa alat di satu stasiun, mis. "Stamet Biak" = AWOS, Radar, Lightning).
+        const sameCategory = candidates.filter((d) => categoryMatches(d.category, e.category));
+        if (sameCategory.length >= 1) {
+          device = sameCategory[0];
+        } else if (candidates.length === 1) {
+          // Nama unik, hanya teks kategori yang beda -> aman dipakai.
           device = candidates[0];
-          if (device.category !== e.category) categoryMismatch.add(`"${e.category}" vs "${device.category}" — "${e.lokasi}"`);
-        } else if (candidates.length > 1) {
-          device = candidates.find((d) => d.category === e.category) || candidates[0];
+          categoryMismatch.add(`"${e.category}" vs "${device.category}" — "${e.lokasi}"`);
         }
+        // Nama ambigu & tidak ada yang kategorinya cocok -> sengaja TIDAK ditebak
+        // (jatuh ke daftar "tidak ditemukan") supaya data tidak masuk ke alat yang salah.
       }
+
       if (!device) {
         if (!notFound.has(e.category)) notFound.set(e.category, new Set());
         notFound.get(e.category)!.add(e.lokasi);

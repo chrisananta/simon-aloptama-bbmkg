@@ -1,246 +1,277 @@
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN JANUARI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-2,AWOS KAT III,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-3,AWOS KAT III,Stamet Wamena,ON,ON,ON,ON,ON,ON,OFF,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,96.8%
-4,AWOS KAT III,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-5,AWOS KAT II,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-6,AWOS KAT II,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-7,AWOS KAT II,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-8,AWOS KAT II,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,99.6%
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+2,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+3,Stamet Wamena,ON,ON,ON,ON,ON,ON,OFF,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,96.8%,"AWOS Middle kehilangan Panel Surya (4 Unit), AWOS RW15 kehilangan Panel Surya (1 Unit). AWOS RW15 dan RW33 kondisi ON, AWOS Middle kondisi OFF"
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,Terjadi masalah pada power runway 27 yang sering fault pada pagi hari
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,Sudah dilakukan pergantian suku cadang oleh PT.Manvis dan sudah beroperasi.
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS sewaktu-waktu data awos tidak terkirim. Kamera CCTV Juga OFF. Perlu penambahan power suplly dari PLN, Panel Surya, dan  baterai tambahan untuk back up agar sensor Ceilometer menyala kembali."
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,99.6%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN JANUARI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,97.1%
-2,AWOS KAT III,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-3,AWOS KAT III,Stamet Wamena,100%,100%,100%,100%,100%,100%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,79.8%
-4,AWOS KAT III,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-5,AWOS KAT II,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-6,AWOS KAT II,Stamet Timika,100%,100%,92%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,99.7%
-7,AWOS KAT II,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-8,AWOS KAT II,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,94.6%
+No,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,97.1%,Transmissometer runway 11 off
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+3,Stamet Wamena,100%,100%,100%,100%,100%,100%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,79.8%,"AWOS Middle kehilangan Panel Surya (4 Unit), AWOS RW15 kehilangan Panel Surya (1 Unit). AWOS RW15 dan RW33 kondisi ON, AWOS Middle kondisi OFF"
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,Sudah dilakukan pergantian suku cadang oleh PT.Manvis dan sudah beroperasi.
+6,Stamet Timika,100%,100%,92%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,99.7%,tgl 3 Januari Jaringan Komunikasi pada server terganggu selama 2 jam (Mati Listrik di kantor)
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS sewaktu-waktu data awos tidak terkirim. Kamera CCTV Juga OFF. Perlu penambahan power suplly dari PLN, Panel Surya, dan  baterai tambahan untuk back up agar sensor Ceilometer menyala kembali."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,Sensor CLR rusak
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,94.6%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN FEBRUARI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,-,-,-,
-1,AWOS KAT III,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%
-2,AWOS KAT III,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%
-3,AWOS KAT III,Stamet Wamena,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%
-4,AWOS KAT III,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%
-5,AWOS KAT II,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%
-6,AWOS KAT II,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%
-7,AWOS KAT II,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%
-8,AWOS KAT II,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,100.0%
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,-,-,-,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%,
+2,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%,
+3,Stamet Wamena,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%,"AWOS Middle kehilangan Panel Surya (4 Unit), AWOS RW15 kehilangan Panel Surya (1 Unit), AWOS RW33 Kehilangan panel surya (4 unit). AWOS RW15 dan RW33 kondisi ON, AWOS Middle kondisi OFF"
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%,
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%,
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS sewaktu-waktu data awos tidak terkirim. Kamera CCTV Juga OFF. Perlu penambahan power suplly dari PLN, Panel Surya, dan  baterai tambahan untuk back up agar sensor Ceilometer menyala kembali."
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,,,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,100.0%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN FEBRUARI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,-,-,-,
-1,AWOS KAT III,Stamet Biak,94%,94%,97%,97%,97%,97%,97%,93%,97%,97%,97%,82%,90%,97%,97%,97%,97%,97%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,,,,96.6%
-2,AWOS KAT III,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,,,100.0%
-3,AWOS KAT III,Stamet Wamena,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,,,,75.0%
-4,AWOS KAT III,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,,,100.0%
-5,AWOS KAT II,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,,,100.0%
-6,AWOS KAT II,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,,,100.0%
-7,AWOS KAT II,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,,,90.0%
-8,AWOS KAT II,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,,,90.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,93.9%
+No,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,-,-,-,,
+1,Stamet Biak,94%,94%,97%,97%,97%,97%,97%,93%,97%,97%,97%,82%,90%,97%,97%,97%,97%,97%,99%,99%,99%,99%,99%,99%,99%,99%,99%,99%,,,,96.6%,"PWD disable (perlu aktivasi dr vendor), 12-13 Feb perbaikan instalasi listrik dr pihak bandara"
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,,,100.0%,
+3,Stamet Wamena,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,,,,75.0%,"AWOS Middle kehilangan Panel Surya (4 Unit), AWOS RW15 kehilangan Panel Surya (1 Unit), AWOS RW33 Kehilangan panel surya (4 unit). AWOS RW15 dan RW33 kondisi ON, AWOS Middle kondisi OFF"
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,,,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,,,100.0%,
+6,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,,,100.0%,
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,,,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS sewaktu-waktu data awos tidak terkirim. Kamera CCTV Juga OFF. Perlu penambahan power suplly dari PLN, Panel Surya, dan  baterai tambahan untuk back up agar sensor Ceilometer menyala kembali."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,,,90.0%,Sensor CLR rusak
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,93.9%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN MARET 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-2,AWOS KAT III,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-3,AWOS KAT III,Stamet Wamena,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,61.3%
-4,AWOS KAT III,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-5,AWOS KAT II,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-6,AWOS KAT II,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-7,AWOS KAT II,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-8,AWOS KAT II,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,95.2%
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+2,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+3,Stamet Wamena,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,61.3%,"seluruh panel surya dan baterai di site AWOS diamankan karena sering terjadi pencurian sehingga untuk sementara sistem AWOS mati. Total kehilangan 13 unit, sisa 11 unit. Sedang menunggu pemasangan listrik PLN."
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS sewaktu-waktu data awos tidak terkirim. Kamera CCTV Juga OFF. Perlu penambahan power suplly dari PLN, Panel Surya, dan  baterai tambahan untuk back up agar sensor Ceilometer menyala kembali."
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,95.2%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN MARET 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,97.9%
-2,AWOS KAT III,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-3,AWOS KAT III,Stamet Wamena,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,41.1%
-4,AWOS KAT III,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-5,AWOS KAT II,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-6,AWOS KAT II,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-7,AWOS KAT II,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-8,AWOS KAT II,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,89.9%
+No,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,97.9%,"Ceilometer  rwy 11 dan 29 missing, gangguan komunikasi data dari converter FO"
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+3,Stamet Wamena,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,75%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,41.1%,"seluruh panel surya dan baterai di site AWOS diamankan karena sering terjadi pencurian sehingga untuk sementara sistem AWOS mati. Total kehilangan 13 unit, sisa 11 unit. Sedang menunggu pemasangan listrik PLN."
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+6,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS sewaktu-waktu data awos tidak terkirim. Kamera CCTV Juga OFF. Perlu penambahan power suplly dari PLN, Panel Surya, dan  baterai tambahan untuk back up agar sensor Ceilometer menyala kembali."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,89.9%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN APRIL 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,-,
-1,AWOS KAT III,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-2,AWOS KAT III,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-3,AWOS KAT III,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,,0.0%
-4,AWOS KAT III,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-5,AWOS KAT II,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-6,AWOS KAT II,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-7,AWOS KAT II,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-8,AWOS KAT II,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,-,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+2,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+3,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,,0.0%,
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS sewaktu-waktu data awos tidak terkirim. Kamera CCTV Juga OFF. Perlu penambahan power suplly dari PLN, Panel Surya, dan  baterai tambahan untuk back up agar sensor Ceilometer menyala kembali."
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN APRIL 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,-,
-1,AWOS KAT III,Stamet Biak,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,,96.0%
-2,AWOS KAT III,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%
-3,AWOS KAT III,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,,0.0%
-4,AWOS KAT III,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%
-5,AWOS KAT II,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%
-6,AWOS KAT II,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%
-7,AWOS KAT II,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%
-8,AWOS KAT II,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.5%
+No,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,-,,
+1,Stamet Biak,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,,96.0%,"Ceilometer  rwy 11 dan 29 missing, gangguan komunikasi data dari converter FO"
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+3,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,,0.0%,
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+6,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS sewaktu-waktu data awos tidak terkirim. Kamera CCTV Juga OFF. Perlu penambahan power suplly dari PLN, Panel Surya, dan  baterai tambahan untuk back up agar sensor Ceilometer menyala kembali."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.5%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN MEI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-2,AWOS KAT III,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-3,AWOS KAT III,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,0.0%
-4,AWOS KAT III,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-5,AWOS KAT II,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-6,AWOS KAT II,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-7,AWOS KAT II,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-8,AWOS KAT II,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+2,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+3,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,0.0%,"seluruh panel surya dan baterai di site AWOS diamankan karena sering terjadi pencurian sehingga untuk sementara sistem AWOS mati. Total kehilangan 13 unit, sisa 11 unit. Sedang menunggu pemasangan listrik PLN."
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS."
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN MEI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Kondisi AWOS Mei,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,85%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,95.6%
-2,AWOS KAT III,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-3,AWOS KAT III,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0.0%
-4,AWOS KAT III,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-5,AWOS KAT II,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-6,AWOS KAT II,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-7,AWOS KAT II,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-8,AWOS KAT II,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.5%
+No,Stasiun ,Kondisi AWOS Mei,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,85%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,95.6%,"Ceilometer runway 11 - 29 missing, kerusakan converter FO, tidak ada sparepart. Tgl 15 Mei 2026, windsite mergarden missing akibat induksi petir, kembali normal setelah setting pemindahan port server."
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+3,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0.0%,"seluruh panel surya dan baterai di site AWOS diamankan karena sering terjadi pencurian sehingga untuk sementara sistem AWOS mati. Total kehilangan 13 unit, sisa 11 unit. Sedang menunggu pemasangan listrik PLN."
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+6,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.5%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN JUNI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,-,
-1,AWOS KAT III,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-2,AWOS KAT III,Stamet Sentani,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-3,AWOS KAT III,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,,0.0%
-4,AWOS KAT III,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-5,AWOS KAT II,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-6,AWOS KAT II,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-7,AWOS KAT II,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-8,AWOS KAT II,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,-,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+2,Stamet Sentani,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,"Battery RVR dan Ceilometer sudah drop, butuh penggantian Battery sebanyak 8 Unit."
+3,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,,0.0%,"seluruh panel surya dan baterai di site AWOS diamankan karena sering terjadi pencurian sehingga untuk sementara sistem AWOS mati. Total kehilangan 13 unit, sisa 11 unit. Sedang menunggu pemasangan listrik PLN."
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN JUNI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,,
-1,AWOS KAT III,Stamet Biak,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,,96.0%
-2,AWOS KAT III,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%
-3,AWOS KAT III,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,,0.0%
-4,AWOS KAT III,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%
-5,AWOS KAT II,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%
-6,AWOS KAT II,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%
-7,AWOS KAT II,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%
-8,AWOS KAT II,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.5%
+No,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,,,
+1,Stamet Biak,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,,96.0%,Ceilometer missing kerusakan pada converter FO to serial
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,"Battery RVR dan Ceilometer sudah drop, butuh penggantian Battery sebanyak 8 Unit."
+3,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,,0.0%,
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+6,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.5%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN JULI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-2,AWOS KAT III,Stamet Sentani,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-3,AWOS KAT III,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,,,,0.0%
-4,AWOS KAT III,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-5,AWOS KAT II,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-6,AWOS KAT II,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-7,AWOS KAT II,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-8,AWOS KAT II,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+2,Stamet Sentani,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+3,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,0.0%,
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN JULI 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,96%,94%,94%,94%,94%,94%,94%,94%,94%,93%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94.0%
-2,AWOS KAT III,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-3,AWOS KAT III,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,,,,0.0%
-4,AWOS KAT III,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-5,AWOS KAT II,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-6,AWOS KAT II,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-7,AWOS KAT II,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-8,AWOS KAT II,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.3%
+No,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,96%,94%,94%,94%,94%,94%,94%,94%,94%,93%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94.0%,Sensor PWD runway 11 missing. menunggu reaktivasi pasca reset master cpu LT31
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+3,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0.0%,
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+6,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.3%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN AGUSTUS 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-2,AWOS KAT III,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-3,AWOS KAT III,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,0.0%
-4,AWOS KAT III,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-5,AWOS KAT II,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-6,AWOS KAT II,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-7,AWOS KAT II,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-8,AWOS KAT II,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,"Telah dilakukan penyambungan kembali  Jalur FO Runway 11 data Transmissometer, ceilo meter, dan windsite runway 11 sudah normal."
+2,Stamet Jayapura,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,"Battre VRLA Pada Runway 12, Runway 30, dan Mid perlu dilakuakan Penggantian/ surat permohonan suku cadang battre sudah dikimkan ke pusat"
+3,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,0.0%,Teknisi Balai agar koordinasi dengan teknis wamena utk dilaporkan kendala OFF
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS."
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 BULAN AGUSTUS 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No,Merk,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%)
-,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-1,AWOS KAT III,Stamet Biak,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,79%,79%,79%,79%,79%,79%,91.1%
-2,AWOS KAT III,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-3,AWOS KAT III,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0.0%
-4,AWOS KAT III,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-5,AWOS KAT II,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-6,AWOS KAT II,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%
-7,AWOS KAT II,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-8,AWOS KAT II,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%
-TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,83.9%
+No,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,,
+1,Stamet Biak,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,94%,79%,79%,79%,79%,79%,79%,91.1%,"Telah dilakukan penyambungan kembali  Jalur FO Runway 11 data Transmissometer, ceilo meter, dan windsite runway 11 sudah normal."
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,"Battre VRLA Pada Runway 12, Runway 30, dan Mid perlu dilakuakan Penggantian/ surat permohonan suku cadang battre sudah dikimkan ke pusat"
+3,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0.0%,Teknisi Balai agar koordinasi dengan teknis wamena utk dilaporkan kendala OFF
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+6,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100.0%,
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,83.9%,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SERVICE LEVEL AGREEMENT ( SLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BULAN SEPTEMBER 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+No,Stasiun ,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,-,,
+1,Stamet Biak,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,"Telah dilakukan penyambungan kembali  Jalur FO Runway 11 data Transmissometer, ceilo meter, dan windsite runway 11 sudah normal."
+2,Stamet Sentani,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+3,Stamet Wamena,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF,,0.0%,
+4,Stamet Sorong,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+5,Stamet Nabire,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+6,Stamet Timika,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+7,Stamet Manokwari,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS."
+8,Stamet Merauke,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,ON,,100.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,87.5%,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+OPERASIONAL LEVEL AGREEMENT ( OLA ) MONITORING DATA AWOS KATEGORI II & III,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+BULAN SEPTEMBER 2026,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+No,Stasiun ,Kondisi AWOS Maret,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Persentase Aktif (%),KETERANGAN / PERMASALAHAN / MITIGASI
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,,,
+1,Stamet Biak,79%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,96%,,95.4%,"Telah dilakukan penyambungan kembali  Jalur FO Runway 11 tanggal 02 Sep. ceilo 29 mising akibat converter fo to serial rusak tidak ada backup, pwd 11 missing akibat master cpu ter reset sendiri."
+2,Stamet Sentani,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+3,Stamet Wamena,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,0%,,0.0%,
+4,Stamet Sorong,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+5,Stamet Nabire,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+6,Stamet Timika,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,100%,,100.0%,
+7,Stamet Manokwari,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%,"Sensor Visibility dan Ceilometer OFF, Logger Zeno sudah mengalami penurunan performa sehingga perlu dilakukan reboot manual ke site AWOS."
+8,Stamet Merauke,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,90%,,90.0%,
+TOTAL PERSENTASE BULANAN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,84.4%,
