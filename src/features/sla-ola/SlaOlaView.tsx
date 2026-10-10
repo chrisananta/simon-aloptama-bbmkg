@@ -278,7 +278,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         score: jumlahLokasi > 0 ? Number((totalOla / jumlahLokasi).toFixed(1)) : 0,
         count: jumlahLokasi,
       };
-    });
+    }).filter((row) => row.count > 0); // hanya kategori yang dimiliki UPT terpilih
   }, [yearlyScores, monthIdx, uptFilteredDevices]);
 
   const balaiDevices = uptFilteredDevices.filter(
@@ -652,8 +652,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             </span>
           </div>
           <p className="text-[11px] text-slate-600 mt-1.5 sm:mt-2 font-medium">
-            <span className="text-emerald-700 font-bold">🟢 {balaiTidakTerlambatCount} Tidak Terlambat</span> | {' '}
-            <span className="text-rose-600 font-bold">🔴 {balaiTerlambatCount} Terlambat</span>
+            <span className="text-emerald-700 font-bold">🟢 {balaiTidakTerlambatCount} Valid</span> | {' '}
+            <span className="text-rose-600 font-bold">🔴 {balaiTerlambatCount} Kadaluwarsa</span>
           </p>
         </div>
       </div>
@@ -823,7 +823,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 Grafik OLA Berdasarkan Jenis Peralatan
               </h3>
             </div>
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+            <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
               {selectedMonth} {selectedYear}
             </span>
           </div>
@@ -842,9 +842,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                   type="monotone"
                   dataKey="score"
                   name="OLA Score (%)"
-                  stroke="#4F46E5"
+                  stroke="#0052CC"
                   strokeWidth={3}
-                  dot={{ r: 5, fill: '#4F46E5' }}
+                  dot={{ r: 5, fill: '#0052CC' }}
                   activeDot={{ r: 8 }}
                 />
               </LineChart>
@@ -869,8 +869,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
                 <tr>
                   <th className="p-2.5">Nama Alat</th>
-                  <th className="p-2.5">Lokasi / UPT</th>
-                  <th className="p-2.5">Keterangan</th>
+                  <th className="p-2.5 text-center">PIC</th>
+                  <th className="p-2.5 text-center">Keterangan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -890,7 +890,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                       <td className="p-2.5 text-slate-600 font-medium">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
                       </td>
-                      <td className="p-2.5 font-medium text-slate-800">
+                      <td className="p-2.5 font-medium text-slate-700 whitespace-nowrap">
                         {dev.keterangan}
                       </td>
                     </tr>
@@ -930,8 +930,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
                 <tr>
                   <th className="p-2.5">Nama Alat</th>
-                  <th className="p-2.5">Lokasi / UPT</th>
-                  <th className="p-2.5">Keterangan</th>
+                  <th className="p-2.5 text-center">PIC</th>
+                  <th className="p-2.5 text-center">Keterangan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -951,7 +951,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                       <td className="p-2.5 text-slate-600 font-medium">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
                       </td>
-                      <td className="p-2.5 font-bold text-rose-600">
+                      <td className="p-2.5 font-medium text-slate-700  whitespace-nowrap">
                         {dev.keterangan}
                       </td>
                     </tr>

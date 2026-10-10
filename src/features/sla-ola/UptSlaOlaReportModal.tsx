@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import printlogobmkg from '../../assets/images/BMKGLogo.png';
-import { X, Printer, FileText, Eye, FileDown } from 'lucide-react';
+import { X, Printer, FileText, Eye } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
+import { apiClient } from '../../shared/api';
 
 export interface UptRekapRow {
   no: number;
@@ -58,6 +59,13 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
   const [namaMengetahui, setNamaMengetahui] = useState<string>('');
   const [namaPembuat, setNamaPembuat] = useState<string>('');
 
+  // Isian harian untuk Lampiran.
+  type LampiranMode = 'SLA' | 'OLA';
+  const [lampiranMode, setLampiranMode] = useState<LampiranMode>('SLA');
+  const [daily, setDaily] = useState<Record<string, Record<number, { sla: boolean; ola: number }>>>({});
+  const [dailyLoading, setDailyLoading] = useState(false);
+  const [dailyFailed, setDailyFailed] = useState(false);
+
   const previewWrapperRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewScale, setPreviewScale] = useState(1);
@@ -78,6 +86,39 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
   }, [month, year]);
 
   const dayColumns = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const monthIdx = MONTH_INDEX_MAP[month];
+    const yearNum = Number(year);
+    if (monthIdx === undefined || !yearNum) return;
+    let cancelled = false;
+    setDailyLoading(true);
+    setDailyFailed(false);
+    apiClient.slaOlaDaily.fetch(monthIdx + 1, yearNum).then((result) => {
+      if (cancelled) return;
+      if (result === null) {
+        setDaily({});
+        setDailyFailed(true);
+      } else {
+        setDaily(result);
+      }
+      setDailyLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, month, year]);
+
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+
+  // Teks sel Lampiran: '' bila belum ada isian.
+  const cellText = (deviceId: string, day: number): { text: string; bad: boolean } => {
+    const e = daily[deviceId]?.[day];
+    if (!e) return { text: '', bad: false };
+    if (lampiranMode === 'SLA') return { text: e.sla ? 'ON' : 'OFF', bad: !e.sla };
+    return { text: String(round1(e.ola)), bad: e.ola <= 0 };
+  };
 
   const sortedDevices = useMemo(
     () => [...devices].sort((a, b) => {
@@ -133,9 +174,17 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
             <td className="border border-black py-1 px-1 text-center font-semibold">{startIndex + idx + 1}</td>
             <td className="border border-black py-1 px-1.5 font-semibold">{dev.site}</td>
             <td className="border border-black py-1 px-1">{dev.category}</td>
-            {dayColumns.map((d) => (
-              <td key={d} className="border border-black py-1 px-0.5">&nbsp;</td>
-            ))}
+            {dayColumns.map((d) => {
+              const c = cellText(dev.devicesId, d);
+              return (
+                <td
+                  key={d}
+                  className={`border border-black py-1 px-0 text-center text-[7px] font-bold ${c.bad ? 'text-red-600' : ''}`}
+                >
+                  {c.text || '\u00A0'}
+                </td>
+              );
+            })}
           </tr>
         ))}
         {chunk.length === 0 && (
@@ -188,13 +237,6 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
               page: page-landscape;
               break-before: page;
             }
-
-            /* Kompatibilitas Ekspor MS Word */
-            @page SectionLandscape {
-              size: 297mm 210mm;
-              mso-page-orientation: landscape;
-              margin: ${PAGE_MARGIN_MM}mm;
-            }
             div.SectionLandscape {
               page: SectionLandscape;
             }
@@ -240,284 +282,6 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
     printWindow.document.close();
   };
 
-
-  const [isExportingWord, setIsExportingWord] = useState(false);
-
-  const escHtml = (v: unknown) =>
-    String(v ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-
-  const blobToBase64 = (blob: Blob) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(blob);
-    });
-
-  const wrapBase64 = (b64: string) => (b64.match(/.{1,76}/g) || []).join('\r\n');
-
-  const buildWordBody = (logoSrc: string) => {
-    const B = 'border:1px solid #000;';
-    const th = `${B}padding:3px 4px;background:#f1f5f9;font-weight:bold;text-align:center;`;
-    const td = `${B}padding:3px 4px;text-align:center;`;
-
-    const kop = `
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-        <tr>
-          <td width="80" style="width:80px;vertical-align:middle;">
-            <img src="${logoSrc}" width="64" height="80" alt="Logo BMKG" />
-          </td>
-          <td style="text-align:center;vertical-align:middle;">
-            <p style="margin:0;font-size:13pt;font-weight:bold;text-transform:uppercase;">BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA</p>
-            <p style="margin:2px 0 0 0;font-size:11pt;font-weight:bold;text-transform:uppercase;">BALAI BESAR METEOROLOGI, KLIMATOLOGI DAN GEOFISIKA WILAYAH V</p>
-            <p style="margin:4px 0 0 0;font-size:8pt;">Jl. Raya Abepura Entrop - Jayapura, Telp : (0967) 5165442, Kode Pos 99224</p>
-            <p style="margin:0;font-size:8pt;">Email : <span style="color:#1e40af;text-decoration:underline;">bbmkg5@bmkg.go.id</span> Website : <span style="color:#1e40af;text-decoration:underline;">bbmkg5.bmkg.go.id</span></p>
-          </td>
-          <td width="80" style="width:80px;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="border-top:1px solid #0f172a;margin-top:6px;height:0;font-size:1px;line-height:1px;">&nbsp;</div>
-      <div style="border-top:4px solid #0f172a;margin-top:2px;margin-bottom:14px;height:0;font-size:1px;line-height:1px;">&nbsp;</div>`;
-
-    const infoRow = (label: string, value: string) => `
-      <tr>
-        <td style="width:140px;padding:2px 6px;font-weight:bold;">${label}</td>
-        <td style="width:14px;padding:2px 0;font-weight:bold;">:</td>
-        <td style="padding:2px 6px;font-weight:bold;">${value}</td>
-      </tr>`;
-
-    const rekapRowsHtml = rekapRows
-      .map(
-        (r) => `
-        <tr>
-          <td style="${td}font-weight:bold;">${r.no}</td>
-          <td style="${td}text-align:left;font-weight:bold;">${escHtml(r.name)}</td>
-          <td style="${td}font-weight:bold;">${r.jumlahLokasi}</td>
-          <td style="${td}font-weight:bold;">${r.sla.toFixed(1)}%</td>
-          <td style="${td}font-weight:bold;">${r.ola.toFixed(1)}%</td>
-          <td style="${td}font-weight:bold;">${r.normalCount}</td>
-          <td style="${td}font-weight:bold;">${r.gangguanCount}</td>
-          <td style="${td}font-weight:bold;">${r.matiCount}</td>
-        </tr>`
-      )
-      .join('');
-
-    const statBox = (label: string, value: string) => `
-      <td width="33%" style="${B}padding:6px;text-align:center;">
-        <p style="margin:0;font-size:7pt;font-weight:bold;text-transform:uppercase;color:#475569;">${label}</p>
-        <p style="margin:0;font-size:14pt;font-weight:bold;">${value}</p>
-      </td>`;
-
-    const page1 = `
-    <div class="SectionPortrait">
-      ${kop}
-      <p style="text-align:center;margin:0;font-size:12pt;font-weight:bold;text-transform:uppercase;">REKAPITULASI KINERJA ALOPTAMA</p>
-      <p style="text-align:center;margin:0 0 14px 0;font-size:12pt;font-weight:bold;text-transform:uppercase;">${escHtml(uptName)}</p>
-
-      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;${B}width:60%;margin-bottom:14px;font-size:9pt;">
-        ${infoRow('Stasiun UPT', escHtml(uptName))}
-        ${infoRow('Periode Laporan', `${escHtml(month)} ${escHtml(year)}`)}
-        ${infoRow('Jumlah Aloptama', `${totalLokasi} Unit`)}
-        ${infoRow('Tanggal Laporan', escHtml(todayLabel))}
-      </table>
-
-      <table width="60%" cellspacing="6" cellpadding="0" style="border-collapse:separate;margin-bottom:14px;">
-        <tr>
-          ${statBox('SLA Bulanan', `${avgSla.toFixed(1)}%`)}
-          ${statBox('OLA Bulanan', `${avgOla.toFixed(1)}%`)}
-          ${statBox('Normal / Total', `${totalNormal}/${totalLokasi}`)}
-        </tr>
-      </table>
-
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:9pt;margin-bottom:24px;">
-        <tr>
-          <th style="${th}width:30px;">NO</th>
-          <th style="${th}text-align:left;">PERALATAN</th>
-          <th style="${th}width:64px;">JUMLAH LOKASI</th>
-          <th style="${th}width:50px;">SLA</th>
-          <th style="${th}width:50px;">OLA</th>
-          <th style="${th}width:60px;">NORMAL</th>
-          <th style="${th}width:66px;">GANGGUAN</th>
-          <th style="${th}width:76px;">TIDAK BEROPERASI</th>
-        </tr>
-        ${rekapRowsHtml}
-        <tr>
-          <td colspan="2" style="${th}text-align:left;">TOTAL</td>
-          <td style="${th}">${totalLokasi}</td>
-          <td style="${th}">${avgSla.toFixed(1)}%</td>
-          <td style="${th}">${avgOla.toFixed(1)}%</td>
-          <td style="${th}">${totalNormal}</td>
-          <td style="${th}">${totalGangguan}</td>
-          <td style="${th}">${totalMati}</td>
-        </tr>
-      </table>
-
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:10pt;">
-        <tr>
-          <td width="60%">&nbsp;</td>
-          <td style="text-align:center;font-weight:bold;">
-            <p style="margin:0;">Mengetahui,</p>
-            <p style="margin:0;">${escHtml(jabatanMengetahui)}</p>
-            <p style="margin:0;height:70px;">&nbsp;</p>
-            <p style="margin:0;text-decoration:underline;">${escHtml(namaMengetahui) || '(...........................)'}</p>
-          </td>
-        </tr>
-      </table>
-    </div>`;
-
-    const dayTh = dayColumns
-      .map((d) => `<th style="${th}width:19px;padding:2px 0;font-size:6.5pt;">${d}</th>`)
-      .join('');
-
-    const lampiranPages = deviceChunks
-      .map((chunk, chunkIdx) => {
-        const startIndex = chunkIdx * ROWS_PER_LANDSCAPE_PAGE;
-        const isFirst = chunkIdx === 0;
-        const isLast = chunkIdx === deviceChunks.length - 1;
-
-        const rows = chunk.length
-          ? chunk
-              .map(
-                (dev, idx) => `
-          <tr>
-            <td style="${td}font-weight:bold;">${startIndex + idx + 1}</td>
-            <td style="${td}text-align:left;font-weight:bold;">${escHtml(dev.site)}</td>
-            <td style="${td}text-align:left;">${escHtml(dev.category)}</td>
-            ${dayColumns.map(() => `<td style="${td}">&nbsp;</td>`).join('')}
-          </tr>`
-              )
-              .join('')
-          : `<tr><td colspan="${3 + dayColumns.length}" style="${td}padding:10px;color:#64748b;">Tidak ada alat pada UPT ini.</td></tr>`;
-
-        const heading = isFirst
-          ? `<p style="text-align:center;margin:0;font-size:12pt;font-weight:bold;text-transform:uppercase;">LAMPIRAN — TABEL PENGISIAN SLA &amp; OLA HARIAN</p>
-             <p style="text-align:center;margin:0 0 10px 0;font-size:10pt;font-weight:bold;text-transform:uppercase;">${escHtml(uptName)} — ${escHtml(month)} ${escHtml(year)}</p>`
-          : '';
-
-        const sign = isLast
-          ? `<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:10pt;margin-top:24px;">
-              <tr>
-                <td width="50%" style="text-align:center;font-weight:bold;">
-                  <p style="margin:0;">Diisi Oleh,</p>
-                  <p style="margin:0;">Teknisi UPT</p>
-                  <p style="margin:0;height:50px;">&nbsp;</p>
-                  <p style="margin:0;text-decoration:underline;">${escHtml(namaPembuat) || '(...........................)'}</p>
-                </td>
-                <td width="50%" style="text-align:center;font-weight:bold;">
-                  <p style="margin:0;">Diperiksa Oleh,</p>
-                  <p style="margin:0;">${escHtml(jabatanMengetahui)}</p>
-                  <p style="margin:0;height:50px;">&nbsp;</p>
-                  <p style="margin:0;text-decoration:underline;">${escHtml(namaMengetahui) || '(...........................)'}</p>
-                </td>
-              </tr>
-            </table>`
-          : '';
-
-        return `
-    <br clear="all" style="page-break-before:always;mso-break-type:section-break;" />
-    <div class="SectionLandscape">
-      ${heading}
-      <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:7pt;">
-        <tr>
-          <th style="${th}width:24px;">NO</th>
-          <th style="${th}width:150px;text-align:left;">NAMA ALAT</th>
-          <th style="${th}width:90px;text-align:left;">KATEGORI</th>
-          ${dayTh}
-        </tr>
-        ${rows}
-      </table>
-      ${sign}
-    </div>`;
-      })
-      .join('');
-
-    return page1 + lampiranPages;
-  };
-
-  const handleExportWord = async () => {
-    if (isExportingWord) return;
-    setIsExportingWord(true);
-    try {
-      // Logo di-embed ke dokumen supaya tetap tampil saat dibuka di Word (offline)
-      let logoB64 = '';
-      let logoMime = 'image/png';
-      try {
-        const res = await fetch(printlogobmkg);
-        const blob = await res.blob();
-        logoMime = blob.type || 'image/png';
-        logoB64 = await blobToBase64(blob);
-      } catch {
-        logoB64 = '';
-      }
-
-      const logoCid = 'bmkg-logo.png';
-      const bodyHtml = buildWordBody(logoB64 ? logoCid : '');
-      const docTitle = `Laporan Kinerja Aloptama - ${uptName} (${month} ${year})`;
-
-      const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-<meta charset="utf-8">
-<title>${escHtml(docTitle)}</title>
-<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
-<style>
-  @page SectionPortrait { size: 210mm 297mm; mso-page-orientation: portrait; margin: ${PAGE_MARGIN_MM}mm; }
-  @page SectionLandscape { size: 297mm 210mm; mso-page-orientation: landscape; margin: ${PAGE_MARGIN_MM}mm; }
-  div.SectionPortrait { page: SectionPortrait; }
-  div.SectionLandscape { page: SectionLandscape; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #000; }
-  table { border-collapse: collapse; }
-  p { margin: 0; }
-</style>
-</head>
-<body>
-${bodyHtml}
-</body>
-</html>`;
-
-      const htmlB64 = wrapBase64(btoa(unescape(encodeURIComponent(html))));
-      const boundary = '----=_NextPart_SIMON_' + Date.now();
-      const parts: string[] = [
-        'MIME-Version: 1.0',
-        `Content-Type: multipart/related; boundary="${boundary}"; type="text/html"`,
-        '',
-        `--${boundary}`,
-        'Content-Type: text/html; charset="utf-8"',
-        'Content-Transfer-Encoding: base64',
-        'Content-Location: file:///C:/report.htm',
-        '',
-        htmlB64,
-        '',
-      ];
-      if (logoB64) {
-        parts.push(
-          `--${boundary}`,
-          `Content-Type: ${logoMime}`,
-          'Content-Transfer-Encoding: base64',
-          `Content-Location: ${logoCid}`,
-          '',
-          wrapBase64(logoB64),
-          ''
-        );
-      }
-      parts.push(`--${boundary}--`, '');
-
-      const blob = new Blob([parts.join('\r\n')], { type: 'application/msword' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${docTitle}.doc`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } finally {
-      setIsExportingWord(false);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -620,6 +384,20 @@ ${bodyHtml}
             </div>
           </div>
 
+          <div className="no-print mb-4 p-3 bg-white border border-slate-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-2 text-xs max-w-4xl mx-auto">
+            <label className="font-bold text-slate-700 shrink-0">Isi Lampiran dengan:</label>
+            <select
+              value={lampiranMode}
+              onChange={(e) => setLampiranMode(e.target.value as LampiranMode)}
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold outline-none focus:border-[#0052CC]"
+            >
+              <option value="SLA">Data SLA (ON / OFF)</option>
+              <option value="OLA">Data OLA (%)</option>
+            </select>
+            {dailyLoading && <span className="text-slate-500 font-semibold">Memuat data harian...</span>}
+            {dailyFailed && <span className="text-rose-600 font-semibold">Gagal memuat data harian dari server.</span>}
+          </div>
+
           <div className="no-print mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-900 font-medium max-w-4xl mx-auto">
             <div className="flex items-center gap-2">
               <Eye size={18} className="text-[#0052CC] shrink-0" />
@@ -633,15 +411,6 @@ ${bodyHtml}
               >
                 <Printer size={14} />
                 <span>Cetak / Simpan PDF</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleExportWord}
-                disabled={isExportingWord}
-                className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <FileDown size={14} />
-                <span>{isExportingWord ? 'Menyiapkan...' : 'Unduh Word'}</span>
               </button>
             </div>
           </div>
