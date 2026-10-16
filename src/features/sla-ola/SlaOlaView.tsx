@@ -626,7 +626,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             OLA BULANAN ({selectedMonth} {selectedYear})
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
-            <span className="font-heading text-3xl sm:text-4xl font-black text-blue-700">
+            <span className="font-heading text-3xl sm:text-4xl font-black text-[#0052CC]">
               {Math.round(monthlyOlaValue)}%
             </span>
             <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -662,9 +662,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 pb-4 border-b border-slate-100">
           <div>
             <h3 className="font-heading font-bold text-base text-slate-900 flex items-center gap-2.5">
-              <span className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 shadow-xs">
-                <BarChart2 className="w-5 h-5" />
-              </span>
               Rekapitulasi, Kondisi &amp; Analisa SLA OLA ({selectedMonth} {selectedYear})
             </h3>
           </div>
@@ -977,7 +974,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
       </div>
 
-      {/* TABEL PENGISIAN SLA & OLA HARIAN (alat x tanggal) */}
+      {/* TABEL HARIAN SLA & OLA (alat x tanggal) */}
       <SlaOlaHarianTable devices={uptFilteredDevices} />
 
       {permissions.canViewUnreportedList && (
@@ -986,8 +983,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
-                <Wrench size={18} className="text-[#0052CC]" />
-                Daftar Aloptama yang Belum Dilaporkan Hari Ini ({sortedDevices.length} Unit)
+                Daftar Aloptama yang Belum Dilaporkan Hari Ini 
               </h3>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                 <CheckCircle2 size={13} />
@@ -1088,12 +1084,11 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     </td>
                     <td className="p-3 text-slate-700 font-medium">
                       <div className="flex items-center gap-1.5">
-                        <Clock size={13} className="text-[#0052CC] shrink-0" />
                         <span className="text-[11px] font-semibold text-slate-800">
                           {dev.lastReportedDate || dev.lastCalibrated || '27 Juli 2026'}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 block ml-4">Belum Lapor Hari Ini</span>
+                      <span className="text-[10px] text-slate-400">Belum Lapor Hari Ini</span>
                     </td>
                   </tr>
                 ))

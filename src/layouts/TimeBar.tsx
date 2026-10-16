@@ -44,9 +44,6 @@ export const TimeBar: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Bar selebar layar penuh (seperti semula), tapi dibuat lebih TIPIS
-  // (h-7, sebelumnya h-9) dengan font lebih kecil. Navbar & Sidebar ikut
-  // disesuaikan ke top-7 supaya tetap menempel tepat di bawah bar ini.
   return (
     <div className="fixed top-0 left-0 right-0 z-40">
       <button

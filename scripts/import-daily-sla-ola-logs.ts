@@ -69,6 +69,14 @@ const LOCATION_TO_DEVICE_ID: Record<string, string> = {
   'AWS Stamet Digi Timika': 'ALT0038',
   'BPBD Kab. Keerom ( Relokasi Ke lantamal X)': 'ALT0146',
   'BPBD Kab. Keerom (Relokasi Ke lantamalX)': 'ALT0146',
+  'BPBD Kab. Keerom (Relokasi Ke lantamal X)': 'ALT0146',
+  'Lantamal X': 'ALT0146', // nama baru WRS NG Keerom di CSV terbaru (relokasi ke Lantamal X)
+  // Nama di SEISMO.csv versi baru (beda ejaan dengan Master Alat):
+  'DYPI (Dekai, Yakukimo)': 'ALT0118',
+  'TRPI (Bovendigoel, Tanah Merah)': 'ALT0121',
+  'BATPI (Babo, Teluk Bintuni)': 'ALT0169',
+  'FKSPI (Sawiat, Sorong Selatan)': 'ALT0172',
+  'RAPI (RajaAmpat)': 'ALT0177',
   // Nama di AWS.csv versi baru:
   'AWS Nimboran Staklim Papua': 'ALT0072',
   'AWS IKRO Staklim Papua': 'ALT0076',
