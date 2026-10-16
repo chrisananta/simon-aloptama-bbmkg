@@ -21,6 +21,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Durasi minimum splash logo SIMON (ms).
+const MIN_SPLASH_MS = 3500;
+
 const DEFAULT_PERMISSIONS: RBACPermissions = {
   allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan'],
   canAddCalibration: false,
@@ -43,8 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
   // Terpisah dari isLoading: isInitializing HANYA true selama pengecekan sesi
   // pertama kali (pas app baru dibuka). Setelah itu SELAMANYA false - tidak
-  // ikut nyala lagi tiap kali proses login() jalan. Ini yang dipakai
-  // ProtectedRoute untuk memutuskan tampilkan spinner vs LoginPage, supaya
+  // ikut nyala lagi tiap kali proses login() jalan. supaya
   // LoginPage tidak unmount/remount tiap kali user mencoba login.
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [sessionTimeLeftMinutes, setSessionTimeLeftMinutes] = useState<number>(0);
@@ -74,7 +76,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(null);
     } finally {
       setIsLoading(false);
-      setIsInitializing(false);
+      // Tahan splash sampai total minimal MIN_SPLASH_MS sejak halaman dibuka.
+      // performance.now() = ms sejak halaman mulai dimuat, jadi waktu yang
+      // sudah terpakai saat loading tidak dihitung dua kali.
+      const remaining = Math.max(0, MIN_SPLASH_MS - performance.now());
+      setTimeout(() => setIsInitializing(false), remaining);
     }
   }, []);
 
