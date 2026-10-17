@@ -364,7 +364,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     }
 
     const reportHtml = element.outerHTML;
-    const docTitle = `Laporan Mingguan Monitoring Aloptama BMKG (${startDate} - ${endDate})`;
+    const docTitle = `Laporan Rekapitulasi Monitoring Aloptama BMKG (${startDate} - ${endDate})`;
 
     printWindow.document.open();
     printWindow.document.write(`
@@ -482,7 +482,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </span>
               </div>
               <h2 className="text-sm sm:text-lg font-black tracking-tight text-white mt-0.5 leading-tight">
-                Buat Laporan Mingguan Monitoring Aloptama
+                Buat Laporan Monitoring Aloptama
               </h2>
             </div>
           </div>
@@ -976,7 +976,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
 
                   <div className="text-center my-6">
                     <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
-                      LAPORAN MINGGUAN MONITORING 
+                      LAPORAN REKAPITULASI MONITORING
                     </h2>
                     <h3 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase mt-0.5">
                       ALOPTAMA DI BBMKG WILAYAH V

@@ -780,9 +780,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <h3 className="font-heading font-bold text-base text-slate-900">
                 Grafik Tren SLA Bulanan {selectedYear}
               </h3>
-              <p className="text-xs text-slate-500">
-                Rata-rata SLA ketersediaan peralatan {selectedUpt !== 'ALL' ? `milik ${selectedUptName}` : 'seluruh UPT'} per bulan
-              </p>
             </div>
             <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
               {selectedUpt === 'ALL' ? `Tahun ${selectedYear}` : selectedUptName}
