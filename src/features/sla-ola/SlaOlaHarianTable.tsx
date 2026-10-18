@@ -121,7 +121,6 @@ export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices })
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div>
           <h3 className="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
-            <CalendarDays size={16} className="text-[#0052CC]" />
             Tabel Pengisian {jenis} Harian — {MONTHS[month]} {year}
           </h3>
         </div>

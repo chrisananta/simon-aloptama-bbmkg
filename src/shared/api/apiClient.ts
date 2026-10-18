@@ -9,6 +9,7 @@ import {
   GensetRecord,
   PerbaikanRecord,
   YearlyScoreMap,
+  RangeScoreMap,
 } from "../types";
 import { AuthUser } from "../../features/auth/authTypes";
 import {
@@ -445,6 +446,27 @@ export const apiClient = {
         }
       } catch (e) {
         console.warn("apiClient.slaOlaSummary.fetch failed:", e);
+      }
+      return null;
+    },
+  },
+
+  // ----------------------------------------------------
+  // SLA/OLA RENTANG TANGGAL API (sumber Laporan Mingguan Monitoring)
+  // ----------------------------------------------------
+  slaOlaRange: {
+    /** from/to "YYYY-MM-DD". null kalau gagal dimuat ({} = memang belum ada isian di rentang itu). */
+    fetch: async (from: string, to: string): Promise<RangeScoreMap | null> => {
+      try {
+        const res = await authFetch(
+          `/api/sla-ola/range?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+        );
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success) return (json.data || {}) as RangeScoreMap;
+        }
+      } catch (e) {
+        console.warn("apiClient.slaOlaRange.fetch failed:", e);
       }
       return null;
     },

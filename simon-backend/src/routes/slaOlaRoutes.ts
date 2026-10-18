@@ -14,6 +14,9 @@ router.get('/sla-ola/summary', verifyToken, slaOlaController.getYearlySummary);
 // Isian SLA/OLA harian per alat per tanggal (tabel pengisian di halaman SLA & OLA) — cukup login
 router.get('/sla-ola/daily', verifyToken, slaOlaController.getDailyFilling);
 
+// Rekap SLA/OLA per alat untuk rentang tanggal (sumber Laporan Mingguan) — cukup login
+router.get('/sla-ola/range', verifyToken, slaOlaController.getRangeSummary);
+
 // Tabel monitoring pengisian SLA/OLA (lihat/edit/hapus per entri) — khusus Admin
 router.get('/sla-ola/logs', verifyToken, requireAdmin, slaOlaController.getSlaOlaLogs);
 router.put('/sla-ola/logs/:id', verifyToken, requireAdmin, slaOlaController.updateSlaOlaLog);

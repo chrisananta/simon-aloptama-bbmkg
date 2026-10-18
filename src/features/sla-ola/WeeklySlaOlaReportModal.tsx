@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import printlogobmkg from '../../assets/images/BMKGLogo.png';
+import footerTte from '../../assets/images/FooterTTE.png';
 import { 
   X, 
   Printer, 
@@ -17,10 +18,10 @@ import {
   Upload,
   Image as ImageIcon,
   Paperclip,
-  FileImage,
   ExternalLink
 } from 'lucide-react';
-import { AloptamaDevice } from '../../shared/types';
+import { AloptamaDevice, RangeScoreMap } from '../../shared/types';
+import { apiClient } from '../../shared/api';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 
 interface WeeklySlaOlaReportModalProps {
@@ -37,6 +38,73 @@ export interface ExtraAttachmentItem {
   imageUrl: string;
 }
 
+const REPORT_CSS = `
+  @page { size: A4 portrait; margin: 0; }
+  .wr-root { background: #e5e7eb; padding: 6mm 0; }
+  .wr-sheet, .wr-sheet * { box-sizing: border-box; }
+  .wr-sheet {
+    position: relative; width: 210mm; height: 297mm; overflow: hidden;
+    margin: 0 auto 6mm; background: #fff; color: #000;
+    font-family: Arial, "Liberation Sans", Helvetica, sans-serif; font-size: 11pt; line-height: 1.2;
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+  }
+  .wr-footer { position: absolute; left: 25.4mm; top: 275.5mm; width: 159.2mm; height: 8.9mm; }
+  .wr-footer img { display: block; width: 100%; height: 100%; }
+
+  /* Kop (halaman 1) */
+  .wr-kop { position: absolute; left: 0; top: 0; width: 210mm; height: 35.3mm; background: #d0d0d0; border-bottom: 0.8mm solid #000; }
+  .wr-kop::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1.6mm; border-top: 0.25mm solid #000; }
+  .wr-kop-logo { position: absolute; left: 7.3mm; top: 4.2mm; width: 25.4mm; height: 25.2mm; object-fit: contain; }
+  .wr-kop-text { position: absolute; left: 32.7mm; right: 7mm; top: 5.9mm; text-align: center; font-weight: bold; }
+  .wr-kop-1 { font-size: 16pt; line-height: 7mm; }
+  .wr-kop-2 { font-size: 13pt; line-height: 6mm; }
+  .wr-kop-3 { font-size: 12pt; line-height: 5.6mm; }
+  .wr-link { color: #0563c1; text-decoration: underline; }
+
+  .wr-title { position: absolute; left: 25.4mm; right: 25.4mm; top: 45.8mm; text-align: center; font-size: 14pt; font-weight: bold; line-height: 8.5mm; }
+  .wr-flow { position: absolute; left: 25.4mm; width: 159.2mm; }
+  .wr-flow-1 { top: 69.6mm; }
+  .wr-flow-2 { top: 25.4mm; }
+  .wr-flow-3 { top: 25.4mm; }
+
+  .wr-info { border: 0.35mm solid #000; padding: 0 1.7mm; line-height: 6.7mm; }
+  .wr-info-row { display: flex; }
+  .wr-info-label { width: 35.3mm; flex: none; }
+  .wr-info-colon { width: 4.6mm; flex: none; }
+  .wr-info-value { flex: 1; }
+  .wr-h2 { margin: 5.3mm 0 3.9mm; font-size: 12pt; font-weight: bold; line-height: 5mm; }
+
+  .wr-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-family: Calibri, Carlito, Arial, sans-serif; font-size: 11pt; }
+  .wr-table th, .wr-table td { border: 0.35mm solid #000; height: 6.07mm; padding: 0 1.2mm; text-align: center; vertical-align: middle; line-height: 1; font-weight: normal; white-space: nowrap; overflow: hidden; }
+  .wr-t2 th, .wr-t2 td { height: 5.97mm; }
+  .wr-table .wr-l { text-align: left; }
+  .wr-table .wr-b th { font-weight: bold; }
+  .wr-table .wr-total td { font-weight: bold; }
+
+  .wr-notes-title { margin-top: 7.4mm; font-weight: bold; line-height: 5mm; }
+  .wr-note { display: flex; padding-left: 6.35mm; margin-top: 2.6mm; line-height: 5mm; }
+  .wr-note-no { width: 6.35mm; flex: none; }
+  .wr-sign { width: 64mm; margin: 9.6mm 0 0 auto; text-align: center; line-height: 6.65mm; }
+  .wr-sign-space { height: 18.8mm; display: flex; align-items: center; justify-content: center; }
+  .wr-sign-hint { border: 0.3mm dashed #94a3b8; color: #94a3b8; font-size: 8pt; font-style: italic; padding: 1mm 3mm; border-radius: 1mm; }
+  .wr-sign-name { font-weight: bold; position: relative; left: 1.7mm; }
+
+  .wr-lamp-title { text-align: center; font-size: 14pt; font-weight: bold; line-height: 6mm; margin-bottom: 11mm; }
+  .wr-lamp-item { margin-bottom: 5.6mm; }
+  .wr-lamp-head { font-size: 12pt; font-weight: bold; font-style: italic; line-height: 4.2mm; }
+  .wr-lamp-img { display: block; height: 67mm; width: auto; max-width: 100%; margin: 0 auto; object-fit: contain; }
+  .wr-lamp-empty { height: 67mm; width: 128mm; max-width: 100%; margin: 0 auto; border: 0.3mm dashed #94a3b8; background: #f8fafc; color: #64748b; font-size: 10pt; display: flex; align-items: center; justify-content: center; }
+
+  @media print {
+    html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .wr-root { background: #fff !important; padding: 0 !important; margin: 0 !important; }
+    .wr-sheet { margin: 0 !important; box-shadow: none !important; height: 296.4mm; break-after: page; page-break-after: always; }
+    .wr-sheet:last-child { break-after: auto; page-break-after: auto; }
+    .wr-noprint, .no-print { display: none !important; }
+  }
+`;
+
 export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = ({
   isOpen,
   onClose,
@@ -48,6 +116,32 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   const [endDateIso, setEndDateIso] = useState<string>('2026-06-19');
   const [startDate, setStartDate] = useState<string>('15 Juni 2026');
   const [endDate, setEndDate] = useState<string>('19 Juni 2026');
+
+  // Nilai SLA/OLA per alat untuk rentang tanggal terpilih, dari isian harian (sla_ola_logs).
+  const [rangeScores, setRangeScores] = useState<RangeScoreMap>({});
+  const [isRangeLoading, setIsRangeLoading] = useState(false);
+  const [rangeLoadFailed, setRangeLoadFailed] = useState(false);
+  const isRangeValid = !!startDateIso && !!endDateIso && startDateIso <= endDateIso;
+
+  useEffect(() => {
+    if (!isOpen || !isRangeValid) return;
+    let cancelled = false;
+    setIsRangeLoading(true);
+    setRangeLoadFailed(false);
+    apiClient.slaOlaRange.fetch(startDateIso, endDateIso).then((result) => {
+      if (cancelled) return;
+      if (result === null) {
+        setRangeScores({});
+        setRangeLoadFailed(true);
+      } else {
+        setRangeScores(result);
+      }
+      setIsRangeLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, isRangeValid, startDateIso, endDateIso]);
 
   const formatDateToIndonesian = (dateIsoStr: string) => {
     if (!dateIsoStr) return '';
@@ -148,7 +242,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   };
 
   const [jabatanMengetahui, setJabatanMengetahui] = useState<string>(
-    'Ketua Tim Kerja\nInstrumentasi dan Kalibrasi'
+    'Ketua Tim Kerja Instrumentasi dan Kalibrasi'
   );
   const [namaMengetahui, setNamaMengetahui] = useState<string>(
     'Yessi Veronika Marpaung, S.Tr'
@@ -296,7 +390,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
       }
     ];
 
-    return CATEGORIES.map((cat) => {
+    return CATEGORIES.map((cat, idx) => {
       const catDevs = devices.filter(cat.matchFn);
 
       let jumlahLokasi = catDevs.length;
@@ -306,31 +400,43 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
       let gangguan = 0;
       let mati = 0;
 
-      if (catDevs.length > 0) {
-        const avgSla = catDevs.reduce((sum, d) => sum + (d.slaScore ?? 0), 0) / catDevs.length;
-        const avgOla = catDevs.reduce((sum, d) => sum + (d.olaScore ?? 0), 0) / catDevs.length;
-        sla = Number(avgSla.toFixed(1));
-        ola = Number(avgOla.toFixed(1));
-        sla = Math.min(100, Math.max(0, sla));
-        ola = Math.min(100, Math.max(0, ola));
-
-        normal = catDevs.filter(d => d.conditionStatus === 'NORMAL').length;
-        gangguan = catDevs.filter(d => d.conditionStatus === 'GANGGUAN').length;
-        mati = catDevs.filter(d => d.conditionStatus === 'MATI').length;
+      // Nilai dari isian harian UPT pada rentang tanggal. Alat tanpa isian sama sekali di
+      // rentang itu tetap dihitung di pembagi (jumlah lokasi) dan masuk "Tidak Beroperasi".
+      let totalSla = 0;
+      let totalOla = 0;
+      let tanpaIsian = 0;
+      for (const d of catDevs) {
+        const sc = rangeScores[d.devicesId];
+        if (!sc) {
+          tanpaIsian += 1;
+          continue;
+        }
+        totalSla += sc.sla;
+        totalOla += sc.ola;
+        // Aturan klasifikasi sama dengan halaman SLA & OLA.
+        if (sc.sla <= 0 || sc.ola <= 0) mati += 1;
+        else if (sc.sla >= 100 && sc.ola >= 100) normal += 1;
+        else gangguan += 1;
+      }
+      mati += tanpaIsian;
+      if (jumlahLokasi > 0) {
+        sla = Math.min(100, Math.max(0, Number((totalSla / jumlahLokasi).toFixed(1))));
+        ola = Math.min(100, Math.max(0, Number((totalOla / jumlahLokasi).toFixed(1))));
       }
 
       return {
-        no: cat.no,
+        no: idx + 1,
         name: cat.name,
         jumlahLokasi,
         sla,
         ola,
         normal,
         gangguan,
-        mati
+        mati,
+        tanpaIsian
       };
     });
-  }, [devices]);
+  }, [devices, rangeScores]);
 
   const totalLokasiSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.jumlahLokasi, 0), [rekapData]);
   const avgSlaTotal = useMemo(() => {
@@ -347,13 +453,11 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
 
   const totalNormalSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.normal, 0), [rekapData]);
   const totalGangguanSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.gangguan, 0), [rekapData]);
+  const totalTanpaIsian = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.tanpaIsian, 0), [rekapData]);
   const totalMatiSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.mati, 0), [rekapData]);
 
-  const percentNormal = useMemo(() => totalLokasiSum > 0 ? ((totalNormalSum / totalLokasiSum) * 100).toFixed(2) : '0', [totalNormalSum, totalLokasiSum]);
-  const percentGangguan = useMemo(() => totalLokasiSum > 0 ? ((totalGangguanSum / totalLokasiSum) * 100).toFixed(2) : '0', [totalGangguanSum, totalLokasiSum]);
-  const percentMati = useMemo(() => totalLokasiSum > 0 ? ((totalMatiSum / totalLokasiSum) * 100).toFixed(2) : '0', [totalMatiSum, totalLokasiSum]);
-
   const handleOpenPrintWindow = () => {
+    if (isRangeLoading || rangeLoadFailed || !isRangeValid) return;
     const element = document.getElementById('printable-report-area');
     if (!element) return;
 
@@ -364,7 +468,11 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     }
 
     const reportHtml = element.outerHTML;
-    const docTitle = `Laporan Rekapitulasi Monitoring Aloptama BMKG (${startDate} - ${endDate})`;
+    // Nama berkas PDF mengikuti kebiasaan: DDMMYYYY (tanggal akhir)_Laporan_Mingguan_Monitoring
+    const [yy, mm, dd] = endDateIso.split('-');
+    const docTitle = yy && mm && dd
+      ? `${dd}${mm}${yy}_Laporan_Mingguan_Monitoring`
+      : `Laporan_Mingguan_Monitoring (${startDate} - ${endDate})`;
 
     printWindow.document.open();
     printWindow.document.write(`
@@ -373,48 +481,22 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         <head>
           <meta charset="UTF-8">
           <title>${docTitle}</title>
-          <script src="https://cdn.tailwindcss.com"></script>
           <style>
-            @page { size: A4 portrait; margin: 12mm; }
-            * { box-sizing: border-box; }
-            body { margin: 0; padding: 20px; background: #f1f5f9; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-            .page { background: white; padding: 12mm; max-width: 210mm; margin: 0 auto; }
-            #printable-report-area { border: none !important; box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; }
-            @media print {
-              body { padding: 0; background: white; }
-              .no-print { display: none !important; }
-              .page { padding: 0; max-width: none; margin: 0; box-shadow: none; border-radius: 0; padding-bottom: 28mm; }
-              .page-break { page-break-before: always !important; }
-              /* Footer TTE tetap muncul di bawah SETIAP halaman cetak */
-              .tte-footer {
-                position: fixed;
-                left: 12mm;
-                right: 12mm;
-                bottom: 6mm;
-                background: white;
-                margin: 0 !important;
-              }
-            }
+            body { margin: 0; background: #e5e7eb; }
+            .print-bar { max-width: 210mm; margin: 12px auto; padding: 12px 16px; background: #0f172a; color: #fff; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; font: 700 12px Arial, sans-serif; }
+            .print-bar button { background: #0052CC; color: #fff; padding: 8px 18px; border-radius: 10px; border: 0; cursor: pointer; font-weight: 700; }
+            ${REPORT_CSS}
           </style>
         </head>
         <body>
-          <div class="no-print max-w-4xl mx-auto mb-4 p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-between text-xs font-bold shadow-xl">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
-              <span>Dokumen Siap Dicetak atau Disimpan sebagai PDF (BMKG V Papua)</span>
-            </div>
-            <button onclick="window.print()" style="background:#0052CC; color:white; padding:8px 18px; border-radius:10px; border:none; cursor:pointer; font-weight:bold; display:flex; items-center; gap:6px;">
-              🖨️ Cetak / Simpan PDF
-            </button>
+          <div class="print-bar no-print">
+            <span>Dokumen siap dicetak atau disimpan sebagai PDF (BBMKG Wilayah V)</span>
+            <button onclick="window.print()">Cetak / Simpan PDF</button>
           </div>
-          <div class="page">
-            ${reportHtml}
-          </div>
+          ${reportHtml}
           <script>
             window.onload = function() {
-              setTimeout(function() {
-                window.print();
-              }, 600);
+              setTimeout(function() { window.print(); }, 600);
             };
           </script>
         </body>
@@ -425,46 +507,37 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
 
   if (!isOpen) return null;
 
+  // ---- Bahan halaman laporan (mengikuti contoh laporan manual) ----
+  const catatanItems = (() => {
+    const items = catatanText.split('\n').map((t) => t.trim()).filter(Boolean);
+    return items.length > 0 ? items : ['-'];
+  })();
+  const jabatanLine = jabatanMengetahui.replace(/\s*\n\s*/g, ' ').trim().replace(/,?$/, ',');
+
+  const lampiranItems: { key: string; title: string; src: string | null }[] = [
+    { key: 'aws', title: 'Monitoring AWS Center', src: imgAwsCenter },
+    { key: 'slaola', title: 'Monitoring SLA dan OLA', src: imgSlaOla },
+    { key: 'diseminasi', title: 'Diseminasi Hasil Monitoring Aloptama', src: imgDiseminasi },
+    ...extraAttachments.map((att, idx) => ({
+      key: att.id,
+      title: att.title || `Lampiran Foto Tambahan #${idx + 1}`,
+      src: att.imageUrl || null,
+    })),
+  ];
+  const lampiranSheets: (typeof lampiranItems)[] = [];
+  for (let i = 0; i < lampiranItems.length; i += 3) {
+    lampiranSheets.push(lampiranItems.slice(i, i + 3));
+  }
+
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
       <style>{`
-        @page { size: A4 portrait; margin: 12mm; }
         @media print {
-          body * {
-            visibility: hidden !important;
-          }
-          #printable-report-area, #printable-report-area * {
-            visibility: visible !important;
-          }
-          #printable-report-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 15mm 15mm 32mm 15mm !important;
-            background: white !important;
-            color: black !important;
-            font-size: 11pt !important;
-            box-shadow: none !important;
-            border: none !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .page-break {
-            page-break-before: always !important;
-          }
-          /* Footer TTE tetap muncul di bawah SETIAP halaman cetak */
-          .tte-footer {
-            position: fixed !important;
-            left: 15mm !important;
-            right: 15mm !important;
-            bottom: 6mm !important;
-            background: white !important;
-            margin: 0 !important;
-          }
+          body * { visibility: hidden !important; }
+          #printable-report-area, #printable-report-area * { visibility: visible !important; }
+          #printable-report-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 210mm !important; }
         }
+        ${REPORT_CSS}
       `}</style>
 
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl my-auto overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[92vh] animate-scaleUp">
@@ -588,9 +661,22 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   </div>
                 </div>
 
+                {!isRangeValid && (
+                  <p className="text-[11px] font-bold text-red-600">Tanggal selesai tidak boleh sebelum tanggal mulai.</p>
+                )}
+                {isRangeValid && isRangeLoading && (
+                  <p className="text-[11px] font-bold text-slate-500">Memuat isian SLA/OLA harian untuk periode ini…</p>
+                )}
+                {isRangeValid && rangeLoadFailed && (
+                  <p className="text-[11px] font-bold text-red-600">
+                    Gagal memuat isian SLA/OLA harian. Laporan tidak bisa dicetak sampai data berhasil dimuat — coba ubah tanggal atau buka ulang.
+                  </p>
+                )}
                 <p className="text-[11px] text-slate-500 flex items-center gap-1.5 italic">
                   <Info size={13} className="text-blue-600 shrink-0" />
-                  Seluruh data persentase pada tabel laporan dihitung secara otomatis sebagai rata-rata dari periode tanggal di atas.
+                  Persentase dihitung dari isian harian UPT pada periode di atas (rata-rata per hari yang terisi).
+                  {!isRangeLoading && !rangeLoadFailed && totalTanpaIsian > 0 &&
+                    ` ${totalTanpaIsian} alat tanpa isian di periode ini dihitung Tidak Beroperasi.`}
                 </p>
               </div>
 
@@ -934,7 +1020,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   <button
                     type="button"
                     onClick={handleOpenPrintWindow}
-                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    disabled={isRangeLoading || rangeLoadFailed || !isRangeValid}
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Printer size={14} />
                     <span>Cetak / Simpan PDF</span>
@@ -942,282 +1029,167 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                 </div>
               </div>
 
-              {/* Printable Wrapper */}
+              {/* Printable Wrapper — susunan mengikuti contoh Laporan Mingguan Monitoring */}
               <div className="w-full overflow-x-auto pb-6">
-                <div 
-                  id="printable-report-area"
-                  className="bg-white p-6 sm:p-10 md:p-12 shadow-md border border-slate-300 min-w-[650px] max-w-4xl mx-auto text-slate-900 font-sans leading-normal text-xs"
-                  style={{ minHeight: '297mm' }}
-                >
-                  <div className="border-b-4 border-slate-900 pb-3 mb-6 relative">
-                    <div className="flex items-center gap-4">
-                      <img 
-                        src={printlogobmkg} 
-                        alt="Logo BMKG" 
-                        className="w-16 h-20 object-contain shrink-0"
-                      />
-                      <div className="text-center flex-1">
-                        <h1 className="font-extrabold text-sm sm:text-base tracking-wide uppercase text-black">
-                          BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA
-                        </h1>
-                        <h2 className="font-bold text-xs sm:text-sm tracking-wide uppercase text-black mt-0.5">
-                          BALAI BESAR METEOROLOGI, KLIMATOLOGI DAN GEOFISIKA WILAYAH V
-                        </h2>
-                        <p className="text-[10px] text-slate-800 font-medium mt-1">
-                          Jl. Raya Abepura Entrop - Jayapura, Telp : (0967) 5165442, Kode Pos 99224
-                        </p>
-                        <p className="text-[10px] text-slate-800 font-medium">
-                          Email : <span className="text-blue-800 underline">bbmkg5@bmkg.go.id</span> Website : <span className="text-blue-800 underline">bbmkg5.bmkg.go.id</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="border-b border-slate-900 mt-2" />
-                  </div>
+                <div id="printable-report-area" className="wr-root">
 
-                  <div className="text-center my-6">
-                    <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
-                      LAPORAN REKAPITULASI MONITORING
-                    </h2>
-                    <h3 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase mt-0.5">
-                      ALOPTAMA DI BBMKG WILAYAH V
-                    </h3>
-                  </div>
-
-                  <div className="border border-black p-3 my-5 max-w-xl text-xs font-semibold text-black space-y-1">
-                    <div className="flex">
-                      <span className="w-36 shrink-0">Periode Pemantauan</span>
-                      <span className="w-4 text-center shrink-0">:</span>
-                      <span className="flex-1 font-bold">{startDate} - {endDate} ({calculatedPeriodDays} Hari / {calculatedPeriodDays * 24} Jam)</span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="w-36 shrink-0">Petugas Monitoring</span>
-                      <span className="w-4 text-center shrink-0">:</span>
-                      <div className="flex-1 space-y-0.5">
-                        {petugasList.map((p, idx) => (
-                          <div key={p.id}>{p.name}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="my-6">
-                    <div className="font-extrabold text-xs uppercase mb-2 text-black">
-                      <span>Rekapitulasi Kinerja Aloptama:</span>
-                    </div>
-                    <table className="w-full border-collapse border border-black text-center text-xs">
-                      <thead>
-                        <tr className="bg-slate-100 font-bold border-b border-black">
-                          <th className="border border-black py-1.5 px-2 w-10">No.</th>
-                          <th className="border border-black py-1.5 px-3 text-left">Peralatan</th>
-                          <th className="border border-black py-1.5 px-2 w-28">Jumlah Lokasi</th>
-                          <th className="border border-black py-1.5 px-2 w-24">SLA</th>
-                          <th className="border border-black py-1.5 px-2 w-24">OLA</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rekapData.map((row) => (
-                          <tr key={row.no} className="border-b border-black font-medium">
-                            <td className="border border-black py-1 px-2">{row.no}</td>
-                            <td className="border border-black py-1 px-3 text-left font-bold">{row.name}</td>
-                            <td className="border border-black py-1 px-2">{row.jumlahLokasi}</td>
-                            <td className="border border-black py-1 px-2 font-bold">{row.sla.toFixed(1)}%</td>
-                            <td className="border border-black py-1 px-2 font-bold">{row.ola.toFixed(1)}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-slate-100 font-extrabold border-t-2 border-black">
-                          <td colSpan={2} className="border border-black py-1.5 px-3 text-left uppercase">
-                            TOTAL PERSENTASE
-                          </td>
-                          <td className="border border-black py-1.5 px-2">{totalLokasiSum}</td>
-                          <td className="border border-black py-1.5 px-2">{avgSlaTotal.toFixed(1)}%</td>
-                          <td className="border border-black py-1.5 px-2">{avgOlaTotal.toFixed(1)}%</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-
-                  <div className="my-8">
-                    <h4 className="font-extrabold text-xs uppercase mb-2 text-black">Kondisi Aloptama</h4>
-                    <table className="w-full border-collapse border border-black text-center text-xs">
-                      <thead>
-                        <tr className="bg-slate-100 font-bold border-b border-black">
-                          <th className="border border-black py-1.5 px-3 text-left">Peralatan</th>
-                          <th className="border border-black py-1.5 px-2 w-32">Normal (100%)</th>
-                          <th className="border border-black py-1.5 px-2 w-36">Gangguan (1-99%)</th>
-                          <th className="border border-black py-1.5 px-2 w-40">Tidak Beroperasi (0%)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rekapData.map((row) => (
-                          <tr key={row.no} className="border-b border-black font-medium">
-                            <td className="border border-black py-1 px-3 text-left font-bold">{row.name}</td>
-                            <td className="border border-black py-1 px-2">{row.normal}</td>
-                            <td className="border border-black py-1 px-2">{row.gangguan}</td>
-                            <td className="border border-black py-1 px-2">{row.mati}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-slate-100 font-extrabold border-t-2 border-black">
-                          <td className="border border-black py-1.5 px-3 text-left uppercase">TOTAL</td>
-                          <td className="border border-black py-1.5 px-2">{totalNormalSum}</td>
-                          <td className="border border-black py-1.5 px-2">{totalGangguanSum}</td>
-                          <td className="border border-black py-1.5 px-2">{totalMatiSum}</td>
-                        </tr>
-                        <tr className="bg-slate-200 font-extrabold border-t border-black">
-                          <td className="border border-black py-1.5 px-3 text-left uppercase">PERSENTASE</td>
-                          <td className="border border-black py-1.5 px-2">{percentNormal}%</td>
-                          <td className="border border-black py-1.5 px-2">{percentGangguan}%</td>
-                          <td className="border border-black py-1.5 px-2">{percentMati}%</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-
-                  <div className="my-8 pt-4 flex flex-col justify-between min-h-[160px] break-inside-avoid">
-                    <div className="text-xs font-semibold text-black space-y-1">
-                      <p className="font-bold">Catatan :</p>
-                      <p className="pl-4">{catatanText}</p>
-                    </div>
-
-                    <div className="flex justify-end mt-8">
-                      <div className="text-center min-w-[240px] text-xs font-semibold text-black space-y-1">
-                        <p>Mengetahui,</p>
-                        <p style={{ whiteSpace: 'pre-line' }}>{jabatanMengetahui}</p>
-                        <div className="h-20 flex items-center justify-center my-1">
-                          <div className="border border-slate-300 rounded px-3 py-1.5 bg-slate-50/50 text-[10px] text-slate-400 italic">
-                            ( Tanda Tangan Digital )
-                          </div>
+                  {/* ===== Halaman 1: kop, judul, info, tabel Kondisi Aloptama ===== */}
+                  <section className="wr-sheet">
+                    <header className="wr-kop">
+                      <img className="wr-kop-logo" src={printlogobmkg} alt="Logo BMKG" />
+                      <div className="wr-kop-text">
+                        <div className="wr-kop-1">BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA</div>
+                        <div className="wr-kop-2">BALAI BESAR METEOROLOGI, KLIMATOLOGI DAN GEOFISIKA WILAYAH V</div>
+                        <div className="wr-kop-3">Jl. Raya Abepura Entrop - Jayapura, Telp : (0967) 5165442, Kode Pos 99224</div>
+                        <div className="wr-kop-3">
+                          Email : <span className="wr-link">bbmkg5@bmkg.go.id</span> Website : <span className="wr-link">bbmkg5.bmkg.go.id</span>
                         </div>
-                        <p className="font-extrabold underline text-sm">{namaMengetahui}</p>
                       </div>
+                    </header>
+
+                    <div className="wr-title">
+                      LAPORAN REKAPITULASI MONITORING KONDISI<br />ALOPTAMA DI BBMKG WILAYAH V
                     </div>
 
-                    {/* Footer TTE — berulang di setiap halaman saat dicetak (lihat CSS .tte-footer) */}
-                    <div className="tte-footer mt-6 text-center">
-                      <div className="border-t-[3px] border-black" />
-                      <div className="border-t border-black mt-[3px] mb-3" />
-                      <p className="text-[10px] sm:text-[11px] font-bold italic text-black leading-snug">
-                        Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang<br className="hidden sm:block" /> diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara
-                      </p>
-                    </div>
-                  </div>
-
-                  {includeDocumentation && (
-                    <div className="page-break pt-8 mt-12 border-t-2 border-dashed border-slate-300">
-                      <div className="text-center mb-6">
-                        <h2 className="font-extrabold text-sm sm:text-base tracking-wide text-black uppercase">
-                          LAMPIRAN DOKUMENTASI MONITORING ALOPTAMA 
-                        </h2>
-                      </div>
-
-                      <div className="space-y-8">
-                        <div className="border border-slate-300 p-4 rounded-lg space-y-2">
-                          <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                            1. Monitoring AWS Center 
-                          </h3>
-                          {imgAwsCenter ? (
-                            <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
-                              <img 
-                                src={imgAwsCenter} 
-                                alt="Tangkapan Layar AWS Center" 
-                                className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
-                              />
-                              <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
-                                Tangkapan Layar Dashboard AWS Center BBMKG Wilayah V
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
-                              <Building2 size={32} className="text-blue-600 mb-2" />
-                              <p className="font-bold text-xs text-slate-800">Tangkapan Layar Dashboard AWS Center </p>
-                              <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
-                            </div>
-                          )}
+                    <div className="wr-flow wr-flow-1">
+                      <div className="wr-info">
+                        <div className="wr-info-row">
+                          <span className="wr-info-label">Tanggal</span>
+                          <span className="wr-info-colon">:</span>
+                          <span className="wr-info-value">{startDate} - {endDate}</span>
                         </div>
-
-                        <div className="border border-slate-300 p-4 rounded-lg space-y-2">
-                          <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                            2. Monitoring SLA dan OLA 
-                          </h3>
-                          {imgSlaOla ? (
-                            <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
-                              <img 
-                                src={imgSlaOla} 
-                                alt="Matriks SLA dan OLA" 
-                                className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
-                              />
-                              <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
-                                Tangkapan Layar Matriks SLA &amp; OLA Aloptama
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
-                              <FileText size={32} className="text-indigo-600 mb-2" />
-                              <p className="font-bold text-xs text-slate-800">Tangkapan Layar Rekapitulasi Web SLA dan OLA</p>
-                              <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="border border-slate-300 p-4 rounded-lg space-y-2">
-                          <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                            3. Diseminasi Hasil Monitoring Aloptama (Grup Koordinasi Teknis)
-                          </h3>
-                          {imgDiseminasi ? (
-                            <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
-                              <img 
-                                src={imgDiseminasi} 
-                                alt="Diseminasi WA" 
-                                className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
-                              />
-                              <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
-                                Bukti Diseminasi Hasil Monitoring ke Grup WhatsApp UPT Lingkungan BBMKG V
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[180px]">
-                              <Users size={32} className="text-emerald-600 mb-2" />
-                              <p className="font-bold text-xs text-slate-800">Laporan Diseminasi WhatsApp </p>
-                              <p className="text-[10px] text-slate-500 mt-1">(Belum Diunggah)</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {extraAttachments.length > 0 && (
-                          <div className="space-y-6 pt-4 border-t border-slate-200">
-                            {extraAttachments.map((att, idx) => (
-                              <div key={att.id} className="border border-slate-300 p-4 rounded-lg space-y-2">
-                                <h3 className="font-bold text-xs text-black border-b border-slate-200 pb-1">
-                                  {4 + idx}. {att.title || `Lampiran Foto Tambahan #${idx + 1}`}
-                                </h3>
-                                {att.imageUrl ? (
-                                  <div className="p-2 bg-slate-50 border border-slate-200 rounded text-center">
-                                    <img 
-                                      src={att.imageUrl} 
-                                      alt={att.title} 
-                                      className="w-full max-h-[400px] object-contain mx-auto rounded border border-slate-300 shadow-xs" 
-                                    />
-                                    <p className="text-[10px] text-slate-600 mt-1.5 font-semibold">
-                                      {att.title}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="bg-slate-100 rounded p-4 text-center border border-slate-200 flex flex-col items-center justify-center min-h-[140px]">
-                                    <FileImage size={28} className="text-slate-400 mb-2" />
-                                    <p className="font-bold text-xs text-slate-700">{att.title}</p>
-                                    <p className="text-[10px] text-slate-500 mt-1">(Gambar belum diunggah)</p>
-                                  </div>
-                                )}
-                              </div>
+                        <div className="wr-info-row">
+                          <span className="wr-info-label">Petugas</span>
+                          <span className="wr-info-colon">:</span>
+                          <span className="wr-info-value">
+                            {petugasList.map((p) => (
+                              <div key={p.id}>{p.name}</div>
                             ))}
-                          </div>
-                        )}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="wr-h2">Kondisi Aloptama</div>
+                      <table className="wr-table">
+                        <colgroup>
+                          <col style={{ width: '12.9mm' }} />
+                          <col style={{ width: '66.6mm' }} />
+                          <col style={{ width: '43mm' }} />
+                          <col style={{ width: '18.4mm' }} />
+                          <col style={{ width: '18.3mm' }} />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th>NO.</th>
+                            <th>PERALATAN</th>
+                            <th>JUMLAH LOKASI</th>
+                            <th>SLA</th>
+                            <th>OLA</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rekapData.map((row) => (
+                            <tr key={row.no}>
+                              <td>{row.no}</td>
+                              <td className="wr-l">{row.name}</td>
+                              <td>{row.jumlahLokasi}</td>
+                              <td>{row.sla.toFixed(1)}%</td>
+                              <td>{row.ola.toFixed(1)}%</td>
+                            </tr>
+                          ))}
+                          <tr className="wr-total">
+                            <td colSpan={2} className="wr-l">TOTAL PERSENTASE</td>
+                            <td>{totalLokasiSum}</td>
+                            <td>{avgSlaTotal.toFixed(1)}%</td>
+                            <td>{avgOlaTotal.toFixed(1)}%</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="wr-footer"><img src={footerTte} alt="Dokumen ini telah ditandatangani secara elektronik" /></div>
+                  </section>
+
+                  {/* ===== Halaman 2: tabel kondisi, catatan, pengesahan ===== */}
+                  <section className="wr-sheet">
+                    <div className="wr-flow wr-flow-2">
+                      <table className="wr-table wr-t2">
+                        <colgroup>
+                          <col style={{ width: '48.8mm' }} />
+                          <col style={{ width: '29.6mm' }} />
+                          <col style={{ width: '37mm' }} />
+                          <col style={{ width: '43.8mm' }} />
+                        </colgroup>
+                        <thead>
+                          <tr className="wr-b">
+                            <th>Peralatan</th>
+                            <th>Normal (100%)</th>
+                            <th>Gangguan (1-99%)</th>
+                            <th>Tidak Beroperasi (0%)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rekapData.map((row) => (
+                            <tr key={row.no}>
+                              <td>{row.name}</td>
+                              <td>{row.normal}</td>
+                              <td>{row.gangguan}</td>
+                              <td>{row.mati}</td>
+                            </tr>
+                          ))}
+                          <tr className="wr-total">
+                            <td>TOTAL</td>
+                            <td>{totalNormalSum}</td>
+                            <td>{totalGangguanSum}</td>
+                            <td>{totalMatiSum}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div className="wr-notes-title">Catatan :</div>
+                      {catatanItems.map((item, idx) => (
+                        <div className="wr-note" key={idx}>
+                          <span className="wr-note-no">{idx + 1}.</span>
+                          <span>{item === '-' ? '–' : item}</span>
+                        </div>
+                      ))}
+
+                      <div className="wr-sign">
+                        <div>Mengetahui,</div>
+                        <div>{jabatanLine}</div>
+                        <div className="wr-sign-space">
+                          <span className="wr-sign-hint wr-noprint">( Tanda Tangan Digital )</span>
+                        </div>
+                        <div className="wr-sign-name">{namaMengetahui}</div>
                       </div>
                     </div>
-                  )}
+
+                    <div className="wr-footer"><img src={footerTte} alt="Dokumen ini telah ditandatangani secara elektronik" /></div>
+                  </section>
+
+                  {/* ===== Halaman 3 dst.: lampiran dokumentasi (3 gambar per halaman) ===== */}
+                  {includeDocumentation && lampiranSheets.map((group, sheetIdx) => (
+                    <section className="wr-sheet" key={sheetIdx}>
+                      <div className="wr-flow wr-flow-3">
+                        {sheetIdx === 0 && (
+                          <div className="wr-lamp-title">LAMPIRAN. MONITORING ALOPTAMA</div>
+                        )}
+                        {group.map((item) => (
+                          <div className="wr-lamp-item" key={item.key}>
+                            <div className="wr-lamp-head">{item.title}</div>
+                            {item.src ? (
+                              <img className="wr-lamp-img" src={item.src} alt={item.title} />
+                            ) : (
+                              <div className="wr-lamp-empty">(Belum Diunggah)</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="wr-footer"><img src={footerTte} alt="Dokumen ini telah ditandatangani secara elektronik" /></div>
+                    </section>
+                  ))}
+
                 </div>
               </div>
             </div>

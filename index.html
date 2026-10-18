@@ -37,17 +37,22 @@
       crossorigin=""
     />
 
-    <!-- Splash awal: tampil seketika (sebelum JS/CSS selesai dimuat) supaya layar tidak putih kosong.
-         Otomatis tergantikan saat React mount ke #root. -->
+    <!-- Splash awal: tampil seketika (sebelum JS/CSS selesai dimuat) supaya layar tidak putih kosong. -->
     <link rel="preload" as="image" href="/icons/icon-192.png" />
+    <script>
+      // Waktu mulai splash — dipakai src/shared/splash.ts untuk menahan splash minimal 3,5 detik.
+      window.__simonSplashStart = Date.now();
+    </script>
     <style>
       html, body { margin: 0; background: #F5F7FA; }
       .simon-splash {
-        position: fixed; inset: 0;
+        position: fixed; inset: 0; z-index: 9999;
+        transition: opacity .45s ease;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         gap: 18px; background: #F5F7FA;
         font-family: 'Poppins', 'Inter', system-ui, sans-serif;
       }
+      .simon-splash-hide { opacity: 0; pointer-events: none; }
       .simon-splash img {
         width: 96px; height: 96px; object-fit: contain;
         animation: simon-pulse 1.6s ease-in-out infinite;
@@ -70,12 +75,14 @@
   <body
     class="bg-[#F5F7FA] text-slate-800 font-['Inter',sans-serif] antialiased"
   >
-    <div id="root">
-      <div class="simon-splash" role="status" aria-live="polite">
-        <img src="/icons/icon-192.png" alt="SIMON" width="96" height="96" />
-        <span class="simon-splash-text">SIMON BMKG</span>
-        <div class="simon-splash-bar"></div>
-      </div>
+    <div id="root"></div>
+    <!-- Satu-satunya layar loading saat web dibuka. Berada di luar #root, jadi React tidak
+         punya layar loading sendiri; disembunyikan oleh hideSplash() (src/shared/splash.ts)
+         setelah sesi selesai diperiksa DAN minimal 3,5 detik sejak halaman dibuka. -->
+    <div id="simon-splash" class="simon-splash" role="status" aria-live="polite">
+      <img src="/icons/icon-192.png" alt="SIMON" width="96" height="96" />
+      <span class="simon-splash-text">SIMON BMKG</span>
+      <div class="simon-splash-bar"></div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

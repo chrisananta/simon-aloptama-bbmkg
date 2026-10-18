@@ -137,3 +137,14 @@ export interface MonthlyDeviceScore {
 
 /** deviceId -> nomor bulan ("1".."12") -> nilai bulanan. Bulan tanpa log tidak ada di map. */
 export type YearlyScoreMap = Record<string, Record<string, MonthlyDeviceScore>>;
+
+/** Nilai SLA/OLA satu alat untuk rentang tanggal (rata-rata isian harian UPT pada rentang itu). */
+export interface RangeDeviceScore {
+  sla: number;
+  ola: number;
+  /** Jumlah hari yang punya isian di dalam rentang. */
+  jumlahLog: number;
+}
+
+/** deviceId -> nilai rentang. Alat tanpa isian di rentang itu tidak ada di map. */
+export type RangeScoreMap = Record<string, RangeDeviceScore>;

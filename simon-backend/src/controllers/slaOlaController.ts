@@ -537,6 +537,84 @@ export const slaOlaController = {
   },
 
   /**
+   * Rekap SLA/OLA per alat untuk RENTANG TANGGAL (sumber Laporan Mingguan Monitoring).
+   * Dihitung dari isian harian UPT di tabel sla_ola_logs berdasarkan `reportDate`:
+   * satu nilai per alat per tanggal (isian terakhir bila diisi lebih dari sekali),
+   * lalu dirata-rata atas hari yang punya isian. Log rekap bulanan input Admin
+   * TIDAK ikut (itu nilai rata-rata bulan, bukan isian harian). Alat yang tidak
+   * punya isian sama sekali di rentang itu tidak ada di hasil — pemanggil yang
+   * memutuskan cara menghitungnya.
+   */
+  getRangeSummary: async (req: AuthRequest, res: Response) => {
+    const parsedQuery = z
+      .object({
+        from: z.string().trim().regex(DATE_ONLY_REGEX, 'Format from wajib "YYYY-MM-DD".'),
+        to: z.string().trim().regex(DATE_ONLY_REGEX, 'Format to wajib "YYYY-MM-DD".'),
+      })
+      .safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({ success: false, message: 'Query from/to wajib diisi dengan format YYYY-MM-DD.' });
+    }
+    try {
+      const fromDate = parseDateOnly(parsedQuery.data.from);
+      const toDate = parseDateOnly(parsedQuery.data.to);
+      const spanDays = Math.round((toDate.getTime() - fromDate.getTime()) / 86400000) + 1;
+      if (spanDays < 1) {
+        return res.status(400).json({ success: false, message: 'Tanggal selesai tidak boleh sebelum tanggal mulai.' });
+      }
+      if (spanDays > 366) {
+        return res.status(400).json({ success: false, message: 'Rentang tanggal maksimal 366 hari.' });
+      }
+
+      const [logs, adminActors] = await Promise.all([
+        prisma.slaOlaLog.findMany({
+          where: { deviceId: { not: null }, reportDate: { gte: fromDate, lte: toDate } },
+          select: {
+            deviceId: true,
+            kondisiSla: true,
+            kondisiOla: true,
+            actor: true,
+            reportDate: true,
+          },
+          orderBy: { timestamp: 'asc' },
+        }),
+        loadAdminActorSet(),
+      ]);
+
+      // deviceId -> tanggal -> isian terakhir (urut timestamp naik, jadi yang terakhir menimpa).
+      const perDevice = new Map<string, Map<string, { sla: boolean; ola: number }>>();
+      for (const log of logs) {
+        if (!log.deviceId) continue;
+        if (adminActors.has(normalizeActor(log.actor))) continue;
+        const day = log.reportDate.toISOString().slice(0, 10);
+        let days = perDevice.get(log.deviceId);
+        if (!days) {
+          days = new Map();
+          perDevice.set(log.deviceId, days);
+        }
+        days.set(day, { sla: log.kondisiSla, ola: log.kondisiOla });
+      }
+
+      const round2 = (n: number) => Math.round(n * 100) / 100;
+      const data: Record<string, { sla: number; ola: number; jumlahLog: number }> = {};
+      for (const [deviceId, days] of perDevice) {
+        const entries = Array.from(days.values());
+        const totalSla = entries.reduce((sum, e) => sum + (e.sla ? 100 : 0), 0);
+        const totalOla = entries.reduce((sum, e) => sum + e.ola, 0);
+        data[deviceId] = {
+          sla: round2(totalSla / entries.length),
+          ola: round2(totalOla / entries.length),
+          jumlahLog: entries.length,
+        };
+      }
+      return res.json({ success: true, from: parsedQuery.data.from, to: parsedQuery.data.to, hari: spanDays, data });
+    } catch (error) {
+      console.error('Error getRangeSummary:', error);
+      return res.status(500).json({ success: false, message: 'Gagal mengambil rekap SLA/OLA rentang tanggal.' });
+    }
+  },
+
+  /**
    * Mengambil Riwayat Log SLA/OLA — untuk tabel monitoring pengisian di Admin.
    * Mendukung filter opsional bulan & tahun (berdasarkan reportDate), dan
    * menyertakan nama alat (site) hasil join ke tabel Device.

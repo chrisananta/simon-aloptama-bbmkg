@@ -1,10 +1,10 @@
-import simonLogo from '../../assets/images/simonlogo.png';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { ActiveNavMenu } from '../../shared/types';
 import { LoginPage } from './LoginPage';
 import { ShieldAlert, ArrowLeft, Lock } from 'lucide-react';
 import { UserRole } from './authTypes';
+import { hideSplash } from '../../shared/splash';
 
 const ROLE_LABEL: Record<UserRole, string> = {
   TEKNISI_UPT: 'Teknisi UPT',
@@ -26,19 +26,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { isAuthenticated, isInitializing, user, isMenuAllowed } = useAuth();
 
+  // Sesi selesai diperiksa -> splash awal (index.html) boleh hilang. hideSplash() sendiri
+  // menahan splash sampai minimal 3,5 detik sejak halaman dibuka.
+  useEffect(() => {
+    if (!isInitializing) hideSplash();
+  }, [isInitializing]);
+
   // Spinner cuma buat pengecekan sesi PERTAMA KALI pas app baru dibuka.
   // Setelah itu, walau login() sedang berjalan (isLoading di context),
   // JANGAN unmount LoginPage - biar state internalnya (pesan error, dst)
   // tidak ikut hilang di tengah proses submit.
+  // Selama pengecekan sesi, splash di index.html masih menutupi layar — React tidak
+  // menampilkan layar loading sendiri supaya hanya ada satu konsep loading.
   if (isInitializing) {
-    return (
-      // Tampilan sama dengan splash di index.html supaya peralihan dari splash awal mulus.
-      <div className="fixed inset-0 bg-[#F5F7FA] flex flex-col items-center justify-center gap-4 p-4">
-        <img src={simonLogo} alt="SIMON" className="h-24 w-24 object-contain animate-pulse" />
-        <span className="font-heading font-bold text-[13px] tracking-[0.18em] text-[#003366]">SIMON BMKG</span>
-        <p className="text-[11px] font-medium text-slate-500">Memverifikasi sesi...</p>
-      </div>
-    );
+    return <div className="fixed inset-0 bg-[#F5F7FA]" />;
   }
 
   if (!isAuthenticated || !user) {
