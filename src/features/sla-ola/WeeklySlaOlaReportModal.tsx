@@ -23,6 +23,7 @@ import {
 import { AloptamaDevice, RangeScoreMap } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
+import { averageOfCategories } from '../../shared/utils/slaOlaTotals';
 
 interface WeeklySlaOlaReportModalProps {
   isOpen: boolean;
@@ -439,17 +440,16 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   }, [devices, rangeScores]);
 
   const totalLokasiSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.jumlahLokasi, 0), [rekapData]);
-  const avgSlaTotal = useMemo(() => {
-    if (totalLokasiSum === 0) return 0;
-    const weighted = rekapData.reduce((acc, curr) => acc + curr.sla * curr.jumlahLokasi, 0);
-    return Number((weighted / totalLokasiSum).toFixed(1));
-  }, [rekapData, totalLokasiSum]);
-
-  const avgOlaTotal = useMemo(() => {
-    if (totalLokasiSum === 0) return 0;
-    const weighted = rekapData.reduce((acc, curr) => acc + curr.ola * curr.jumlahLokasi, 0);
-    return Number((weighted / totalLokasiSum).toFixed(1));
-  }, [rekapData, totalLokasiSum]);
+  // TOTAL PERSENTASE = rata-rata sederhana persentase tiap jenis alat (jumlah persentase 11 jenis
+  // alat dibagi 11), sama dengan halaman SLA & OLA — lihat shared/utils/slaOlaTotals.ts.
+  const avgSlaTotal = useMemo(
+    () => averageOfCategories(rekapData.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.sla }))),
+    [rekapData]
+  );
+  const avgOlaTotal = useMemo(
+    () => averageOfCategories(rekapData.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.ola }))),
+    [rekapData]
+  );
 
   const totalNormalSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.normal, 0), [rekapData]);
   const totalGangguanSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.gangguan, 0), [rekapData]);

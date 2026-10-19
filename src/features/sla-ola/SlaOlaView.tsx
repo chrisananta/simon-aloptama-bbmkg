@@ -33,6 +33,7 @@ import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
 import { UptSlaOlaReportModal } from './UptSlaOlaReportModal';
 import { SlaOlaHarianTable } from './SlaOlaHarianTable';
 import { useAuth } from '../auth/AuthContext';
+import { averageOfCategories } from '../../shared/utils/slaOlaTotals';
 
 // Kategori resmi sesuai field `category` di database (lihat dropdown di
 // AdminMasterView.tsx). Pencocokan exact-match (bukan substring) supaya
@@ -75,6 +76,38 @@ interface SlaOlaViewProps {
   devices: AloptamaDevice[];
   stations?: UPTStation[];
 }
+
+/**
+ * Persentase SLA/OLA per JENIS alat untuk satu bulan (dibulatkan 1 desimal, sama dengan tabel rekap).
+ * Alat yang belum punya nilai di bulan itu tetap ada di pembagi (jumlah lokasi) sebagai 0%.
+ * Dipakai bersama oleh tabel, kartu bulanan, dan grafik tren supaya angkanya selalu sama.
+ */
+const categoryPercentsForMonth = (
+  devices: AloptamaDevice[],
+  yearlyScores: Parameters<typeof pickScore>[0],
+  monthNum: number
+) => {
+  return CATEGORY_DEFS.map((cat) => {
+    const catDevs = devices.filter((d) => isInCategory(d, cat.key));
+    const jumlahLokasi = catDevs.length;
+    let totalSla = 0;
+    let totalOla = 0;
+    let withData = 0;
+    for (const d of catDevs) {
+      const sc = pickScore(yearlyScores, d.devicesId, monthNum);
+      if (!sc) continue;
+      withData += 1;
+      totalSla += sc.sla;
+      totalOla += sc.ola;
+    }
+    return {
+      jumlahLokasi,
+      withData,
+      sla: jumlahLokasi > 0 ? Number((totalSla / jumlahLokasi).toFixed(1)) : 0,
+      ola: jumlahLokasi > 0 ? Number((totalOla / jumlahLokasi).toFixed(1)) : 0,
+    };
+  });
+};
 
 export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => {
   const { user, permissions } = useAuth();
@@ -214,29 +247,20 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const slaTrendData = useMemo(() => {
     return MONTHS_LIST.map((mObj, idx) => {
-      const totalMasterDevs = uptFilteredDevices.length;
-      let totalSla = 0;
-      let totalOla = 0;
-      let withDataCount = 0;
-
-      for (const d of uptFilteredDevices) {
-        const sc = pickScore(yearlyScores, d.devicesId, idx + 1);
-        if (!sc) continue;
-        withDataCount += 1;
-        totalSla += sc.sla;
-        totalOla += sc.ola;
-      }
+      const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, idx + 1);
+      const withDataCount = rows.reduce((acc, r) => acc + r.withData, 0);
 
       // Bulan tanpa satu pun data dikosongkan (null) supaya garis grafik
       // terputus, bukan jatuh ke 0% (mis. bulan yang belum berjalan).
-      if (totalMasterDevs === 0 || withDataCount === 0) {
+      if (uptFilteredDevices.length === 0 || withDataCount === 0) {
         return { month: mObj.short, sla: null as number | null, ola: null as number | null };
       }
 
+      // Total bulan = rata-rata sederhana persentase tiap jenis alat (lihat slaOlaTotals.ts).
       return {
         month: mObj.short,
-        sla: Number((totalSla / totalMasterDevs).toFixed(1)),
-        ola: Number((totalOla / totalMasterDevs).toFixed(1)),
+        sla: averageOfCategories(rows.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.sla }))),
+        ola: averageOfCategories(rows.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.ola }))),
       };
     });
   }, [yearlyScores, uptFilteredDevices]);
@@ -355,28 +379,16 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     });
   }, [yearlyScores, prevYearScores, monthIdx, uptFilteredDevices]);
 
+  // TOTAL PERSENTASE bulan terpilih = rata-rata sederhana persentase tiap jenis alat
+  // (jumlah persentase 11 jenis alat dibagi 11), BUKAN rata-rata berbobot jumlah lokasi.
   const monthlySlaValue = useMemo(() => {
-    const targetMonthNum = monthIdx + 1;
-    const totalDevices = uptFilteredDevices.length;
-    if (totalDevices === 0) return 0;
-    let sum = 0;
-    for (const d of uptFilteredDevices) {
-      const sc = pickScore(yearlyScores, d.devicesId, targetMonthNum);
-      sum += sc ? sc.sla : 0;
-    }
-    return Number((sum / totalDevices).toFixed(1));
+    const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, monthIdx + 1);
+    return averageOfCategories(rows.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.sla })));
   }, [yearlyScores, monthIdx, uptFilteredDevices]);
 
   const monthlyOlaValue = useMemo(() => {
-    const targetMonthNum = monthIdx + 1;
-    const totalDevices = uptFilteredDevices.length;
-    if (totalDevices === 0) return 0;
-    let sum = 0;
-    for (const d of uptFilteredDevices) {
-      const sc = pickScore(yearlyScores, d.devicesId, targetMonthNum);
-      sum += sc ? sc.ola : 0;
-    }
-    return Number((sum / totalDevices).toFixed(1));
+    const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, monthIdx + 1);
+    return averageOfCategories(rows.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.ola })));
   }, [yearlyScores, monthIdx, uptFilteredDevices]);
 
   const totalLokasiSum = useMemo(
