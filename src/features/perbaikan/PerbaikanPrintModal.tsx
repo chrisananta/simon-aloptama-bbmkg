@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Printer } from 'lucide-react';
 import { PerbaikanRecord } from '../../shared/types';
 import bmkgLogo from '../../assets/images/BMKGLogo.png';
+import { openPrintWindow } from '../../shared/print/openPrintWindow';
 
 export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => void; record: PerbaikanRecord | null }> = ({
   isOpen,
@@ -15,20 +16,25 @@ export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => voi
   const handlePrint = () => {
     const printContent = document.getElementById('perbaikan-printable');
     if (!printContent) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) { window.print(); return; }
-    printWindow.document.write(`
-      <html><head><title>Form Laporan ${record.namaAlat}</title>
-      <script src="https://cdn.tailwindcss.com"></script>
-      <style>
+
+    const opened = openPrintWindow({
+      title: `Form Laporan ${record.namaAlat}`,
+      bodyHtml: `<div class="page">${printContent.innerHTML}</div>`,
+      tailwind: true,
+      toolbar: false,
+      autoPrintDelayMs: 500,
+      css: `
         @page { size: A4 portrait; margin: 10mm; }
-        @media print { body { padding: 0; background: white; } .page { padding: 0; max-width: none; margin: 0; border-radius: 0; box-shadow: none; } .page-break { page-break-before: always; } }
-        body { padding: 20px; font-family: ui-sans-serif, system-ui, sans-serif; background: #f1f5f9; }
+        body { padding: 20px; }
         .page { background: white; padding: 30px; border-radius: 8px; max-width: 900px; margin: auto; }
-      </style></head><body><div class="page">${printContent.innerHTML}</div>
-      <script>window.onload = function() { setTimeout(window.print, 500); }</script></body></html>
-    `);
-    printWindow.document.close();
+        @media print {
+          body { padding: 0; }
+          .page { padding: 0; max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
+          .page-break { page-break-before: always; }
+        }
+      `,
+    });
+    if (!opened) window.print();
   };
 
   return (

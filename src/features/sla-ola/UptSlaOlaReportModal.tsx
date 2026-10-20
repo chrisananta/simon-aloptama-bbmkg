@@ -3,6 +3,7 @@ import printlogobmkg from '../../assets/images/BMKGLogo.png';
 import { X, Printer, FileText, Eye } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import { apiClient } from '../../shared/api';
+import { openPrintWindow } from '../../shared/print/openPrintWindow';
 
 export interface UptRekapRow {
   no: number;
@@ -202,84 +203,39 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
     const element = document.getElementById('upt-printable-report-area');
     if (!element) return;
 
-    const printWindow = window.open('', '_blank', 'width=1100,height=900');
-    if (!printWindow) {
-      window.print();
-      return;
-    }
+    const opened = openPrintWindow({
+      title: `Laporan Kinerja Aloptama - ${uptName} (${month} ${year})`,
+      bodyHtml: `<div class="print-container">${element.outerHTML}</div>`,
+      tailwind: true,
+      toolbar: { text: 'Dokumen Siap Cetak.', width: '1024px' },
+      width: 1100,
+      height: 900,
+      css: `
+        @page { margin: ${PAGE_MARGIN_MM}mm; }
+        @page page-portrait { size: A4 portrait; }
+        @page page-landscape { size: A4 landscape; }
 
-    const reportHtml = element.outerHTML;
-    const docTitle = `Laporan Kinerja Aloptama - ${uptName} (${month} ${year})`;
+        .page-portrait { page: page-portrait; }
+        .page-landscape { page: page-landscape; break-before: page; }
+        div.SectionLandscape { page: SectionLandscape; }
 
-    printWindow.document.open();
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="id">
-        <head>
-          <meta charset="UTF-8">
-          <title>${docTitle}</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            @page {
-              margin: ${PAGE_MARGIN_MM}mm;
-            }
-            @page page-portrait {
-              size: A4 portrait;
-            }
-            @page page-landscape {
-              size: A4 landscape;
-            }
+        .print-container { background: white; margin: 0 auto; }
+        table { border-collapse: collapse; }
+        #upt-printable-report-area { transform: none !important; width: auto !important; }
 
-            .page-portrait {
-              page: page-portrait;
-            }
-            .page-landscape {
-              page: page-landscape;
-              break-before: page;
-            }
-            div.SectionLandscape {
-              page: SectionLandscape;
-            }
-
-            * { box-sizing: border-box; }
-            body { margin: 0; padding: 0; background: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
-            .print-container { background: white; margin: 0 auto; }
-            table { border-collapse: collapse; }
-            #upt-printable-report-area { transform: none !important; width: auto !important; }
-
-            @media print {
-              body { padding: 0; background: white; }
-              .no-print { display: none !important; }
-              .print-container { padding: 0; margin: 0; box-shadow: none; }
-              .page-portrait, .page-landscape {
-                min-height: auto !important;
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 auto !important;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="no-print max-w-5xl mx-auto my-4 p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-between text-xs font-bold shadow-xl">
-            <div class="flex items-center gap-2">
-              <span>Dokumen Siap Cetak.</span>
-            </div>
-            <button onclick="window.print()" style="background:#0052CC; color:white; padding:8px 18px; border-radius:10px; border:none; cursor:pointer; font-weight:bold;">
-              Cetak / Simpan PDF
-            </button>
-          </div>
-          <div class="print-container">${reportHtml}</div>
-          <script>
-            window.onload = function () {
-              setTimeout(function () { window.print(); }, 600);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+        @media print {
+          .print-container { padding: 0; margin: 0; box-shadow: none; }
+          .page-portrait, .page-landscape {
+            min-height: auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+          }
+        }
+      `,
+    });
+    if (!opened) window.print();
   };
 
 

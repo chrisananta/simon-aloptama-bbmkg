@@ -3,6 +3,7 @@ import { X, Printer, Filter } from 'lucide-react';
 import { GensetRecord } from '../../shared/types';
 import { getTodayIsoWIT } from '../../shared/utils/dateUtils';
 import bmkgLogo from '../../assets/images/BMKGLogo.png';
+import { openPrintWindow } from '../../shared/print/openPrintWindow';
 
 export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void; records: GensetRecord[] }> = ({
   isOpen,
@@ -49,33 +50,34 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
   const handlePrint = () => {
     const printContent = document.getElementById('genset-report-printable');
     if (!printContent) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) { window.print(); return; }
-    printWindow.document.write(`
-      <html><head><title>Laporan Rekapitulasi Genset BMKG</title>
-      <script src="https://cdn.tailwindcss.com"></script>
-      <style>
+
+    // Footer TTE dipisah dari isi: diulang di bawah SETIAP halaman cetak dengan ruang
+    // cadangan, jadi tidak lagi menimpa baris tabel (lihat shared/print/printBaseCss.ts).
+    const bodyClone = printContent.cloneNode(true) as HTMLElement;
+    const footerEl = bodyClone.querySelector('.tte-footer');
+    const footerHtml = footerEl ? footerEl.outerHTML : undefined;
+    footerEl?.remove();
+
+    const opened = openPrintWindow({
+      title: 'Laporan Rekapitulasi Genset BMKG',
+      bodyHtml: `<div class="page">${bodyClone.innerHTML}</div>`,
+      repeatFooterHtml: footerHtml,
+      footerSpace: '22mm',
+      tailwind: true,
+      toolbar: false,
+      autoPrintDelayMs: 500,
+      css: `
         @page { size: A4 landscape; margin: 10mm; }
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 20px; font-family: ui-sans-serif, system-ui, sans-serif; background: #f1f5f9; }
+        body { padding: 20px; }
         .page { background: white; padding: 12mm; max-width: 297mm; margin: auto; }
+        .print-footer-fixed .tte-footer { margin: 0 !important; }
         @media print {
-          body { padding: 0; background: white; }
-          .page { padding: 0; max-width: none; margin: 0; box-shadow: none; padding-bottom: 24mm; }
-          /* Footer TTE tetap muncul di bawah SETIAP halaman cetak (position: fixed diulang browser per halaman) */
-          .tte-footer {
-            position: fixed;
-            left: 10mm;
-            right: 10mm;
-            bottom: 4mm;
-            background: white;
-            margin: 0 !important;
-          }
+          body { padding: 0; }
+          .page { padding: 0; max-width: none; margin: 0; box-shadow: none; }
         }
-      </style></head><body><div class="page">${printContent.innerHTML}</div>
-      <script>window.onload = function() { setTimeout(window.print, 500); }</script></body></html>
-    `);
-    printWindow.document.close();
+      `,
+    });
+    if (!opened) window.print();
   };
 
   if (!isOpen) return null;

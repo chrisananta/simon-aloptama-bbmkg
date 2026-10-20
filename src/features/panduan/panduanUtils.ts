@@ -182,7 +182,8 @@ const listHtml = (nodes: PanduanNode[]): string =>
     .map((n) => `<li>${esc(n.text)}${n.children && n.children.length ? listHtml(n.children) : ''}</li>`)
     .join('')}</ul>`;
 
-export function buildPrintHtml(entry: PanduanAlat): string {
+/** Bagian-bagian dokumen cetak panduan; dibungkus jendela cetak oleh openPrintWindow(). */
+export function buildPrintDoc(entry: PanduanAlat): { title: string; css: string; bodyHtml: string } {
   const parts: string[] = [];
   parts.push(`<h1>${esc(entry.nama)}</h1>`);
   parts.push(
@@ -216,13 +217,16 @@ export function buildPrintHtml(entry: PanduanAlat): string {
   parts.push(
     `<p class="src">Sumber: Peraturan Kepala BMKG Nomor 7 Tahun 2014, Lampiran I hlm. ${entry.hlmMulai}&ndash;${entry.hlmSelesai}. Dicetak dari SIMON BBMKG.</p>`
   );
-  return `<!doctype html><html lang="id"><head><meta charset="utf-8"><title>${esc(entry.nama)} - Panduan Pemeliharaan</title>
-<style>
-body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;margin:24px 32px;line-height:1.45;font-size:13px}
+  return {
+    title: `${entry.nama} - Panduan Pemeliharaan`,
+    bodyHtml: parts.join(''),
+    css: `
+body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;margin:24px 32px;line-height:1.45;font-size:13px;background:#fff}
 h1{font-size:20px;margin:0 0 4px;color:#0f2d52} h2{font-size:15px;margin:22px 0 6px;color:#0f2d52;border-bottom:1px solid #cbd5e1;padding-bottom:3px}
 h3{font-size:13px;margin:12px 0 4px} ul{margin:4px 0 6px 18px;padding:0} li{margin:2px 0}
 .meta{color:#64748b;margin:0 0 10px} .box{border:1px solid #f2c14e;background:#fff6e0;padding:8px 10px;border-radius:6px}
 .note{color:#475569;font-style:italic} .src{margin-top:24px;color:#64748b;font-size:11px;border-top:1px solid #cbd5e1;padding-top:8px}
 @media print{body{margin:12mm} h2{break-after:avoid}}
-</style></head><body>${parts.join('')}</body></html>`;
+`,
+  };
 }

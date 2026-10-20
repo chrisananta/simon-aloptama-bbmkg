@@ -73,8 +73,8 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
     return formatUptName(fullName);
   };
 
-  const formatDateIndo = (dateStr?: string) => {
-    if (!dateStr) return '28 Juli 2026';
+  const formatDateIndo = (dateStr?: string | null) => {
+    if (!dateStr) return 'Belum Diisi';
     if (dateStr.includes('Juli') || dateStr.includes('Agustus') || dateStr.includes('Januari') || dateStr.includes('Februari')) return dateStr;
     try {
       const parts = dateStr.split('-');

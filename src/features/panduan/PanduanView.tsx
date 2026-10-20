@@ -12,9 +12,10 @@ import {
 } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import type { PanduanAlat, PanduanNode, PanduanTab } from './panduanTypes';
+import { openPrintWindow } from '../../shared/print/openPrintWindow';
 import {
   TabDef,
-  buildPrintHtml,
+  buildPrintDoc,
   buildSearchIndex,
   buildTabDefs,
   ringkasCadangan,
@@ -245,16 +246,14 @@ export const PanduanView: React.FC<PanduanViewProps> = () => {
 
   const handlePrint = () => {
     if (!selectedEntry) return;
-    const w = window.open('', '_blank');
-    if (!w) {
+    const opened = openPrintWindow({
+      ...buildPrintDoc(selectedEntry),
+      toolbar: false,
+      autoPrintDelayMs: 300,
+    });
+    if (!opened) {
       window.alert('Pop-up diblokir oleh browser. Izinkan pop-up untuk situs ini agar panduan bisa dicetak.');
-      return;
     }
-    w.document.open();
-    w.document.write(buildPrintHtml(selectedEntry));
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 300);
   };
 
   if (loadFailed) {

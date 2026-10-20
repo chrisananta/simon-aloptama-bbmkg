@@ -24,6 +24,8 @@ import { AloptamaDevice, RangeScoreMap } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 import { averageOfCategories } from '../../shared/utils/slaOlaTotals';
+import { getLastWorkWeek, formatIsoDateId } from '../../shared/utils/dateRange';
+import { openPrintWindow } from '../../shared/print/openPrintWindow';
 
 interface WeeklySlaOlaReportModalProps {
   isOpen: boolean;
@@ -113,10 +115,12 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
 }) => {
   const [activeTab, setActiveTab] = useState<'config' | 'preview'>('config');
 
-  const [startDateIso, setStartDateIso] = useState<string>('2026-06-15');
-  const [endDateIso, setEndDateIso] = useState<string>('2026-06-19');
-  const [startDate, setStartDate] = useState<string>('15 Juni 2026');
-  const [endDate, setEndDate] = useState<string>('19 Juni 2026');
+  // Periode bawaan = minggu kerja (Senin–Jumat) terakhir yang sudah selesai, bukan tanggal tetap.
+  const [defaultWeek] = useState(() => getLastWorkWeek());
+  const [startDateIso, setStartDateIso] = useState<string>(defaultWeek.startIso);
+  const [endDateIso, setEndDateIso] = useState<string>(defaultWeek.endIso);
+  const [startDate, setStartDate] = useState<string>(() => formatIsoDateId(defaultWeek.startIso));
+  const [endDate, setEndDate] = useState<string>(() => formatIsoDateId(defaultWeek.endIso));
 
   // Nilai SLA/OLA per alat untuk rentang tanggal terpilih, dari isian harian (sla_ola_logs).
   const [rangeScores, setRangeScores] = useState<RangeScoreMap>({});
@@ -144,19 +148,8 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     };
   }, [isOpen, isRangeValid, startDateIso, endDateIso]);
 
-  const formatDateToIndonesian = (dateIsoStr: string) => {
-    if (!dateIsoStr) return '';
-    const d = new Date(dateIsoStr);
-    if (isNaN(d.getTime())) return dateIsoStr;
-    const day = d.getDate();
-    const months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    const month = months[d.getMonth()];
-    const year = d.getFullYear();
-    return `${day} ${month} ${year}`;
-  };
+  // Format "15 Juni 2026" dari "YYYY-MM-DD" tanpa pergeseran zona waktu.
+  const formatDateToIndonesian = formatIsoDateId;
 
   const handleStartDateIsoChange = (isoVal: string) => {
     setStartDateIso(isoVal);
@@ -461,48 +454,21 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     const element = document.getElementById('printable-report-area');
     if (!element) return;
 
-    const printWindow = window.open('', '_blank', 'width=950,height=1000');
-    if (!printWindow) {
-      window.print();
-      return;
-    }
-
-    const reportHtml = element.outerHTML;
     // Nama berkas PDF mengikuti kebiasaan: DDMMYYYY (tanggal akhir)_Laporan_Mingguan_Monitoring
     const [yy, mm, dd] = endDateIso.split('-');
     const docTitle = yy && mm && dd
       ? `${dd}${mm}${yy}_Laporan_Mingguan_Monitoring`
       : `Laporan_Mingguan_Monitoring (${startDate} - ${endDate})`;
 
-    printWindow.document.open();
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="id">
-        <head>
-          <meta charset="UTF-8">
-          <title>${docTitle}</title>
-          <style>
-            body { margin: 0; background: #e5e7eb; }
-            .print-bar { max-width: 210mm; margin: 12px auto; padding: 12px 16px; background: #0f172a; color: #fff; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; font: 700 12px Arial, sans-serif; }
-            .print-bar button { background: #0052CC; color: #fff; padding: 8px 18px; border-radius: 10px; border: 0; cursor: pointer; font-weight: 700; }
-            ${REPORT_CSS}
-          </style>
-        </head>
-        <body>
-          <div class="print-bar no-print">
-            <span>Dokumen siap dicetak atau disimpan sebagai PDF (BBMKG Wilayah V)</span>
-            <button onclick="window.print()">Cetak / Simpan PDF</button>
-          </div>
-          ${reportHtml}
-          <script>
-            window.onload = function() {
-              setTimeout(function() { window.print(); }, 600);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    const opened = openPrintWindow({
+      title: docTitle,
+      bodyHtml: element.outerHTML,
+      css: REPORT_CSS,
+      toolbar: { text: 'Dokumen siap dicetak atau disimpan sebagai PDF (BBMKG Wilayah V)' },
+      width: 950,
+      height: 1000,
+    });
+    if (!opened) window.print();
   };
 
   if (!isOpen) return null;

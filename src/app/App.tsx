@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity } from 'lucide-react';
-import { ActiveNavMenu, AloptamaDevice, UPTStation, ChangeLog } from '../shared/types';
+import { AloptamaDevice, UPTStation, ChangeLog } from '../shared/types';
 import { Sidebar } from '../layouts/Sidebar';
 import { Navbar } from '../layouts/Navbar';
 import { DashboardView } from '../features/dashboard/DashboardView';
@@ -23,16 +23,31 @@ import { GensetPage } from '../features/genset/GensetPage';
 import { PerbaikanView } from '../features/perbaikan/PerbaikanView';
 import { PanduanView } from '../features/panduan/PanduanView';
 import { TimeBar } from '../layouts/TimeBar';
+import { useMenuRoute } from './useMenuRoute';
+
+// Penanda sebelum sinkronisasi server pertama selesai (bukan tanggal palsu).
+const BELUM_SINKRON = 'Belum sinkron';
 
 function AppContent() {
   const { user, permissions, isAuthenticated } = useAuth();
-  const [activeMenu, setActiveMenu] = useState<ActiveNavMenu>('dashboard');
+  // Menu aktif mengikuti URL (/sla-ola, /kalibrasi, ...): refresh tetap di halaman yang sama,
+  // tombol Back/Forward berfungsi, dan halaman tertentu bisa dibagikan lewat link.
+  const [activeMenu, navigateMenu] = useMenuRoute();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+
+  // Setelah LOGOUT, URL dikembalikan ke Dashboard supaya pengguna berikutnya tidak mendarat di
+  // halaman milik sesi sebelumnya. Hanya saat transisi login -> logout: pengunjung yang belum
+  // login dan membuka link langsung (mis. /sla-ola) tetap diarahkan ke halaman itu setelah login.
+  const wasAuthenticated = React.useRef(false);
+  useEffect(() => {
+    if (wasAuthenticated.current && !isAuthenticated) navigateMenu('dashboard', { replace: true });
+    wasAuthenticated.current = isAuthenticated;
+  }, [isAuthenticated, navigateMenu]);
   // Khusus tampilan HP: sidebar (bahkan rail ikonnya) tersembunyi total by
   // default. Baru muncul rail ikon setelah tombol logo di Navbar ditekan.
   // Tidak berlaku di tablet/PC (di sana sidebar selalu tampil seperti biasa).
   const [mobileSidebarHidden, setMobileSidebarHidden] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState('28 Juli 2026, 10:30 WIT');
+  const [lastUpdate, setLastUpdate] = useState(BELUM_SINKRON);
   const [isServerModalOpen, setIsServerModalOpen] = useState(false);
   
   // Modals for UPT SLA OLA input and INSKAL Calibration input
@@ -56,7 +71,7 @@ function AppContent() {
     devices: [],
     stations: [],
     source: 'server_api',
-    lastSync: '28 Juli 2026, 10:30 WIT',
+    lastSync: BELUM_SINKRON,
   });
 
   // Alat yang boleh DIISI (form SLA OLA) oleh Teknisi UPT/KaUPT - dibatasi
@@ -221,7 +236,7 @@ function AppContent() {
   }, [isAuthenticated]);
 
   return (
-    <ProtectedRoute activeMenu={activeMenu} onRedirectToDashboard={() => setActiveMenu('dashboard')}>
+    <ProtectedRoute activeMenu={activeMenu} onRedirectToDashboard={() => navigateMenu('dashboard')}>
       <div className="min-h-screen bg-white font-['Inter',sans-serif] text-slate-800 flex flex-col">
         {/* Bar tanggal & jam — full-width dari ujung ke ujung, di atas Sidebar & Navbar */}
         <TimeBar />
@@ -229,7 +244,7 @@ function AppContent() {
         {/* Sidebar Navigation */}       
         <Sidebar
           activeMenu={activeMenu}
-          onSelectMenu={(menu) => setActiveMenu(menu)}
+          onSelectMenu={(menu) => navigateMenu(menu)}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           mobileHidden={mobileSidebarHidden}
