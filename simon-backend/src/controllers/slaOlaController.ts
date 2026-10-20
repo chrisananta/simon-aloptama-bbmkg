@@ -10,11 +10,8 @@ import {
   diffDaysDateOnly,
 } from '../utils/dateUtils.js';
 import { isSameUptStation } from '../utils/uptMatch.js';
-import {
-  ADMIN_ACTOR_FALLBACK,
-  normalizeActor,
-  resolveMonthlyScores,
-} from '../utils/slaOlaMonthly.js';
+import { normalizeActor, resolveMonthlyScores } from '../utils/slaOlaMonthly.js';
+import { loadAdminActorSet } from '../utils/adminActors.js';
 
 // Batas maksimal mundur untuk pengisian SLA/OLA susulan (hari).
 const MAX_BACKDATE_DAYS = 10;
@@ -51,26 +48,6 @@ const updateSlaOlaLogInput = z.object({
 
 function invalidSlaOla(res: Response, error: z.ZodError) {
   return res.status(400).json({ success: false, message: 'Data SLA/OLA tidak valid.', errors: z.flattenError(error).fieldErrors });
-}
-
-/**
- * Kumpulan nama `actor` yang dianggap Admin: nama & username semua akun
- * Super Admin / Admin Inskal, ditambah daftar cadangan (mis. akun yang sudah
- * dihapus). Dipakai untuk membedakan log rekap bulanan admin dari log
- * pengisian UPT (lihat utils/slaOlaMonthly.ts).
- */
-async function loadAdminActorSet(): Promise<Set<string>> {
-  const admins = await prisma.user.findMany({
-    where: { role: { in: ['SUPER_ADMIN', 'ADMIN_INSKAL'] } },
-    select: { name: true, username: true },
-  });
-  const set = new Set<string>(ADMIN_ACTOR_FALLBACK.map(normalizeActor));
-  for (const u of admins) {
-    set.add(normalizeActor(u.name));
-    set.add(normalizeActor(u.username));
-  }
-  set.delete('');
-  return set;
 }
 
 export const slaOlaController = {

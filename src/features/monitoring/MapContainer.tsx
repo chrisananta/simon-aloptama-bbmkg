@@ -305,7 +305,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
               <span>🕒</span> Updated:
             </span>
             <span class="font-bold text-[#0052CC] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-              ${formatDateIndo(device.lastReportedDate || device.lastCalibrated)}
+              ${formatDateIndo(device.lastReportedDate)}
             </span>
           </div>
         </div>

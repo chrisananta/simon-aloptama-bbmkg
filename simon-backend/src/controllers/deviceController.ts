@@ -5,6 +5,7 @@ import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE } from '../utils/dateUtils.js';
 import { syncCalibrationListing } from '../utils/calibrationList.js';
+import { loadLatestReportDates } from '../utils/latestSlaOlaReport.js';
 
 const dateOnlyString = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal wajib "YYYY-MM-DD".');
 
@@ -103,8 +104,15 @@ async function isDeviceInUserUpt(
 export const deviceController = {
   getAllDevices: async (_req: AuthRequest, res: Response) => {
     try {
-      const devices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
-      const serialized = devices.map(serializeDevice);
+      // lastReportedDate diambil dari tabel sla_ola_logs (tanggal pengisian terakhir per alat),
+      // bukan dari kolom devices.lastReportedDate yang bisa tertinggal (mis. data hasil import).
+      const [devices, latestReports] = await Promise.all([
+        prisma.device.findMany({ orderBy: { site: 'asc' } }),
+        loadLatestReportDates(),
+      ]);
+      const serialized = devices.map((d) =>
+        serializeDevice({ ...d, lastReportedDate: latestReports.get(d.devicesId) ?? null })
+      );
       return res.json({
         success: true,
         count: serialized.length,

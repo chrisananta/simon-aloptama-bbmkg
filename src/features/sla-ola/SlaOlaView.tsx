@@ -34,6 +34,7 @@ import { UptSlaOlaReportModal } from './UptSlaOlaReportModal';
 import { SlaOlaHarianTable } from './SlaOlaHarianTable';
 import { useAuth } from '../auth/AuthContext';
 import { averageOfCategories } from '../../shared/utils/slaOlaTotals';
+import { formatDateIndo } from '../../shared/utils/dateUtils';
 
 // Kategori resmi sesuai field `category` di database (lihat dropdown di
 // AdminMasterView.tsx). Pencocokan exact-match (bukan substring) supaya
@@ -432,12 +433,11 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   });
 
   const sortedDevices = [...filteredDevices].sort((a, b) => {
-    // Urutkan dari yang paling lama belum update.
-    // Prioritaskan lastReportedDate (tanggal lapor terakhir); jika kosong, gunakan
-    // lastCalibrated sebagai fallback. Alat yang belum pernah lapor sama sekali
+    // Urutkan dari yang paling lama belum update. lastReportedDate = tanggal pengisian
+    // SLA/OLA terakhir (dari sla_ola_logs). Alat yang belum pernah lapor sama sekali
     // dianggap paling lama (ditempatkan paling atas).
-    const rawA = a.lastReportedDate || a.lastCalibrated;
-    const rawB = b.lastReportedDate || b.lastCalibrated;
+    const rawA = a.lastReportedDate;
+    const rawB = b.lastReportedDate;
 
     const timeA = rawA ? new Date(rawA).getTime() : -Infinity;
     const timeB = rawB ? new Date(rawB).getTime() : -Infinity;
@@ -1094,7 +1094,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     <td className="p-3 text-slate-700 font-medium">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] font-semibold text-slate-800">
-                          {dev.lastReportedDate || dev.lastCalibrated || '27 Juli 2026'}
+                          {dev.lastReportedDate ? formatDateIndo(dev.lastReportedDate) : 'Belum pernah lapor'}
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-400">Belum Lapor Hari Ini</span>

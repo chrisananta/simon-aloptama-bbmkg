@@ -96,7 +96,7 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
         const uniqueItems = new Map<string, string>();
         match.forEach((dev) => {
           const siteLabel = getUptLabel(dev);
-          const updatedDate = formatDateIndo(dev.lastReportedDate || dev.lastCalibrated);
+          const updatedDate = formatDateIndo(dev.lastReportedDate);
           uniqueItems.set(siteLabel, `${siteLabel} (terakhir update ${updatedDate})`);
         });
         return Array.from(uniqueItems.values());

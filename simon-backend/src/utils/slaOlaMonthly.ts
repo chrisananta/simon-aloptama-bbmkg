@@ -120,3 +120,35 @@ export function resolveMonthlyScores(
 
   return result;
 }
+
+/** Satu baris hasil groupBy(deviceId, actor) pada tabel sla_ola_logs. */
+export interface LatestReportRow {
+  deviceId: string | null;
+  actor: string | null;
+  _max: { reportDate: Date | null };
+}
+
+/**
+ * Tanggal pengisian SLA/OLA TERAKHIR per alat, dari tabel sla_ola_logs (sumber kebenaran).
+ *
+ *  - Yang dipakai `reportDate` (tanggal laporan) TERBARU — sama dengan arti `lastReportedDate`
+ *    di aplikasi (pengisian susulan untuk tanggal lama tidak memundurkan tanggal terakhir).
+ *  - Log rekap bulanan input Admin TIDAK dihitung: tanggalnya hanya penanda (tanggal 15 bulan itu),
+ *    bukan hari pengisian sebenarnya.
+ *  - Alat tanpa log pengisian tidak ada di hasil (pemanggil menampilkannya sebagai "belum lapor").
+ */
+export function pickLatestReportDates(
+  rows: ReadonlyArray<LatestReportRow>,
+  adminActors: ReadonlySet<string>
+): Map<string, Date> {
+  const latest = new Map<string, Date>();
+  for (const row of rows) {
+    if (!row.deviceId || !row._max.reportDate) continue;
+    if (adminActors.has(normalizeActor(row.actor))) continue;
+    const current = latest.get(row.deviceId);
+    if (!current || row._max.reportDate.getTime() > current.getTime()) {
+      latest.set(row.deviceId, row._max.reportDate);
+    }
+  }
+  return latest;
+}
