@@ -152,3 +152,63 @@ export function pickLatestReportDates(
   }
   return latest;
 }
+
+export type ConditionStatus = 'NORMAL' | 'GANGGUAN' | 'MATI';
+
+/**
+ * Kondisi dari nilai SLA & OLA (0–100). SAMA PERSIS dengan `classifyScore` di halaman
+ * SLA & OLA (SlaOlaView.tsx) dan rumus status di saveSlaOla / skrip import:
+ *  - SLA atau OLA 0  -> MATI
+ *  - keduanya 100    -> NORMAL
+ *  - selainnya       -> GANGGUAN
+ */
+export function classifyCondition(sla: number, ola: number): ConditionStatus {
+  if (sla <= 0 || ola <= 0) return 'MATI';
+  if (sla >= 100 && ola >= 100) return 'NORMAL';
+  return 'GANGGUAN';
+}
+
+/** Satu log pengisian harian (kolom yang dibutuhkan untuk menentukan kondisi terakhir). */
+export interface LatestConditionLog {
+  id: string;
+  deviceId: string | null;
+  kondisiSla: boolean;
+  kondisiOla: number;
+  actor: string | null;
+  reportDate: Date;
+  timestamp: Date;
+}
+
+/**
+ * Kondisi TERAKHIR tiap alat = kondisi dari log pengisian harian terbaru alat itu.
+ *
+ *  - "Terbaru" = reportDate terbesar; bila sama, timestamp (waktu submit) terbesar; bila masih
+ *    sama, id terbesar — hasilnya selalu pasti (tidak bergantung urutan data).
+ *  - Log rekap bulanan input Admin tidak dihitung (bukan data harian).
+ *  - Alat tanpa log pengisian tidak ada di hasil; pemanggil memakai kondisi tersimpannya.
+ */
+export function pickLatestConditions(
+  logs: ReadonlyArray<LatestConditionLog>,
+  adminActors: ReadonlySet<string>
+): Map<string, ConditionStatus> {
+  const newest = new Map<string, LatestConditionLog>();
+  for (const log of logs) {
+    if (!log.deviceId) continue;
+    if (adminActors.has(normalizeActor(log.actor))) continue;
+    const cur = newest.get(log.deviceId);
+    if (!cur || isNewerLog(log, cur)) newest.set(log.deviceId, log);
+  }
+  const result = new Map<string, ConditionStatus>();
+  for (const [deviceId, log] of newest) {
+    result.set(deviceId, classifyCondition(log.kondisiSla ? 100 : 0, log.kondisiOla));
+  }
+  return result;
+}
+
+function isNewerLog(a: LatestConditionLog, b: LatestConditionLog): boolean {
+  const byDate = a.reportDate.getTime() - b.reportDate.getTime();
+  if (byDate !== 0) return byDate > 0;
+  const byTime = a.timestamp.getTime() - b.timestamp.getTime();
+  if (byTime !== 0) return byTime > 0;
+  return a.id > b.id;
+}

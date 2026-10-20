@@ -5,7 +5,7 @@ import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE } from '../utils/dateUtils.js';
 import { syncCalibrationListing } from '../utils/calibrationList.js';
-import { loadLatestReportDates } from '../utils/latestSlaOlaReport.js';
+import { loadLatestReportSnapshot } from '../utils/latestSlaOlaReport.js';
 
 const dateOnlyString = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal wajib "YYYY-MM-DD".');
 
@@ -104,14 +104,20 @@ async function isDeviceInUserUpt(
 export const deviceController = {
   getAllDevices: async (_req: AuthRequest, res: Response) => {
     try {
-      // lastReportedDate diambil dari tabel sla_ola_logs (tanggal pengisian terakhir per alat),
-      // bukan dari kolom devices.lastReportedDate yang bisa tertinggal (mis. data hasil import).
-      const [devices, latestReports] = await Promise.all([
+      // Tanggal & kondisi TERAKHIR tiap alat diambil dari tabel sla_ola_logs (sumber kebenaran),
+      // bukan dari kolom devices.lastReportedDate / conditionStatus yang bisa tertinggal
+      // (mis. data hasil import). Peta dan hitungan Dashboard mengikuti data pengisian terakhir.
+      // Alat yang belum punya log pengisian tetap memakai nilai tersimpannya.
+      const [devices, latest] = await Promise.all([
         prisma.device.findMany({ orderBy: { site: 'asc' } }),
-        loadLatestReportDates(),
+        loadLatestReportSnapshot(),
       ]);
       const serialized = devices.map((d) =>
-        serializeDevice({ ...d, lastReportedDate: latestReports.get(d.devicesId) ?? null })
+        serializeDevice({
+          ...d,
+          lastReportedDate: latest.reportDates.get(d.devicesId) ?? null,
+          conditionStatus: latest.conditions.get(d.devicesId) ?? d.conditionStatus,
+        })
       );
       return res.json({
         success: true,
