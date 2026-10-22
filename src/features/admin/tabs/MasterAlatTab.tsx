@@ -19,14 +19,13 @@ interface MasterAlatTabProps {
   handleOpenAddDevice: () => void;
   handleOpenEditDevice: (dev: AloptamaDevice) => void;
   setDeleteConfirmTarget: (target: { type: 'stasiun' | 'alat'; id: string; name: string } | null) => void;
-  // Mode Teknisi UPT: tanpa tombol Tambah & Hapus, filter UPT disembunyikan
-  // (data sudah dibatasi ke UPT sendiri oleh parent).
+  // Mode Teknisi UPT:
   canAdd?: boolean;
   canDelete?: boolean;
   showUptFilter?: boolean;
-  // Search & filter kategori: disembunyikan untuk selain Super Admin.
+  // Search & filter kategori
   showSearchAndCategory?: boolean;
-  // Tombol Ekspor CSV (mengekspor seluruh hasil filter, bukan hanya 100 baris di tabel).
+  // Tombol Ekspor CSV
   canExport?: boolean;
 }
 
@@ -57,8 +56,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
   showSearchAndCategory = true,
   canExport = true,
 }) => {
-  // Kotak search/filter/tambah disembunyikan total (bukan cuma isinya) kalau
-  // tidak ada satu pun yang ditampilkan - contoh: Teknisi UPT.
+  // Kotak search/filter/tambah disembunyikan total (bukan cuma isinya) 
   const hasToolbar = showSearchAndCategory || showUptFilter || canAdd || canExport;
 
   const handleExportCsv = () => {

@@ -55,9 +55,6 @@ export const MasterPetugasTab: React.FC<MasterPetugasTabProps> = ({
                   Daftar Personil Petugas Monitoring ({filteredPetugas.length})
                 </h3>
               </div>
-              <span className="text-[11px] text-slate-500 font-medium">
-                Personil tercatat secara resmi pada Laporan Mingguan Aloptama
-              </span>
             </div>
 
             <div className="overflow-x-auto">

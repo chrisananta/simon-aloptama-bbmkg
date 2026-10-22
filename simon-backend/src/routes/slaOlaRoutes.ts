@@ -22,8 +22,4 @@ router.get('/sla-ola/logs', verifyToken, requireAdmin, slaOlaController.getSlaOl
 router.put('/sla-ola/logs/:id', verifyToken, requireAdmin, slaOlaController.updateSlaOlaLog);
 router.delete('/sla-ola/logs/:id', verifyToken, requireAdmin, slaOlaController.deleteSlaOlaLog);
 
-// Input SLA/OLA per-bulan khusus Admin Master View
-router.get('/sla-ola/monthly', verifyToken, requireAdmin, slaOlaController.getMonthlySlaOla);
-router.post('/sla-ola/monthly', verifyToken, requireAdmin, slaOlaController.saveMonthlySlaOla);
-
 export default router;

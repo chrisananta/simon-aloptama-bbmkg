@@ -56,11 +56,11 @@ Setiap modul fitur di `src/features/` wajib menggunakan akhiran nama berkas beri
 
 | Jenis Berkas | Suffix / Naming Pattern | Contoh | Tanggung Jawab |
 | :--- | :--- | :--- | :--- |
-| **Page Component** | `*Page.tsx` | `DashboardPage.tsx`, `SlaOlaPage.tsx` | Komponen halaman utama untuk fitur |
+| **Page Component** | `*Page.tsx` | `DashboardPage.tsx`, `LoginPage.tsx` | Komponen halaman utama untuk fitur |
 | **Modal / Dialog** | `*Modal.tsx` | `SlaOlaModal.tsx`, `CalibrationModal.tsx` | Dialog popup / form input |
 | **Table Component** | `*Table.tsx` | `DashboardTable.tsx`, `AuditLogTable.tsx` | Komponen visualisasi tabel & filter |
 | **Card Component** | `*Card.tsx` | `DashboardCard.tsx` | Komponen statistik / KPI card |
-| **Service Adapter** | `*Service.ts` | `DashboardService.ts` | Bridge panggilan ke `apiClient` |
+| **Service Adapter** | `*Service.ts` | `authService.ts`, `petugasService.ts` | Bridge panggilan ke `apiClient` |
 | **Types Definition** | `*Types.ts` | `DashboardTypes.ts`, `SlaOlaTypes.ts` | Type definitions spesifik modul |
 
 > **Catatan Backward Compatibility:** Komponen lama berakhiran `*InputModal.tsx` (mis. `SlaOlaInputModal.tsx`) tetap di-reexport dari file standar baru (`export { SlaOlaModal as SlaOlaInputModal }`) supaya tidak merusak import existing.

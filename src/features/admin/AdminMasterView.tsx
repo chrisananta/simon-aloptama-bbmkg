@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Building2,
   Radio,
-  History,
   Database,
   ShieldCheck,
-  Activity,
   Users,
   UserCheck,
   CheckCircle2,
@@ -13,9 +11,6 @@ import {
 import {
   UPTStation,
   AloptamaDevice,
-  ChangeLog,
-  LogAction,
-  LogTable,
   EquipmentCategory,
   EquipmentStatus,
   CalibrationStatus
@@ -30,16 +25,13 @@ import { loadPapuaProvinces, findProvince, ProvinceShape } from '../../shared/ut
 
 import { MasterStasiunTab } from './tabs/MasterStasiunTab';
 import { MasterAlatTab } from './tabs/MasterAlatTab';
-import { MasterSlaOlaTab } from './tabs/MasterSlaOlaTab';
 import { MonitoringSlaOlaTab } from './tabs/MonitoringSlaOlaTab';
 import { MasterPetugasTab } from './tabs/MasterPetugasTab';
 import { MasterAkunTab } from './tabs/MasterAkunTab';
-import { LogPerubahanTab } from './tabs/LogPerubahanTab';
 
 import { StationFormModal } from './modals/StationFormModal';
 import { DeviceFormModal } from './modals/DeviceFormModal';
 import { DeleteConfirmModal } from './modals/DeleteConfirmModal';
-import { SlaOlaEditModal } from './modals/SlaOlaEditModal';
 import { EditSlaOlaLogModal } from './modals/EditSlaOlaLogModal';
 import { DeleteSlaOlaLogModal } from './modals/DeleteSlaOlaLogModal';
 import { UserFormModal } from './modals/UserFormModal';
@@ -52,7 +44,6 @@ import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../shared/utils/calib
 interface AdminMasterViewProps {
   stations: UPTStation[];
   devices: AloptamaDevice[];
-  changeLogs: ChangeLog[];
   onAddStation: (station: UPTStation, actor: string) => void;
   onUpdateStation: (station: UPTStation, changesDetail: string, actor: string) => void;
   onDeleteStation: (stationId: string, stationName: string, actor: string) => void;
@@ -60,23 +51,20 @@ interface AdminMasterViewProps {
   onAddDevice: (device: AloptamaDevice, actor: string) => void | boolean | Promise<void | boolean>;
   onUpdateDevice: (device: AloptamaDevice, changesDetail: string, actor: string) => void | boolean | Promise<void | boolean>;
   onDeleteDevice: (deviceId: string, deviceName: string, actor: string) => void | boolean | Promise<void | boolean>;
-  onClearLogs?: () => void;
   onSyncDevicesFromServer?: (devices: AloptamaDevice[]) => void;
 }
 
-type TabType = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'monitoring_sla_ola' | 'master_petugas' | 'master_akun' | 'Log_Perubahan';
+type TabType = 'master_stasiun' | 'master_alat' | 'monitoring_sla_ola' | 'master_petugas' | 'master_akun';
 
 export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   stations: stationsProp,
   devices: devicesProp,
-  changeLogs,
   onAddStation,
   onUpdateStation,
   onDeleteStation,
   onAddDevice,
   onUpdateDevice,
   onDeleteDevice,
-  onClearLogs,
   onSyncDevicesFromServer,
 }) => {
   const { user, permissions } = useAuth();
@@ -381,106 +369,12 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   );
   const [alatSortOrder, setAlatSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  // --- LOG SEARCH & FILTERS ---
-  const [logSearch, setLogSearch] = useState('');
-  const [logTableFilter, setLogTableFilter] = useState<'ALL' | LogTable>('ALL');
-  const [logActionFilter, setLogActionFilter] = useState<'ALL' | LogAction>('ALL');
-
-  // --- MASTER SLA OLA TAB STATES ---
-  const [selectedMonthSlaOla, setSelectedMonthSlaOla] = useState<string>('Juli');
-  const [selectedYearSlaOla, setSelectedYearSlaOla] = useState<string>('2026');
-  const [slaOlaSearchQuery, setSlaOlaSearchQuery] = useState<string>('');
-  const [slaOlaUptFilter, setSlaOlaUptFilter] = useState<string>('ALL');
-  const [slaOlaCategoryFilter, setSlaOlaCategoryFilter] = useState<string>('ALL');
-
-  const [monthlySlaOlaData, setMonthlySlaOlaData] = useState<Record<string, { sla: number; ola: number }>>({});
-  const [isLoadingMonthlySlaOla, setIsLoadingMonthlySlaOla] = useState<boolean>(false);
-
-  const MONTH_NAME_TO_NUMBER: Record<string, number> = {
-    'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4, 'Mei': 5, 'Juni': 6,
-    'Juli': 7, 'Agustus': 8, 'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12,
-  };
-
-  useEffect(() => {
-    // Teknisi UPT tidak punya tab master_sla_ola & endpoint ini khusus admin (403).
-    if (isTeknisiAlatMode) return;
-    const bulanNum = MONTH_NAME_TO_NUMBER[selectedMonthSlaOla];
-    const tahunNum = Number(selectedYearSlaOla);
-    if (!bulanNum || !tahunNum) return;
-
-    let cancelled = false;
-    setIsLoadingMonthlySlaOla(true);
-    apiClient.devices.getMonthlySlaOla(bulanNum, tahunNum)
-      .then((data) => {
-        if (!cancelled) setMonthlySlaOlaData(data);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingMonthlySlaOla(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [selectedMonthSlaOla, selectedYearSlaOla, isTeknisiAlatMode]);
-
-  const [isSlaOlaEditModalOpen, setIsSlaOlaEditModalOpen] = useState<boolean>(false);
-  const [editingSlaDevice, setEditingSlaDevice] = useState<AloptamaDevice | null>(null);
-  const [editSlaVal, setEditSlaVal] = useState<number>(0);
-  const [editOlaVal, setEditOlaVal] = useState<number>(0);
-
   const currentYearNum = new Date().getFullYear();
   const maxYearNum = Math.max(2028, currentYearNum + 2);
   const dynamicYears: string[] = [];
   for (let y = 2024; y <= maxYearNum; y++) {
     dynamicYears.push(y.toString());
   }
-
-  const getSlaOlaForDevice = (dev: AloptamaDevice) => {
-    return monthlySlaOlaData[dev.devicesId] ?? { sla: 0, ola: 0 };
-  };
-
-  const handleOpenEditSlaOla = (dev: AloptamaDevice) => {
-    setEditingSlaDevice(dev);
-    const currentVal = getSlaOlaForDevice(dev);
-    setEditSlaVal(currentVal.sla);
-    setEditOlaVal(currentVal.ola);
-    setIsSlaOlaEditModalOpen(true);
-  };
-
-  const handleSaveSlaOla = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSlaDevice) return;
-
-    const sla = Math.min(100, Math.max(0, Math.round(Number(editSlaVal))));
-    const ola = Math.min(100, Math.max(0, Math.round(Number(editOlaVal))));
-    const bulanNum = MONTH_NAME_TO_NUMBER[selectedMonthSlaOla];
-    const tahunNum = Number(selectedYearSlaOla);
-
-    try {
-      const { devices: updatedDevices } = await apiClient.devices.saveMonthlySlaOla({
-        deviceId: editingSlaDevice.devicesId,
-        uptStation: editingSlaDevice.uptStation,
-        category: editingSlaDevice.category,
-        kondisiSla: sla >= 100,
-        ola,
-        bulan: bulanNum,
-        tahun: tahunNum,
-        actor: adminActor,
-      });
-
-      setMonthlySlaOlaData((prev) => ({
-        ...prev,
-        [editingSlaDevice.devicesId]: { sla: sla >= 100 ? 100 : 0, ola },
-      }));
-
-      if (updatedDevices?.length) {
-        onSyncDevicesFromServer?.(updatedDevices);
-      }
-
-      setIsSlaOlaEditModalOpen(false);
-      setEditingSlaDevice(null);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Gagal menyimpan data SLA/OLA.');
-    }
-  };
 
   // ================= TAB MONITORING PENGISIAN SLA/OLA (per-entri log) =================
   const currentMonthNum1to12 = new Date().getMonth() + 1;
@@ -565,18 +459,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     }
   };
 
-  const filteredSlaDevices = devices.filter((dev) => {
-    const matchesSearch =
-      (dev.site || '').toLowerCase().includes(slaOlaSearchQuery.toLowerCase()) ||
-      (dev.devicesId || '').toLowerCase().includes(slaOlaSearchQuery.toLowerCase()) ||
-      (dev.uptStation || '').toLowerCase().includes(slaOlaSearchQuery.toLowerCase());
-
-    const matchesUpt = slaOlaUptFilter === 'ALL' || dev.uptStation === slaOlaUptFilter;
-    const matchesCategory = slaOlaCategoryFilter === 'ALL' || dev.category === slaOlaCategoryFilter;
-
-    return matchesSearch && matchesUpt && matchesCategory;
-  });
-
   // --- MODAL STATES ---
   const [isStationModalOpen, setIsStationModalOpen] = useState(false);
   const [editingStation, setEditingStation] = useState<UPTStation | null>(null);
@@ -642,17 +524,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   .sort((a, b) => {
     const result = (a.devicesId || '').localeCompare(b.devicesId || '', undefined, { numeric: true, sensitivity: 'base' });
     return alatSortOrder === 'asc' ? result : -result;
-  });
-
-  const filteredLogs = changeLogs.filter((log) => {
-    const matchesSearch = 
-      (log.recordName || '').toLowerCase().includes(logSearch.toLowerCase()) ||
-      (log.recordId || '').toLowerCase().includes(logSearch.toLowerCase()) ||
-      (log.actor || '').toLowerCase().includes(logSearch.toLowerCase()) ||
-      (log.details || '').toLowerCase().includes(logSearch.toLowerCase());
-    const matchesTable = logTableFilter === 'ALL' || log.table === logTableFilter;
-    const matchesAction = logActionFilter === 'ALL' || log.action === logActionFilter;
-    return matchesSearch && matchesTable && matchesAction;
   });
 
   const handleOpenAddStation = () => {
@@ -896,34 +767,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     if (ok !== false) setNotice(`Alat ${target.name} (${target.id}) berhasil dihapus.`);
   };
 
-  const handleExportLogsCSV = () => {
-    if (changeLogs.length === 0) {
-      alert('Tidak ada log perubahan untuk diekspor.');
-      return;
-    }
-
-    const headers = ['ID_LOG', 'TIMESTAMP', 'TABEL_MASTER', 'AKSI', 'RECORD_ID', 'NAMA_RECORD', 'ADMIN_PENGUBAH', 'DETAIL_PERUBAHAN'];
-    const rows = changeLogs.map((log) => [
-      log.id,
-      `"${log.timestamp}"`,
-      log.table,
-      log.action,
-      log.recordId,
-      `"${log.recordName.replace(/"/g, '""')}"`,
-      `"${log.actor}"`,
-      `"${log.details.replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Log_Perubahan_MasterDB_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
       {notice && (
@@ -967,7 +810,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
               </p>
             ) : (
             <p className="text-slate-500 text-[11px] sm:text-xs mt-0.5 leading-relaxed">
-              Ubah data <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_stasiun</code>, <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_alat</code>, serta audit jejak perubahan pada <code className="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">Log_Perubahan</code>.
+              Ubah data <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_stasiun</code>, <code className="text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded">master_alat</code>, serta data petugas dan akun. Jejak perubahan tercatat otomatis di menu <code className="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">Audit Log</code>.
             </p>
             )}
           </div>
@@ -984,7 +827,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
                 onChange={(e) => setAdminActor(e.target.value)}
                 readOnly={isTeknisiAlatMode}
                 className="text-xs font-bold text-slate-800 bg-transparent outline-none border-b border-dashed border-slate-300 focus:border-[#0052CC] w-32 sm:w-40"
-                title="Nama Pengguna/Admin yang tercatat pada Log_Perubahan"
+                title="Nama Pengguna/Admin yang tercatat pada Audit Log"
               />
             </div>
           </div>
@@ -1042,22 +885,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           </span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('master_sla_ola')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-            activeTab === 'master_sla_ola'
-              ? 'bg-[#0052CC] text-white shadow-md shadow-blue-500/20'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <Activity size={16} />
-          <span>master_sla_ola</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${
-            activeTab === 'master_sla_ola' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-          }`}>
-            Bulanan
-          </span>
-        </button>
         </>
         )}
 
@@ -1116,22 +943,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           </span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('Log_Perubahan')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-            activeTab === 'Log_Perubahan'
-              ? 'bg-amber-600 text-white shadow-md shadow-amber-500/20'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <History size={16} />
-          <span>Log_Perubahan</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${
-            activeTab === 'Log_Perubahan' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-          }`}>
-            {changeLogs.length} Log
-          </span>
-        </button>
         </>
         )}
       </div>
@@ -1172,27 +983,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           canDelete={!isTeknisiAlatMode}
           showUptFilter={!isTeknisiAlatMode}
           showSearchAndCategory={!isTeknisiAlatMode}
-        />
-      )}
-
-      {activeTab === 'master_sla_ola' && isFullMasterAccess && (
-        <MasterSlaOlaTab
-          stations={stations}
-          devices={devices}
-          filteredSlaDevices={filteredSlaDevices}
-          dynamicYears={dynamicYears}
-          selectedMonthSlaOla={selectedMonthSlaOla}
-          setSelectedMonthSlaOla={setSelectedMonthSlaOla}
-          selectedYearSlaOla={selectedYearSlaOla}
-          setSelectedYearSlaOla={setSelectedYearSlaOla}
-          slaOlaSearchQuery={slaOlaSearchQuery}
-          setSlaOlaSearchQuery={setSlaOlaSearchQuery}
-          slaOlaUptFilter={slaOlaUptFilter}
-          setSlaOlaUptFilter={setSlaOlaUptFilter}
-          slaOlaCategoryFilter={slaOlaCategoryFilter}
-          setSlaOlaCategoryFilter={setSlaOlaCategoryFilter}
-          getSlaOlaForDevice={getSlaOlaForDevice}
-          handleOpenEditSlaOla={handleOpenEditSlaOla}
         />
       )}
 
@@ -1237,20 +1027,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         />
       )}
 
-      {activeTab === 'Log_Perubahan' && isFullMasterAccess && (
-        <LogPerubahanTab
-          filteredLogs={filteredLogs}
-          logSearch={logSearch}
-          setLogSearch={setLogSearch}
-          logTableFilter={logTableFilter}
-          setLogTableFilter={setLogTableFilter}
-          logActionFilter={logActionFilter}
-          setLogActionFilter={setLogActionFilter}
-          handleExportLogsCSV={handleExportLogsCSV}
-          onClearLogs={onClearLogs}
-        />
-      )}
-
       {isStationModalOpen && (
         <StationFormModal
           editingStation={editingStation}
@@ -1279,20 +1055,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           deleteConfirmTarget={deleteConfirmTarget}
           setDeleteConfirmTarget={setDeleteConfirmTarget}
           handleConfirmDelete={handleConfirmDelete}
-        />
-      )}
-
-      {isSlaOlaEditModalOpen && editingSlaDevice && (
-        <SlaOlaEditModal
-          editingSlaDevice={editingSlaDevice}
-          selectedMonthSlaOla={selectedMonthSlaOla}
-          selectedYearSlaOla={selectedYearSlaOla}
-          editSlaVal={editSlaVal}
-          setEditSlaVal={setEditSlaVal}
-          editOlaVal={editOlaVal}
-          setEditOlaVal={setEditOlaVal}
-          setIsSlaOlaEditModalOpen={setIsSlaOlaEditModalOpen}
-          handleSaveSlaOla={handleSaveSlaOla}
         />
       )}
 

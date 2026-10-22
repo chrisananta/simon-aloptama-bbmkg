@@ -247,7 +247,7 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
               </div>
 
               <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-[11px] text-blue-800">
-                Pembaruan alat ini akan langsung memperbarui pemetaan peta interaktif dan tercatat pada <strong className="font-bold">Log_Perubahan</strong>.
+                Pembaruan alat ini akan langsung memperbarui pemetaan peta interaktif dan tercatat pada <strong className="font-bold">Audit Log</strong>.
                 {restrictedMode && (
                   <span className="block mt-1 text-blue-700">
                     Stasiun UPT dan Masa Berlaku Sertifikat dikelola oleh Admin dan tidak dapat diubah dari akun Teknisi.

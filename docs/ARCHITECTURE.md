@@ -108,7 +108,6 @@ Backend mendaftarkan seluruh grup route di root (`/api/...`), tanpa alias namesp
 | Stations | `/api/stations` | ADMIN |
 | Petugas | `/api/petugas` | ADMIN |
 | SLA/OLA (entry harian) | `/api/sla-ola` | Login (semua role) |
-| SLA/OLA (rekap bulanan) | `/api/sla-ola/monthly` | ADMIN |
 | Kalibrasi | `/api/calibration` | ADMIN |
 | Audit Log | `/api/audit-logs` | ADMIN |
 | History | `/api/history` | — (read-only, wajib login) |

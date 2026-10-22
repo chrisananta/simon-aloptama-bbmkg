@@ -115,7 +115,7 @@ export const StationFormModal: React.FC<StationFormModalProps> = ({
               </div>
 
               <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-[11px] text-blue-800">
-                Setiap perubahan pada form ini akan dicatat otomatis ke dalam audit trail <strong className="font-bold">Log_Perubahan</strong>.
+                Setiap perubahan pada form ini akan dicatat otomatis ke dalam audit trail <strong className="font-bold">Audit Log</strong>.
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 shrink-0">

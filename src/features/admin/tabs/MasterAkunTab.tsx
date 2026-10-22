@@ -49,10 +49,7 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
   handleOpenEditUser,
   setDeleteConfirmUser,
 }) => {
-  // Akun yang dibuat lewat script seed menyimpan uptStation sebagai KODE
-  // (mis. "GEO001"), sama seperti field uptStation pada tabel Device -
-  // supaya filter alat per-UPT jalan benar. Fungsi ini cuma buat TAMPILAN,
-  // menerjemahkan kode itu jadi nama stasiun yang mudah dibaca di tabel.
+ 
   const resolveStationLabel = (value?: string) => {
     if (!value) return '-';
     const match = stations.find(

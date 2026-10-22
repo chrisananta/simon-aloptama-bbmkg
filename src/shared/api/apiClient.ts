@@ -259,47 +259,6 @@ export const apiClient = {
       };
     },
 
-    getMonthlySlaOla: async (bulan: number, tahun: number): Promise<Record<string, { sla: number; ola: number }>> => {
-      try {
-        const res = await authFetch(`/api/sla-ola/monthly?bulan=${bulan}&tahun=${tahun}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json?.success) return json.data || {};
-        }
-      } catch (e) {
-        console.warn("apiClient.devices.getMonthlySlaOla failed:", e);
-      }
-      return {};
-    },
-
-    saveMonthlySlaOla: async (data: {
-      deviceId: string;
-      uptStation: string;
-      category: string;
-      kondisiSla: boolean;
-      ola: number;
-      bulan: number;
-      tahun: number;
-      actor?: string;
-    }): Promise<{ devices: AloptamaDevice[] }> => {
-      const res = await authFetch("/api/sla-ola/monthly", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        let message = "Gagal menyimpan SLA/OLA bulanan ke server.";
-        try {
-          const errData = await res.json();
-          if (errData?.message) message = errData.message;
-        } catch { /* ignore */ }
-        throw new Error(message);
-      }
-      const json = await res.json();
-      if (json?.devices) memoryCache.devices = json.devices;
-      return { devices: json.devices || memoryCache.devices };
-    },
-
     add: async (device: AloptamaDevice, actor = "Admin INSKAL"): Promise<AloptamaDevice> => {
       const response = await authFetch("/api/devices", {
         method: "POST",

@@ -300,14 +300,12 @@ function AppContent() {
               <AdminMasterView
                 stations={stationsData}
                 devices={devicesData}
-                changeLogs={changeLogsData}
                 onAddStation={handleAddStation}
                 onUpdateStation={handleUpdateStation}
                 onDeleteStation={handleDeleteStation}
                 onAddDevice={handleAddDevice}
                 onUpdateDevice={handleUpdateDevice}
                 onDeleteDevice={handleDeleteDevice}
-                onClearLogs={handleClearLogs}
                 onSyncDevicesFromServer={setDevicesData}
               />
             )}
