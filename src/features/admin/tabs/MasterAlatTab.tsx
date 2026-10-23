@@ -2,7 +2,6 @@ import React from 'react';
 import { Plus, Edit2, Trash2, Search, Download } from 'lucide-react';
 import { UPTStation, AloptamaDevice, EquipmentCategory } from '../../../shared/types';
 import { isNotCalibrated } from '../../../shared/utils/calibration';
-import { getStationName } from '../../../shared/utils/stations';
 
 interface MasterAlatTabProps {
   stations: UPTStation[];
@@ -77,7 +76,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
       d.locationName,
       d.category,
       d.merk,
-      getStationName(stations, d.stationId),
+      d.uptStation,
       d.latitude,
       d.longitude,
       isNotCalibrated(d) ? 'TIDAK DIKALIBRASI' : d.picKalibrasi,
@@ -141,7 +140,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                 >
                   <option value="ALL">Semua Stasiun UPT</option>
                   {stations.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
+                    <option key={s.id} value={s.name}>{s.name}</option>
                   ))}
                 </select>
               </div>
@@ -224,8 +223,8 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                             {dev.category}
                           </span>
                         </td>
-                        <td className="p-3.5 text-slate-600 max-w-[200px] truncate" title={getStationName(stations, dev.stationId)}>
-                          {getStationName(stations, dev.stationId)}
+                        <td className="p-3.5 text-slate-600 max-w-[200px] truncate" title={dev.uptStation}>
+                          {dev.uptStation}
                         </td>
                         <td className="p-3.5 text-center whitespace-nowrap">
                           {isNotCalibrated(dev) ? (

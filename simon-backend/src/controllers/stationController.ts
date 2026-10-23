@@ -125,29 +125,11 @@ export const stationController = {
     try {
       const station = await prisma.uptStation.findUnique({ where: { id: req.params.id } });
       if (!station) return res.status(404).json({ success: false, message: 'Stasiun tidak ditemukan.' });
-      // Semua tabel yang menunjuk stasiun ini lewat FK (RESTRICT) harus kosong dulu.
-      const [deviceCount, slaOlaLogCount, calibrationCount, userCount] = await Promise.all([
-        prisma.device.count({ where: { stationId: station.id } }),
-        prisma.slaOlaLog.count({ where: { stationId: station.id } }),
-        prisma.calibrationRecord.count({ where: { stationId: station.id } }),
-        prisma.user.count({ where: { stationId: station.id } }),
-      ]);
+      const deviceCount = await prisma.device.count({ where: { OR: [{ stationId: station.id }, { uptStation: station.name }] } });
       if (deviceCount > 0) {
         return res.status(409).json({
           success: false,
           message: `Stasiun tidak dapat dihapus karena masih memiliki ${deviceCount} perangkat. Pindahkan atau hapus perangkat terlebih dahulu.`,
-        });
-      }
-      if (userCount > 0) {
-        return res.status(409).json({
-          success: false,
-          message: `Stasiun tidak dapat dihapus karena masih dipakai ${userCount} akun pengguna. Pindahkan akun tersebut ke stasiun lain terlebih dahulu.`,
-        });
-      }
-      if (slaOlaLogCount > 0 || calibrationCount > 0) {
-        return res.status(409).json({
-          success: false,
-          message: `Stasiun tidak dapat dihapus karena masih memiliki riwayat data (${slaOlaLogCount} log SLA/OLA, ${calibrationCount} catatan kalibrasi).`,
         });
       }
       await prisma.$transaction(async (tx) => {
@@ -166,9 +148,6 @@ export const stationController = {
       return res.json({ success: true, message: 'Stasiun UPT berhasil dihapus.' });
     } catch (error) {
       console.error('Error deleteStation:', error);
-      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2003') {
-        return res.status(409).json({ success: false, message: 'Stasiun tidak dapat dihapus karena masih dipakai data lain.' });
-      }
       return res.status(500).json({ success: false, message: 'Gagal menghapus stasiun UPT.' });
     }
   },

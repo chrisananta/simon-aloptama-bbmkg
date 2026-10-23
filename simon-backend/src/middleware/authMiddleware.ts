@@ -8,21 +8,8 @@ export interface AuthRequest extends Request {
     username: string;
     role: string;
     name: string;
-    /** ID stasiun (upt_stations.id) tempat user bertugas. null = level Balai. */
-    stationId: string | null;
+    uptStation: string;
   };
-}
-
-/**
- * Apakah user boleh mengakses data milik stasiun `stationId`?
- * Admin Inskal & Super Admin boleh semua stasiun. Role lain hanya stasiunnya
- * sendiri; user tanpa stasiun (null) tidak punya akses berbasis-stasiun.
- * Perbandingan langsung antar ID - tidak ada lagi pencocokan kode/nama.
- */
-export function canAccessStation(user: AuthRequest['user'], stationId: string | null | undefined): boolean {
-  if (!user || !stationId) return false;
-  if (user.role === 'ADMIN_INSKAL' || user.role === 'SUPER_ADMIN') return true;
-  return user.stationId === stationId;
 }
 
 // Nama cookie httpOnly tempat JWT disimpan sisi browser. httpOnly berarti
@@ -86,15 +73,6 @@ export function verifyToken(req: AuthRequest, res: Response, next: NextFunction)
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthRequest['user'];
-    // Token yang diterbitkan sebelum normalisasi stasiun masih membawa klaim
-    // "uptStation" (teks) dan tidak punya klaim "stationId". Anggap kedaluwarsa
-    // supaya user login ulang dan mendapat token baru (maks. 24 jam, umur token).
-    if (!decoded || !('stationId' in decoded)) {
-      return res.status(401).json({
-        success: false,
-        message: 'Sesi lama tidak lagi berlaku. Silakan login kembali.',
-      });
-    }
     req.user = decoded;
     next();
   } catch (err) {

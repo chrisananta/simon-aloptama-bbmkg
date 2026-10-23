@@ -143,7 +143,7 @@ export const SEED_DEVICES = [
     name: "AWOS Kat. III Sentani",
     category: "AWOS",
     subCategory: "Vaisala TacMet",
-    stationCode: "MET006", // kode stasiun di SEED_UPT_STATIONS
+    uptStation: "Stasiun Meteorologi Sentani",
     locationName: "Bandara Sentani Jayapura",
     latitude: -2.576,
     longitude: 140.518,
@@ -160,7 +160,7 @@ export const SEED_DEVICES = [
     name: "Radar Cuaca Biak",
     category: "Radar Cuaca",
     subCategory: "Baron C-Band Dual Pol",
-    stationCode: "MET005", // kode stasiun di SEED_UPT_STATIONS
+    uptStation: "Stasiun Meteorologi Frans Kaisiepo Biak",
     locationName: "Biak Numfor",
     latitude: -1.191,
     longitude: 136.104,
@@ -177,7 +177,7 @@ export const SEED_DEVICES = [
     name: "Seismometer Jayapura",
     category: "Seismometer",
     subCategory: "Nanometrics Trillium",
-    stationCode: "GEO001", // kode stasiun di SEED_UPT_STATIONS
+    uptStation: "Stasiun Geofisika Angkasapura Jayapura",
     locationName: "Angkasapura Jayapura",
     latitude: -2.521,
     longitude: 140.712,

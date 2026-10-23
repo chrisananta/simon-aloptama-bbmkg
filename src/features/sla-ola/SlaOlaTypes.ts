@@ -1,11 +1,15 @@
 import { AloptamaDevice } from '../../shared/types';
 
+export interface SlaOlaPageProps {
+  devices: AloptamaDevice[];
+}
+
 export interface SlaOlaModalProps {
   isOpen: boolean;
   onClose: () => void;
   devices: AloptamaDevice[];
   onSaveSlaOla: (data: {
-    stationId: string;
+    uptStation: string;
     category: string;
     deviceId: string;
     kondisiSla: boolean;

@@ -220,7 +220,7 @@ export const apiClient = {
     },
 
     saveSlaOla: async (data: {
-      stationId: string;
+      uptStation: string;
       category: string;
       deviceId: string;
       kondisiSla: boolean;
@@ -289,7 +289,7 @@ export const apiClient = {
         recordId: device.devicesId,
         recordName: `${device.site} (${device.category})`,
         actor,
-        details: `Penambahan unit aloptama baru di Stasiun ${memoryCache.stations.find((st) => st.id === device.stationId)?.name ?? device.stationId} (${device.locationName}).`,
+        details: `Penambahan unit aloptama baru di Stasiun ${device.uptStation} (${device.locationName}).`,
       });
 
       await apiClient.devices.fetch();
@@ -462,7 +462,7 @@ export const apiClient = {
       deviceId: string | null;
       kodeAlat: string;
       namaAlat: string;
-      stationId: string;
+      uptStation: string;
       category: string;
       kondisiSla: boolean;
       kondisiOla: number;
@@ -601,6 +601,7 @@ export const apiClient = {
           body: JSON.stringify({
             deviceId: record.deviceId,
             deviceName: record.deviceName,
+            uptStation: record.uptStation,
             category: record.category,
             lastCalibrated: record.lastCalibrated,
             calibrationValidUntil: record.calibrationValidUntil,
@@ -954,7 +955,7 @@ export const apiClient = {
           title: user.title,
           nip: user.nip,
           email: user.email,
-          stationId: user.stationId ?? null,
+          uptStation: user.uptStation,
           avatarUrl: user.avatarUrl,
           actor,
         }),
@@ -996,7 +997,7 @@ export const apiClient = {
           title: json.data.title || user.title,
           nip: json.data.nip || user.nip,
           email: json.data.email || user.email,
-          stationId: json.data.stationId !== undefined ? json.data.stationId : user.stationId,
+          uptStation: json.data.uptStation || user.uptStation,
           avatarUrl: json.data.avatarUrl || user.avatarUrl,
           password: user.password || json.generatedPassword,
         };
@@ -1033,7 +1034,7 @@ export const apiClient = {
           title: user.title,
           nip: user.nip,
           email: user.email,
-          stationId: user.stationId ?? null,
+          uptStation: user.uptStation,
           avatarUrl: user.avatarUrl,
           actor,
           details,
@@ -1067,7 +1068,7 @@ export const apiClient = {
           title: json.data.title || user.title,
           nip: json.data.nip || user.nip,
           email: json.data.email || user.email,
-          stationId: json.data.stationId !== undefined ? json.data.stationId : user.stationId,
+          uptStation: json.data.uptStation || user.uptStation,
           avatarUrl: json.data.avatarUrl || user.avatarUrl,
           password: user.password || json.data.passwordHash,
         };

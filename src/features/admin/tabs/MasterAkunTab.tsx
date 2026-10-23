@@ -1,5 +1,4 @@
 import React from 'react';
-import { getStationName } from '../../../shared/utils/stations';
 import { Plus, Edit2, Trash2, Search, Filter, ShieldCheck, Users, User, UserCog } from 'lucide-react';
 import { AuthUser, UserRole } from '../../auth/authTypes';
 import { UPTStation } from '../../../shared/types';
@@ -50,9 +49,14 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
   handleOpenEditUser,
   setDeleteConfirmUser,
 }) => {
-  // Akun menyimpan stationId (FK ke stasiun). Tanpa stasiun = level Balai.
-  const resolveStationLabel = (stationId?: string | null) =>
-    getStationName(stations, stationId, 'BBMKG Wilayah V Papua (Balai)');
+ 
+  const resolveStationLabel = (value?: string) => {
+    if (!value) return '-';
+    const match = stations.find(
+      (s) => s.stationid === value || s.id === value || s.name === value
+    );
+    return match ? match.name : value;
+  };
 
   return (
         <div className="space-y-4">
@@ -159,7 +163,7 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
                           {u.nip && <div className="text-[10px] text-slate-400 font-mono">NIP: {u.nip}</div>}
                         </td>
                         <td className="p-3.5 font-medium text-slate-700">
-                          {resolveStationLabel(u.stationId)}
+                          {resolveStationLabel(u.uptStation)}
                         </td>
                         <td className="p-3.5 text-slate-600">
                           {u.email || '-'}

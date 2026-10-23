@@ -5,6 +5,7 @@ import { MapContainer } from '../monitoring/MapContainer';
 import { DashboardPageProps } from './DashboardTypes';
 import { DashboardCard } from './DashboardCard';
 import { MapFilterControls } from './MapFilterControls';
+import { findStation } from '../../shared/utils/uptMatch';
 import { loadPapuaProvinces, findProvince, ProvinceShape } from '../../shared/utils/provinceLookup';
 
 interface ExtendedDashboardProps extends DashboardPageProps {
@@ -24,6 +25,7 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
     const map = new Map<string, string>();
     const stationList = stations && stations.length > 0 ? stations : apiClient.stations.getAll();
     stationList.forEach((s) => {
+      if (s.stationid) map.set(s.stationid, s.name);
       if (s.id) map.set(s.id, s.name);
     });
     return map;
@@ -43,12 +45,12 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
   // Wilayah (provinsi) alat = lokasi fisik alat (titik koordinat di dalam batas
   // provinsi). Satu UPT bisa mengelola alat di banyak provinsi, jadi provinsi
   // kantor UPT TIDAK dipakai - kecuali GeoJSON belum termuat / koordinat tidak valid.
-  const regionOfDevice = (dev: { stationId?: string; latitude?: number; longitude?: number }): string => {
+  const regionOfDevice = (dev: { uptStation?: string; latitude?: number; longitude?: number }): string => {
     if (provinceShapes.length > 0) {
       const byCoord = findProvince(Number(dev.latitude), Number(dev.longitude), provinceShapes);
       if (byCoord) return byCoord;
     }
-    return stationList.find((st) => st.id === dev.stationId)?.regionGroup || '';
+    return findStation(dev.uptStation, stationList)?.regionGroup || '';
   };
 
   const regionOptions = useMemo(() => {
@@ -62,30 +64,34 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [devices, stationList, provinceShapes]);
 
-  // List opsi dropdown { id, name }: id = ID stasiun (sama dengan device.stationId)
+  // List opsi dropdown { id, name }
   const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
     const stationIds = new Set<string>();
     devices.forEach((d) => {
       if (selectedRegion !== 'ALL' && regionOfDevice(d) !== selectedRegion) return;
-      if (d.stationId) stationIds.add(d.stationId);
+      if (d.uptStation) {
+        const idStr = typeof d.uptStation === 'string' 
+          ? d.uptStation 
+          : (d.uptStation as any).stationid || (d.uptStation as any).id;
+        if (idStr) stationIds.add(idStr);
+      }
     });
-    return stationList
-      .filter((st) => stationIds.has(st.id))
-      .slice()
-      .sort((a, b) => (a.stationid || '').localeCompare(b.stationid || ''))
-      .map((st) => ({ id: st.id, name: st.name }));
-  }, [devices, selectedRegion, stationList, provinceShapes]);
+    return Array.from(stationIds).sort().map((id) => ({
+      id: String(id),
+      name: stationMap.get(String(id)) || String(id),
+    }));
+  }, [devices, stationMap, selectedRegion, stationList, provinceShapes]);
 
   const filteredDevices = devices.filter((dev) => {
     const matchesSearch =
       searchQuery === '' ||
       (dev.site || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (stationMap.get(dev.stationId) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (dev.uptStation || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.locationName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.category || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesRegion = selectedRegion === 'ALL' || regionOfDevice(dev) === selectedRegion;
-    const matchesUpt = selectedUpt === 'ALL' || dev.stationId === selectedUpt;
+    const matchesUpt = selectedUpt === 'ALL' || dev.uptStation === selectedUpt;
     const matchesCategory = selectedCategory === 'ALL' || dev.category === selectedCategory;
     const matchesStatus = selectedStatus === 'ALL' || dev.conditionStatus === selectedStatus;
 

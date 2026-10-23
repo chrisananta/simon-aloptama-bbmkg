@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import { slaOlaSchema, SLA_OLA_MAX_BACKDATE_DAYS } from "../../shared/schemas";
 import { getTodayIsoWIT, getIsoDaysAgoWIT, formatDateIndo } from "../../shared/utils/dateUtils";
 import { SlaOlaModalProps } from "./SlaOlaTypes";
+import { isSameUpt } from "../../shared/utils/uptMatch";
 import {
   X as XIcon,
   Percent as PercentIcon,
@@ -88,7 +89,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   } = useForm({
     resolver: zodResolver(slaOlaSchema),
     defaultValues: {
-      stationId: stationsList[0]?.id || "",
+      uptStation: stationsList[0]?.name || "",
       category: "AWOS Kat. III",
       deviceId: "",
       kondisiSla: true,
@@ -98,7 +99,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     },
   });
 
-  const watchStationId = watch("stationId");
+  const watchUptStation = watch("uptStation");
   const watchCategory = watch("category");
   const watchKondisiOla = watch("kondisiOla");
   const watchKondisiSla = watch("kondisiSla");
@@ -121,12 +122,12 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     }
   }, [isOpen, setValue]);
 
-  // Untuk Teknisi UPT/KaUPT: paksa nilai stationId mengikuti UPT alat
+  // Untuk Teknisi UPT/KaUPT: paksa nilai uptStation mengikuti UPT alat
   // yang mereka lihat (devices sudah difilter di App.tsx), karena dropdown
   // pemilihan stasiun disembunyikan untuk role ini.
   useEffect(() => {
     if (isOpen && isScopedToOwnUpt && devices.length > 0) {
-      setValue("stationId", devices[0].stationId);
+      setValue("uptStation", devices[0].uptStation);
     }
   }, [isOpen, isScopedToOwnUpt, devices, setValue]);
 
@@ -166,16 +167,26 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     }
   }, [watchCategory]);
 
-  // Stasiun terpilih (dicari lewat ID) - hanya untuk menampilkan namanya.
-  const selectedStationObj = useMemo(
-    () => stationsList.find((s) => s.id === watchStationId),
-    [stationsList, watchStationId]
-  );
-  const targetStationName = selectedStationObj?.name || "";
+  // Lookup objek stasiun terpilih untuk mencocokkan Nama Stasiun vs ID Stasiun
+  const selectedStationObj = useMemo(() => {
+    return stationsList.find(
+      (s) => s.name === watchUptStation || s.stationid === watchUptStation || s.id === watchUptStation
+    );
+  }, [stationsList, watchUptStation]);
+
+  const targetStationId = selectedStationObj?.stationid || selectedStationObj?.id;
+  const targetStationName = selectedStationObj?.name || watchUptStation;
 
   const matchingDevices = useMemo(() => {
     return devices.filter((d) => {
-      if (d.stationId !== watchStationId) return false;
+      // Cocokkan berdasarkan ID Stasiun maupun Nama Stasiun
+      const matchesUpt =
+        isSameUpt(d.uptStation, watchUptStation, stationsList) ||
+        d.uptStation === watchUptStation ||
+        (targetStationId && d.uptStation === targetStationId) ||
+        (targetStationName && d.uptStation === targetStationName);
+
+      if (!matchesUpt) return false;
       if (!watchCategory || watchCategory === "ALL") return true;
 
       const devCat = (d.category || "").toLowerCase();
@@ -223,7 +234,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
       return devCat.includes(selCat) || selCat.includes(devCat);
     });
-  }, [devices, watchStationId, watchCategory]);
+  }, [devices, stationsList, watchUptStation, targetStationId, targetStationName, watchCategory]);
 
   useEffect(() => {
     setErrorMessage(null);
@@ -389,7 +400,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       // sebagai baris histori tersendiri).
       for (const deviceId of targetIds) {
         await onSaveSlaOla({
-          stationId: data.stationId,
+          uptStation: data.uptStation,
           category: data.category.startsWith("AWOS") ? "AWOS" : data.category,
           deviceId,
           kondisiSla: data.kondisiSla,
@@ -522,7 +533,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 : "Data SLA & OLA Berhasil Disimpan!"}
             </h4>
             <p className="text-xs text-emerald-700">
-              Kondisi operasional UPT {targetStationName} ({watchCategory}) untuk{" "}
+              Kondisi operasional UPT {watchUptStation} ({watchCategory}) untuk{" "}
               tanggal <strong>{formatDateIndo(watchTanggal)}</strong> telah
               diperbarui dengan Skor OLA <strong>{watchKondisiOla}%</strong>
               {lastBatchCount > 1 ? ` untuk ${lastBatchCount} unit alat.` : "."}
@@ -586,19 +597,19 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   STASIUN BMKG / UPT:
                 </label>
                 <select
-                  {...register("stationId")}
+                  {...register("uptStation")}
                   disabled={isSubmitting}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
                 >
                   {stationsList.map((st) => (
-                    <option key={st.id} value={st.id}>
+                    <option key={st.id || st.stationid || st.name} value={st.name}>
                       {st.name} ({st.regionGroup || "Papua"})
                     </option>
                   ))}
                 </select>
-                {errors.stationId && (
+                {errors.uptStation && (
                   <span className="text-[10px] text-rose-600 font-bold">
-                    {String(errors.stationId.message)}
+                    {String(errors.uptStation.message)}
                   </span>
                 )}
               </div>

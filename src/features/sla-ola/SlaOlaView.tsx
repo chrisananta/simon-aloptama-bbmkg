@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { AloptamaDevice, UPTStation, YearlyScoreMap, MonthlyDeviceScore } from '../../shared/types';
 import { apiClient } from '../../shared/api';
+import { isSameUpt, findStation } from '../../shared/utils/uptMatch';
 import { WaReportModal } from '../monitoring/WaReportModal';
 import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
 import { UptSlaOlaReportModal } from './UptSlaOlaReportModal';
@@ -168,34 +169,44 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     [stations]
   );
 
-  // Map ID Stasiun -> Nama Stasiun (untuk tampilan)
+  // Map pencarian ID Stasiun -> Nama Stasiun
   const stationMap = useMemo(() => {
     const map = new Map<string, string>();
-    stationList.forEach((s) => map.set(s.id, s.name));
+    stationList.forEach((s) => {
+      if (s.stationid) map.set(s.stationid, s.name);
+      if (s.id) map.set(s.id, s.name);
+    });
     return map;
   }, [stationList]);
 
-  // Opsi dropdown: satu opsi per stasiun yang punya alat. Nilai opsi = ID stasiun
-  // (sama dengan device.stationId), jadi filter cukup membandingkan ID.
+  // Opsi dropdown: SATU opsi per stasiun. Kolom uptStation alat bisa berisi KODE atau
+  // NAMA stasiun, jadi keduanya digabung lewat findStation supaya alat satu stasiun
+  // tidak terpecah ke dua opsi (yang membuat sebagian alat "hilang" saat difilter).
   const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
-    const stationsWithDevices = new Set(devices.map((d) => d.stationId));
-    return stationList
-      .filter((st) => stationsWithDevices.has(st.id))
-      .slice()
-      .sort((a, b) => (a.stationid || '').localeCompare(b.stationid || ''))
-      .map((st) => ({ id: st.id, name: st.name }));
+    const options = new Map<string, { id: string; name: string }>();
+    devices.forEach((d) => {
+      const raw =
+        typeof d.uptStation === 'string'
+          ? d.uptStation
+          : (d.uptStation as any)?.stationid || (d.uptStation as any)?.id;
+      if (!raw) return;
+      const st = findStation(String(raw), stationList);
+      const id = st ? st.stationid || st.id || String(raw) : String(raw);
+      if (!options.has(id)) options.set(id, { id, name: st?.name || String(raw) });
+    });
+    return Array.from(options.values()).sort((a, b) => a.id.localeCompare(b.id));
   }, [devices, stationList]);
 
   // Nama Stasiun Terpilih untuk Tampilan UI
   const selectedUptName = useMemo(() => {
     if (selectedUpt === 'ALL') return 'Seluruh UPT';
-    return stationMap.get(selectedUpt) || '-';
+    return stationMap.get(selectedUpt) || selectedUpt;
   }, [selectedUpt, stationMap]);
 
   const uptFilteredDevices = useMemo(() => {
     if (selectedUpt === 'ALL') return devices;
-    return devices.filter((d) => d.stationId === selectedUpt);
-  }, [devices, selectedUpt]);
+    return devices.filter((d) => isSameUpt(d.uptStation, selectedUpt, stationList));
+  }, [devices, selectedUpt, stationList]);
 
   const [reportedTodayIds, setReportedTodayIds] = useState<string[]>([]);
 
@@ -407,13 +418,13 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       return false;
     }
 
-    const matchesUpt = selectedUpt === 'ALL' || dev.stationId === selectedUpt;
+    const matchesUpt = selectedUpt === 'ALL' || isSameUpt(dev.uptStation, selectedUpt, stationList);
 
     const matchesSearch =
       searchQuery === '' ||
       (dev.site || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.devicesId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (stationMap.get(dev.stationId) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (dev.uptStation || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (dev.category || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === 'ALL' || dev.conditionStatus === statusFilter;
@@ -444,7 +455,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       id: string;
       name: string;
       category: string;
-      stationId: string;
+      uptStation: string;
       keterangan: string;
     };
     const gangguan: ListRow[] = [];
@@ -459,7 +470,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         id: d.devicesId,
         name: d.site,
         category: d.category,
-        stationId: d.stationId,
+        uptStation: d.uptStation,
         keterangan: `SLA ${sc.sla}% • OLA ${sc.ola}%`,
       };
       (kondisi === 'MATI' ? mati : gangguan).push(row);
@@ -883,7 +894,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                         <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {periodLabel}</span>
                       </td>
                       <td className="p-2.5 text-slate-600 font-medium">
-                        {stationMap.get(dev.stationId) || '-'}
+                        {stationMap.get(dev.uptStation) || dev.uptStation}
                       </td>
                       <td className="p-2.5 font-medium text-slate-700 whitespace-nowrap">
                         {dev.keterangan}
@@ -944,7 +955,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                         <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {periodLabel}</span>
                       </td>
                       <td className="p-2.5 text-slate-600 font-medium">
-                        {stationMap.get(dev.stationId) || '-'}
+                        {stationMap.get(dev.uptStation) || dev.uptStation}
                       </td>
                       <td className="p-2.5 font-medium text-slate-700  whitespace-nowrap">
                         {dev.keterangan}
@@ -1078,7 +1089,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                       </div>
                     </td>
                     <td className="p-3 text-slate-800 font-semibold">
-                      {stationMap.get(dev.stationId) || '-'}
+                      {stationMap.get(dev.uptStation) || dev.uptStation}
                     </td>
                     <td className="p-3 text-slate-700 font-medium">
                       <div className="flex items-center gap-1.5">

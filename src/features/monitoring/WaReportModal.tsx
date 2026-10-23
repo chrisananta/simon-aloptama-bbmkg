@@ -19,11 +19,12 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [reportText, setReportText] = useState('');
 
-  // Map lookup ID Stasiun -> Nama Stasiun Resmi
+  // Map lookup pencarian Kode/ID Stasiun -> Nama Stasiun Resmi
   const stationMap = useMemo(() => {
     const map = new Map<string, string>();
     const stationList = stations && stations.length > 0 ? stations : apiClient.stations.getAll();
     stationList.forEach((s) => {
+      if (s.stationid) map.set(s.stationid, s.name);
       if (s.id) map.set(s.id, s.name);
     });
     return map;
@@ -67,7 +68,8 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
   };
 
   const getUptLabel = (dev: AloptamaDevice) => {
-    const fullName = stationMap.get(dev.stationId) || dev.site || '';
+    const rawUpt = dev.uptStation || '';
+    const fullName = stationMap.get(rawUpt) || rawUpt || dev.site || '';
     return formatUptName(fullName);
   };
 

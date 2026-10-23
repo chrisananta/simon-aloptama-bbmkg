@@ -66,14 +66,6 @@ async function main() {
     const namaStasiun = st.NAMA_STASIUN;
     if (!kode || !namaStasiun) continue;
 
-    // Akun terikat ke stasiun lewat FK stationId. Stasiun harus sudah ada di DB
-    // (jalankan seed.cjs / import stasiun dulu).
-    const station = await prisma.uptStation.findUnique({ where: { stationid: kode } });
-    if (!station) {
-      console.log(`  ! dilewati: stasiun ${kode} belum ada di database`);
-      continue;
-    }
-
     const accounts = [
       {
         username: kode.toLowerCase(),
@@ -107,7 +99,7 @@ async function main() {
           name: acc.name,
           role: acc.role,
           title: acc.title,
-          stationId: station.id,
+          uptStation: kode,
         },
       });
       console.log(`  + dibuat: ${acc.username} (${acc.role}) - ${namaStasiun}`);

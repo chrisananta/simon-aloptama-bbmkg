@@ -89,7 +89,14 @@ export const MasterStasiunTab: React.FC<MasterStasiunTabProps> = ({
                     </tr>
                   ) : (
                     filteredStations.map((st) => {
-                      const deviceCount = devices.filter((d) => d.stationId === st.id).length;
+                      const deviceCount = devices.filter((d) => {
+                        if (!d.uptStation) return false;
+                        const upt = (d.uptStation || '').trim().toLowerCase();
+                        const stName = (st.name || '').trim().toLowerCase();
+                        const stCode = st.stationid ? st.stationid.trim().toLowerCase() : '';
+                        const stId = st.id ? st.id.trim().toLowerCase() : '';
+                        return (stName && upt === stName) || (stCode && upt === stCode) || (stId && upt === stId);
+                      }).length;
 
                       return (
                         <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">

@@ -50,7 +50,7 @@ Login dan mendapatkan sesi. Dibatasi maksimal **10 percobaan gagal per 15 menit 
     "title": "Admin INSKAL & Kalibrasi BBMKG V",
     "nip": "19850412 201012 1 001",
     "email": "fajar.nur@bmkg.go.id",
-    "stationId": null,
+    "uptStation": "BBMKG Wilayah V Papua",
     "avatarUrl": "..."
   }
 }
@@ -111,7 +111,7 @@ Menolak dengan `400` jika mencoba hapus akun sendiri, atau menghapus admin terak
 
 ## 5. SLA/OLA — `slaOlaRoutes.ts`
 
-Entry harian diisi rutin oleh operator UPT (bukan cuma admin), jadi cukup wajib login. Input rekap bulanan manual sudah dihapus; data bulanan kini diimpor lewat CSV (skrip di `scripts/`) dan dibaca dari tabel `sla_ola_logs`.
+Entry harian diisi rutin oleh operator UPT (bukan cuma admin), jadi cukup wajib login. Rekap **bulanan** (dipakai khusus di Admin Master View) dibatasi ADMIN saja.
 
 | Method | Path | Akses |
 | :--- | :--- | :--- |
@@ -124,7 +124,7 @@ Entry harian diisi rutin oleh operator UPT (bukan cuma admin), jadi cukup wajib 
 * **Payload POST** (`/api/sla-ola` atau `/api/sla-ola/save`):
 ```json
 {
-  "stationId": "<id stasiun, dari GET /api/stations>",
+  "uptStation": "Stasiun Meteorologi Dok II Jayapura",
   "category": "AWOS",
   "deviceId": "AWOS-STN-01",
   "kondisiSla": true,
@@ -149,6 +149,7 @@ Perubahan data kalibrasi adalah data master; **hanya Admin INSKAL** yang boleh m
 {
   "deviceId": "AWS-JAP-01",
   "deviceName": "AWS Sentani",
+  "uptStation": "Stasiun Meteorologi Sentani",
   "category": "AWS",
   "lastCalibrated": "2026-07-15",
   "calibrationValidUntil": "2027-07-14",
@@ -189,7 +190,6 @@ Perubahan data kalibrasi adalah data master; **hanya Admin INSKAL** yang boleh m
 
 ### GET `/api/history?...` — wajib login
 Log riwayat operasional gabungan (dipakai untuk laporan/filter di frontend).
-Filter stasiun memakai query `stationId` (ID stasiun, kecocokan persis), bersama `year` dan `type`.
 
 ---
 

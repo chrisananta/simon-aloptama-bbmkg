@@ -141,7 +141,7 @@ async function main() {
       site: deviceName,
       category: finalCategory,
       merk: row.MERK && row.MERK !== '-' ? row.MERK : '',
-      stationId: station.id,
+      uptStation: station.name,
       locationName: station.location || station.name,
       latitude: isNaN(lat) ? station.latitude : lat,
       longitude: isNaN(lng) ? station.longitude : lng,
@@ -198,3 +198,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+  

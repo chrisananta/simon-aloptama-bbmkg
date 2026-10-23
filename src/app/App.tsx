@@ -15,6 +15,7 @@ import { CalibrationInputModal } from '../features/calibration/CalibrationInputM
 import { CalibrationRecord } from '../features/calibration/CalibrationTypes';
 import { ErrorBoundary } from '../shared/components/ErrorBoundary';
 import { apiClient } from '../shared/api';
+import { isSameUpt } from '../shared/utils/uptMatch';
 import { ServerFetchResult } from '../shared/api/serverDataService';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
@@ -78,14 +79,12 @@ function AppContent() {
   // Dashboard, daftar SLA OLA, dan Kalibrasi tetap menampilkan data
   // nasional (semua UPT) untuk semua role, sesuai arahan pimpinan.
   const ownUptInputDevices = React.useMemo(() => {
-    if (permissions.isScopedToOwnUpt) {
-      // Dibatasi ke stasiun user sendiri (perbandingan ID langsung). User yang
-      // seharusnya terikat UPT tetapi belum punya stasiun tidak boleh mengisi apa pun.
-      const ownStationId = user?.stationId;
-      return ownStationId ? devicesData.filter((d) => d.stationId === ownStationId) : [];
+    if (permissions.isScopedToOwnUpt && user?.uptStation) {
+      // isSameUpt: UPT bisa tersimpan sebagai KODE (GEO001) atau NAMA stasiun.
+      return devicesData.filter((d) => isSameUpt(d.uptStation, user.uptStation, stationsData));
     }
     return devicesData;
-  }, [devicesData, permissions.isScopedToOwnUpt, user?.stationId]);
+  }, [devicesData, stationsData, permissions.isScopedToOwnUpt, user?.uptStation]);
 
   // Calculate high-level totals (data NASIONAL - semua UPT, untuk semua role)
   const totalDevices = devicesData.length;
@@ -122,7 +121,7 @@ function AppContent() {
 
   // Handler for UPT SLA & OLA Data Entry via Centralized API
   const handleSaveSlaOla = async (data: {
-    stationId: string;
+    uptStation: string;
     category: string;
     deviceId: string;
     kondisiSla: boolean;
@@ -355,7 +354,6 @@ function AppContent() {
             isOpen={isCalibrationModalOpen}
             onClose={() => setIsCalibrationModalOpen(false)}
             devices={devicesData}
-            stations={stationsData}
             onAddCalibrationRecord={handleAddCalibrationRecord}
           />
         )}

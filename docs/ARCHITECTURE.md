@@ -53,7 +53,7 @@ Aplikasi ini **tidak** memisahkan frontend dan backend jadi dua server berbeda s
    - Cek password pakai bcrypt.compare()
    - Jika akun lama masih pakai password teks polos (migrasi dari versi lama),
      dicocokkan dulu lalu OTOMATIS di-hash ulang ke bcrypt & disimpan
-   - Sukses → generate JWT (jsonwebtoken), berisi { id, username, role, name, stationId }
+   - Sukses → generate JWT (jsonwebtoken), berisi { id, username, role, name, uptStation }
        │
        ▼
 4. Backend set cookie httpOnly "simon_jwt" lewat header Set-Cookie (userController.ts).

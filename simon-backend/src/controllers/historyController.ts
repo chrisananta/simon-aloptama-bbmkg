@@ -5,8 +5,7 @@ import { formatDateOnly } from '../utils/dateUtils.js';
 export const historyController = {
   getHistoryLogs: async (req: Request, res: Response) => {
     try {
-      // Filter stasiun memakai ID stasiun (upt_stations.id) - kecocokan persis, bukan pencarian teks.
-      const { year, type, stationId } = req.query;
+      const { year, type, upt } = req.query;
 
       const [slaLogs, calRecords] = await Promise.all([
         prisma.slaOlaLog.findMany({ orderBy: { timestamp: 'desc' } }),
@@ -20,7 +19,7 @@ export const historyController = {
           type: 'SLA_OLA' as const,
           year: yearStr,
           timestamp: log.timestamp ? log.timestamp.toISOString() : new Date().toISOString(),
-          stationId: log.stationId,
+          uptStation: log.uptStation,
           deviceId: log.deviceId || undefined,
           category: log.category,
           details: {
@@ -43,7 +42,7 @@ export const historyController = {
           type: 'KALIBRASI' as const,
           year: yearStr,
           timestamp: rec.createdAt ? rec.createdAt.toISOString() : new Date().toISOString(),
-          stationId: rec.stationId,
+          uptStation: rec.uptStation,
           deviceId: rec.deviceId,
           deviceName: rec.deviceName,
           category: rec.category,
@@ -68,8 +67,8 @@ export const historyController = {
       if (type && typeof type === 'string' && type !== 'ALL') {
         combined = combined.filter((h) => h.type === type);
       }
-      if (stationId && typeof stationId === 'string' && stationId !== 'ALL') {
-        combined = combined.filter((h) => h.stationId === stationId);
+      if (upt && typeof upt === 'string' && upt !== 'ALL') {
+        combined = combined.filter((h) => h.uptStation.toLowerCase().includes((upt as string).toLowerCase()));
       }
 
       return res.json({

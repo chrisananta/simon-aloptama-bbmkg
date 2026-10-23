@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
-import { AuthRequest, canAccessStation } from '../middleware/authMiddleware.js';
+import { AuthRequest } from '../middleware/authMiddleware.js';
 import {
   serializeDeviceDates,
   parseDateOnly,
@@ -9,6 +9,7 @@ import {
   getTodayDateOnlyWIT,
   diffDaysDateOnly,
 } from '../utils/dateUtils.js';
+import { isSameUptStation } from '../utils/uptMatch.js';
 import { normalizeActor, resolveMonthlyScores } from '../utils/slaOlaMonthly.js';
 import { loadAdminActorSet } from '../utils/adminActors.js';
 
@@ -18,7 +19,7 @@ const MAX_BACKDATE_DAYS = 10;
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const saveSlaOlaInput = z.object({
-  stationId: z.string().trim().min(1, 'Stasiun UPT wajib diisi').max(64), // upt_stations.id
+  uptStation: z.string().trim().min(1, 'Stasiun UPT wajib diisi').max(200),
   category: z.string().trim().min(1, 'Kategori peralatan wajib diisi').max(100),
   deviceId: z.string().trim().min(1).max(64).optional().nullable(),
   kondisiSla: z.union([z.boolean(), z.enum(['true', 'false']), z.literal(1), z.literal(0), z.literal('1'), z.literal('0')]),
@@ -47,7 +48,7 @@ export const slaOlaController = {
     const parsed = saveSlaOlaInput.safeParse(req.body);
     if (!parsed.success) return invalidSlaOla(res, parsed.error);
     try {
-      const { stationId, category, deviceId, kondisiSla, kondisiOla, kendala, tanggal } = parsed.data;
+      const { uptStation, category, deviceId, kondisiSla, kondisiOla, kendala, tanggal } = parsed.data;
 
       if (!req.user) {
         return res.status(401).json({ success: false, message: 'Sesi tidak valid.' });
@@ -80,31 +81,19 @@ export const slaOlaController = {
         return res.status(403).json({ success: false, message: 'Peran KaUPT/KaBBMKG tidak memiliki akses untuk mengisi SLA/OLA.' });
       }
       // Teknisi UPT hanya boleh mengisi untuk UPT sendiri. Admin Inskal &
-      // Super Admin boleh mengisi untuk UPT mana pun (lihat canAccessStation).
-      if (!canAccessStation(req.user, stationId)) {
+      // Super Admin boleh mengisi untuk UPT mana pun.
+      const isFullAccessRole = req.user.role === 'ADMIN_INSKAL' || req.user.role === 'SUPER_ADMIN';
+      if (!isFullAccessRole && !(await isSameUptStation(req.user.uptStation, uptStation))) {
         return res.status(403).json({ success: false, message: 'Anda hanya dapat mengisi SLA/OLA untuk UPT sendiri.' });
       }
 
-      const station = await prisma.uptStation.findUnique({
-        where: { id: stationId },
-        select: { id: true, stationid: true, name: true },
-      });
-      if (!station) {
-        return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan.' });
-      }
-
       if (deviceId) {
-        const targetDevice = await prisma.device.findUnique({
-          where: { devicesId: deviceId },
-          select: { stationId: true },
-        });
+        const targetDevice = await prisma.device.findUnique({ where: { devicesId: deviceId } });
         if (!targetDevice) {
           return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
         }
-        // Stasiun yang dipilih harus stasiun tempat alat berada (sekaligus memastikan
-        // Teknisi hanya mengisi alat miliknya, karena stationId sudah lolos canAccessStation).
-        if (targetDevice.stationId !== station.id) {
-          return res.status(400).json({ success: false, message: 'Perangkat bukan milik stasiun yang dipilih.' });
+        if (!isFullAccessRole && !(await isSameUptStation(targetDevice.uptStation, req.user.uptStation))) {
+          return res.status(403).json({ success: false, message: 'Perangkat bukan milik UPT Anda.' });
         }
       }
 
@@ -137,7 +126,7 @@ export const slaOlaController = {
         //    terlepas dari apakah status live perangkat ikut diperbarui).
         const createdLog = await tx.slaOlaLog.create({
           data: {
-            stationId: station.id,
+            uptStation,
             category,
             deviceId: deviceId || null,
             kondisiSla: slaOn,
@@ -177,7 +166,7 @@ export const slaOlaController = {
           }
         } else {
           const matchingDevices = await tx.device.findMany({
-            where: { stationId: station.id, category },
+            where: { uptStation, category },
           });
 
           for (const dev of matchingDevices) {
@@ -213,8 +202,8 @@ export const slaOlaController = {
           data: {
             table: 'master_sla_ola',
             action: 'SIMPAN_SLA_OLA',
-            recordId: deviceId || station.stationid,
-            recordName: updatedDeviceName || `${category} - ${station.name}`,
+            recordId: deviceId || uptStation,
+            recordName: updatedDeviceName || `${category} - ${uptStation}`,
             actor: actorName,
             details: `Pengisian SLA/OLA (tanggal ${tanggalIndo}): SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA=${ola}%. Kendala: "${kendala || '-'}"${lateNote}${skippedNote}`,
           },
@@ -459,7 +448,6 @@ export const slaOlaController = {
         take: bulan && tahun ? undefined : 100,
         include: {
           device: { select: { devicesId: true, site: true } },
-          station: { select: { name: true } },
         },
       });
 
@@ -467,8 +455,8 @@ export const slaOlaController = {
         id: log.id,
         deviceId: log.deviceId,
         kodeAlat: log.device?.devicesId || log.deviceId || '-',
-        namaAlat: log.device?.site || `${log.category} - ${log.station.name}`,
-        stationId: log.stationId,
+        namaAlat: log.device?.site || `${log.category} - ${log.uptStation}`,
+        uptStation: log.uptStation,
         category: log.category,
         kondisiSla: log.kondisiSla,
         kondisiOla: log.kondisiOla,
@@ -520,7 +508,6 @@ export const slaOlaController = {
         const updatedLog = await tx.slaOlaLog.update({
           where: { id },
           data: { kondisiSla: slaOn, kondisiOla: ola, status: newStatus },
-          include: { station: { select: { name: true } } },
         });
 
         // Jika ini entri PALING BARU untuk alat ini, sinkronkan status live Device.
@@ -547,7 +534,7 @@ export const slaOlaController = {
             table: 'master_sla_ola',
             action: 'EDIT',
             recordId: updatedLog.deviceId || updatedLog.id,
-            recordName: `${updatedLog.category} - ${updatedLog.station.name}`,
+            recordName: `${updatedLog.category} - ${updatedLog.uptStation}`,
             actor: actorName,
             details: `Koreksi entri SLA/OLA tanggal ${formatDateOnly(updatedLog.reportDate)}: SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA=${ola}%.`,
           },
@@ -577,7 +564,7 @@ export const slaOlaController = {
     const actorName = (req.body?.actor as string) || req.user?.name || 'Admin INSKAL';
 
     try {
-      const existingLog = await prisma.slaOlaLog.findUnique({ where: { id }, include: { station: { select: { name: true } } } });
+      const existingLog = await prisma.slaOlaLog.findUnique({ where: { id } });
       if (!existingLog) {
         return res.status(404).json({ success: false, message: 'Entri log SLA/OLA tidak ditemukan.' });
       }
@@ -628,7 +615,7 @@ export const slaOlaController = {
             table: 'master_sla_ola',
             action: 'HAPUS',
             recordId: existingLog.deviceId || existingLog.id,
-            recordName: `${existingLog.category} - ${existingLog.station.name}`,
+            recordName: `${existingLog.category} - ${existingLog.uptStation}`,
             actor: actorName,
             details: `Hapus entri SLA/OLA salah input tanggal ${formatDateOnly(existingLog.reportDate)} (SLA=${existingLog.kondisiSla ? 'ON' : 'OFF'}, OLA=${existingLog.kondisiOla}%).`,
           },

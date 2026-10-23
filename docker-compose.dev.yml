@@ -1,0 +1,21 @@
+services:
+  db-dev:
+    image: postgres:16-alpine
+    container_name: simon-db-dev
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpassword123
+      POSTGRES_DB: simon_bmkg
+    volumes:
+      - simon_db_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  simon_db_dev_data:

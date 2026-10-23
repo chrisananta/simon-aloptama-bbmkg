@@ -31,14 +31,6 @@ function isUniqueConstraint(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 }
 
-// P2003 = pelanggaran foreign key (mis. stationId menunjuk stasiun yang tidak ada).
-function isForeignKeyViolation(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2003';
-}
-
-const STATION_NOT_FOUND = 'Stasiun UPT tidak ditemukan. Pilih stasiun yang terdaftar.';
-const TEKNISI_NEEDS_STATION = 'Teknisi UPT wajib memiliki stasiun UPT.';
-
 // Catatan: client HANYA boleh mengirim password mentah (plaintext), tidak pernah
 // hash siap pakai. Sebelumnya endpoint ini juga menerima field "passwordHash" dari
 // body lalu tetap di-bcrypt.hash() ulang - artinya nilai itu di-hash dua kali dan jadi
@@ -61,14 +53,7 @@ const createUserInput = z.object({
   title: z.string().trim().max(150).optional(),
   nip: z.string().trim().max(50).nullable().optional(),
   email: z.string().trim().email('Format email tidak valid').max(150).nullable().optional().or(z.literal('')),
-  // ID stasiun (upt_stations.id). null/kosong = level Balai (tidak terikat satu UPT).
-  stationId: z
-    .string()
-    .trim()
-    .max(64)
-    .nullable()
-    .optional()
-    .transform((v) => (v ? v : v === undefined ? undefined : null)),
+  uptStation: z.string().trim().max(200).optional(),
   avatarUrl: z.string().trim().url('URL avatar tidak valid').max(500).nullable().optional().or(z.literal('')),
 });
 
@@ -139,7 +124,7 @@ export const userController = {
 
       // Generate JWT Token
       const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role, name: user.name, stationId: user.stationId },
+        { id: user.id, username: user.username, role: user.role, name: user.name, uptStation: user.uptStation },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -186,7 +171,7 @@ export const userController = {
           title: user.title,
           nip: user.nip,
           email: user.email,
-          stationId: user.stationId,
+          uptStation: user.uptStation,
           avatarUrl: user.avatarUrl,
         },
       });
@@ -252,7 +237,7 @@ export const userController = {
           title: true,
           nip: true,
           email: true,
-          stationId: true,
+          uptStation: true,
           avatarUrl: true,
           createdAt: true,
         },
@@ -269,11 +254,6 @@ export const userController = {
     if (!parsed.success) return invalidUser(res, parsed.error);
     try {
       const body = parsed.data;
-      const role = body.role || 'TEKNISI_UPT';
-      const stationId = body.stationId ?? null;
-      if (role === 'TEKNISI_UPT' && !stationId) {
-        return res.status(400).json({ success: false, message: TEKNISI_NEEDS_STATION });
-      }
       // Client hanya boleh kirim password mentah (plaintext). Kalau kosong,
       // sistem yang generate password acak - bukan client yang kirim hash siap pakai.
       const generatedPassword = body.password ? null : generateRandomPassword();
@@ -286,11 +266,11 @@ export const userController = {
             username: body.username.toLowerCase(),
             passwordHash: hashedPassword,
             name: body.name,
-            role,
+            role: body.role || 'TEKNISI_UPT',
             title: body.title || 'Operator UPT',
             nip: body.nip || null,
             email: body.email || null,
-            stationId,
+            uptStation: body.uptStation || 'BBMKG Wilayah V Papua',
             avatarUrl: body.avatarUrl || null,
           },
         });
@@ -309,7 +289,6 @@ export const userController = {
     } catch (error) {
       console.error('Error createUser:', error);
       if (isUniqueConstraint(error)) return res.status(409).json({ success: false, message: 'Username sudah digunakan.' });
-      if (isForeignKeyViolation(error)) return res.status(400).json({ success: false, message: STATION_NOT_FOUND });
       return res.status(500).json({ success: false, message: 'Gagal membuat akun pengguna baru.' });
     }
   },
@@ -323,21 +302,10 @@ export const userController = {
       const body = parsed.data;
 
       const updateData: any = {};
-      for (const key of ['username', 'name', 'role', 'title', 'nip', 'email', 'stationId', 'avatarUrl'] as const) {
+      for (const key of ['username', 'name', 'role', 'title', 'nip', 'email', 'uptStation', 'avatarUrl'] as const) {
         if (body[key] !== undefined) updateData[key] = key === 'username' ? body[key]!.toLowerCase() : body[key];
       }
       if (Object.keys(updateData).length === 0 && !body.password) return res.status(400).json({ success: false, message: 'Tidak ada data yang dapat diperbarui.' });
-
-      // Aturan akhir (setelah perubahan): Teknisi UPT wajib punya stasiun.
-      if (body.role !== undefined || body.stationId !== undefined) {
-        const existing = await prisma.user.findUnique({ where: { id }, select: { role: true, stationId: true } });
-        if (!existing) return res.status(404).json({ success: false, message: 'Akun tidak ditemukan.' });
-        const finalRole = body.role ?? existing.role;
-        const finalStationId = body.stationId !== undefined ? body.stationId : existing.stationId;
-        if (finalRole === 'TEKNISI_UPT' && !finalStationId) {
-          return res.status(400).json({ success: false, message: TEKNISI_NEEDS_STATION });
-        }
-      }
 
       // Client hanya boleh kirim password mentah (plaintext) - tidak ada lagi
       // jalur "passwordHash" langsung dari client (lihat catatan di createUser).
@@ -357,7 +325,6 @@ export const userController = {
     } catch (error) {
       console.error('Error updateUser:', error);
       if (isUniqueConstraint(error)) return res.status(409).json({ success: false, message: 'Username sudah digunakan.' });
-      if (isForeignKeyViolation(error)) return res.status(400).json({ success: false, message: STATION_NOT_FOUND });
       return res.status(500).json({ success: false, message: 'Gagal memperbarui akun pengguna.' });
     }
   },

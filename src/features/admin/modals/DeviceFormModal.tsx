@@ -140,13 +140,13 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                 <div>
                   <label className="block font-bold text-slate-800 mb-1">Stasiun UPT Pengelola</label>
                   <select
-                    value={deviceForm.stationId || ''}
-                    onChange={(e) => setDeviceForm({ ...deviceForm, stationId: e.target.value })}
+                    value={deviceForm.uptStation || ''}
+                    onChange={(e) => setDeviceForm({ ...deviceForm, uptStation: e.target.value })}
                     disabled={restrictedMode}
                     className={`w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-semibold ${restrictedMode ? lockedInputCls : ''}`}
                   >
                     {stations.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
+                      <option key={s.id} value={s.name}>{s.name}</option>
                     ))}
                   </select>
                 </div>
