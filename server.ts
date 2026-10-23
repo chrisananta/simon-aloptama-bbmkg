@@ -15,7 +15,7 @@ import {
 } from "./simon-backend/src/db/seedData.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import perbaikanRoutes from './simon-backend/src/routes/perbaikanRoutes.js';
+import perbaikanRoutes from "./simon-backend/src/routes/perbaikanRoutes.js";
 
 // Bikin password acak yang aman & gampang dibaca manusia
 function generateRandomPassword(): string {
@@ -37,7 +37,7 @@ const PORT = Number(process.env.PORT) || 3000;
 //      untuk forensik/investigasi.
 // "1" berarti percaya SATU hop proxy di depan app. Express lalu membaca
 // IP asli dari header X-Forwarded-For yang disuntik oleh proxy tepercaya tsb.
-app.set('trust proxy', 2);
+app.set("trust proxy", 2);
 
 // 1. Header keamanan standar (CSP dimatikan agar aset inline Vite/dist tidak terblokir)
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -78,16 +78,16 @@ app.use(
       return callback(null, false);
     },
     credentials: true,
-  })
+  }),
 );
 
 // Form seperti Laporan Perbaikan & Genset mengirim foto lampiran sebagai
 // base64 di dalam body JSON (bukan multipart upload), sehingga ukurannya
 // jauh lebih besar dari limit default Express (100kb). "50mb" cukup untuk
 // beberapa foto kamera/WhatsApp sekaligus (maks 3 foto per form).
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: "50mb" }));
 
-import cookieParser from 'cookie-parser';
+import cookieParser from "cookie-parser";
 
 app.use(cookieParser()); // Pasang middleware pembaca cookie
 
@@ -97,7 +97,7 @@ async function autoSeedDatabase() {
     const userCount = await prisma.user.count();
     if (userCount === 0) {
       console.log(
-        "🌱 Database PostgreSQL kosong. Melakukan auto-seeding data awal SIMON Aloptama..."
+        "🌱 Database PostgreSQL kosong. Melakukan auto-seeding data awal SIMON Aloptama...",
       );
 
       const adminPassword = generateRandomPassword();
@@ -108,7 +108,25 @@ async function autoSeedDatabase() {
       const uptHash = await bcrypt.hash(uptPassword, 10);
       const pimpinanHash = await bcrypt.hash(pimpinanPassword, 10);
 
-      // 1. Users
+      // 1. Stations (harus dibuat lebih dulu: users & devices menunjuk ke stasiun lewat stationId)
+      const stationIdByCode = new Map<string, string>();
+      for (const st of SEED_UPT_STATIONS) {
+        const station = await prisma.uptStation.upsert({
+          where: { stationid: st.code },
+          update: {},
+          create: {
+            stationid: st.code,
+            name: st.name,
+            regionGroup: st.regionGroup || "Papua",
+            location: st.location || st.name,
+            latitude: Number(st.latitude) || -2.54,
+            longitude: Number(st.longitude) || 140.7,
+          },
+        });
+        stationIdByCode.set(st.code, station.id);
+      }
+
+      // 2. Users
       await prisma.user.upsert({
         where: { username: "admin.inskal" },
         update: {},
@@ -121,7 +139,7 @@ async function autoSeedDatabase() {
           title: "Admin INSKAL & Kalibrasi BBMKG V",
           nip: "19850412 201012 1 001",
           email: "fajar.nur@bmkg.go.id",
-          uptStation: "BBMKG Wilayah V Papua",
+          stationId: null, // level Balai, tidak terikat satu UPT
           avatarUrl:
             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80",
         },
@@ -139,7 +157,7 @@ async function autoSeedDatabase() {
           title: "Operator UPT Stamet Dok II Jayapura",
           nip: "19920815 201503 1 002",
           email: "stamet.jayapura@bmkg.go.id",
-          uptStation: "Stasiun Meteorologi Dok II Jayapura",
+          stationId: stationIdByCode.get("MET012") ?? null, // Stamet Dok II Jayapura
           avatarUrl:
             "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80",
         },
@@ -157,47 +175,31 @@ async function autoSeedDatabase() {
           title: "Kepala BBMKG Wilayah V Papua",
           nip: "19760310 199903 1 001",
           email: "pimpinan.balai5@bmkg.go.id",
-          uptStation: "BBMKG Wilayah V Papua",
+          stationId: null, // level Balai, tidak terikat satu UPT
           avatarUrl:
             "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80",
         },
       });
 
       console.log(
-        "\n════════════════════════════════════════════════════════════"
+        "\n════════════════════════════════════════════════════════════",
       );
       console.log(
-        "🔑  AKUN AWAL BERHASIL DIBUAT - CATAT PASSWORD INI SEKARANG!"
+        "🔑  AKUN AWAL BERHASIL DIBUAT - CATAT PASSWORD INI SEKARANG!",
       );
       console.log(
-        "    Password ini HANYA ditampilkan sekali dan TIDAK disimpan"
+        "    Password ini HANYA ditampilkan sekali dan TIDAK disimpan",
       );
       console.log("    dalam bentuk terbaca di mana pun setelah ini.");
       console.log(
-        "────────────────────────────────────────────────────────────"
+        "────────────────────────────────────────────────────────────",
       );
       console.log(`    admin.inskal    : ${adminPassword}`);
       console.log(`    upt.jayapura    : ${uptPassword}`);
       console.log(`    pimpinan.balai  : ${pimpinanPassword}`);
       console.log(
-        "════════════════════════════════════════════════════════════\n"
+        "════════════════════════════════════════════════════════════\n",
       );
-
-      // 2. Stations
-      for (const st of SEED_UPT_STATIONS) {
-        await prisma.uptStation.upsert({
-          where: { stationid: st.code },
-          update: {},
-          create: {
-            stationid: st.code,
-            name: st.name,
-            regionGroup: st.regionGroup || "Papua",
-            location: st.location || st.name,
-            latitude: Number(st.latitude) || -2.54,
-            longitude: Number(st.longitude) || 140.7,
-          },
-        });
-      }
 
       // 3. Initial Devices
       for (const dev of SEED_DEVICES) {
@@ -209,14 +211,16 @@ async function autoSeedDatabase() {
             site: dev.name,
             category: dev.category,
             merk: dev.subCategory || null,
-            uptStation: dev.uptStation,
-            locationName: dev.locationName || dev.uptStation,
+            stationId: stationIdByCode.get(dev.stationCode)!,
+            locationName: dev.locationName || dev.name,
             latitude: Number(dev.latitude) || -2.54,
             longitude: Number(dev.longitude) || 140.7,
             conditionStatus: (dev.conditionStatus || "NORMAL") as any,
             calibrationStatus: (dev.calibrationStatus || "VALID") as any,
             lastCalibrated: new Date(dev.lastCalibrated || "2025-06-15"),
-            calibrationValidUntil: new Date(dev.calibrationValidUntil || "2026-06-15"),
+            calibrationValidUntil: new Date(
+              dev.calibrationValidUntil || "2026-06-15",
+            ),
             timkalibrasi: dev.calibrationAgency || "INSKAL BBMKG V",
             issueDescription: null,
             downtimeDuration: null,
@@ -227,7 +231,7 @@ async function autoSeedDatabase() {
       }
 
       console.log(
-        "✅ Auto-seeding PostgreSQL SIMON Aloptama berhasil selesai!"
+        "✅ Auto-seeding PostgreSQL SIMON Aloptama berhasil selesai!",
       );
     }
   } catch (err) {
@@ -266,22 +270,22 @@ async function startServer() {
       err: any,
       _req: express.Request,
       res: express.Response,
-      _next: express.NextFunction
+      _next: express.NextFunction,
     ) => {
       console.error("❌ Unhandled Server Error:", err);
       return res.status(err.status || 500).json({
         success: false,
         message: err.message || "Terjadi kesalahan internal pada server.",
       });
-    }
+    },
   );
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(
-      `Server BMKG Aloptama (PostgreSQL DB Enabled) running on http://0.0.0.0:${PORT}`
+      `Server BMKG Aloptama (PostgreSQL DB Enabled) running on http://0.0.0.0:${PORT}`,
     );
     autoSeedDatabase().catch((err) =>
-      console.warn("Auto-seed check notification:", err)
+      console.warn("Auto-seed check notification:", err),
     );
   });
 }

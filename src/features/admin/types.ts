@@ -8,7 +8,7 @@ export interface SlaOlaLogRow {
   deviceId: string | null;
   kodeAlat: string;
   namaAlat: string;
-  uptStation: string;
+  stationId: string;
   category: string;
   kondisiSla: boolean;
   kondisiOla: number;

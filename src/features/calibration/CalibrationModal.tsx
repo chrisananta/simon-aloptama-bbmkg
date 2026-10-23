@@ -16,11 +16,13 @@ import {
 import { calibrationSchema } from '../../shared/schemas';
 import { CalibrationModalProps } from './CalibrationTypes';
 import { isNotCalibrated } from '../../shared/utils/calibration';
+import { getStationName } from '../../shared/utils/stations';
 
 export const CalibrationModal: React.FC<CalibrationModalProps> = ({
   isOpen,
   onClose,
   devices: allDevices,
+  stations,
   onAddCalibrationRecord,
 }) => {
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
@@ -48,7 +50,7 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
       deviceId: devices[0]?.devicesId || '',
       deviceName: devices[0]?.site || '',
       category: devices[0]?.category || '',
-      uptStation: devices[0]?.uptStation || '',
+      stationId: devices[0]?.stationId || '',
       lastCalibrated: '',
       calibrationValidUntil: '',
       calibrationStatus: 'VALID' as const,
@@ -69,7 +71,7 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
       setValue('deviceId', selectedDevice.devicesId);
       setValue('deviceName', selectedDevice.site);
       setValue('category', selectedDevice.category);
-      setValue('uptStation', selectedDevice.uptStation);
+      setValue('stationId', selectedDevice.stationId);
     }
   }, [watchDeviceId, selectedDevice, setValue]);
 
@@ -88,7 +90,7 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
       deviceId: data.deviceId,
       deviceName: data.deviceName,
       category: data.category,
-      uptStation: data.uptStation,
+      stationId: data.stationId,
       lastCalibrated: data.lastCalibrated,
       calibrationValidUntil: data.calibrationValidUntil,
       calibrationStatus: data.calibrationStatus,
@@ -157,7 +159,7 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
               >
                 {devices.map((dev) => (
                   <option key={dev.devicesId} value={dev.devicesId}>
-                    {dev.site} ({dev.category}) — {dev.uptStation}
+                    {dev.site} ({dev.category}) — {getStationName(stations, dev.stationId)}
                   </option>
                 ))}
               </select>
@@ -170,7 +172,7 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
               <div className="p-2.5 sm:p-3 bg-slate-50 rounded-lg sm:rounded-xl border border-slate-200 text-[11px] sm:text-xs space-y-1">
                 <div className="flex justify-between text-slate-700">
                   <span className="font-semibold">Stasiun UPT:</span>
-                  <span className="font-bold text-slate-900 text-right">{selectedDevice.uptStation}</span>
+                  <span className="font-bold text-slate-900 text-right">{getStationName(stations, selectedDevice.stationId)}</span>
                 </div>
                 <div className="flex justify-between text-slate-700">
                   <span className="font-semibold">ID Peralatan:</span>

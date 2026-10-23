@@ -18,7 +18,8 @@ export interface AloptamaDevice {
   site: string;            
   category: EquipmentCategory;
   merk?: string;           
-  uptStation: string;
+  /** ID stasiun UPT (UPTStation.id). Nama stasiun diambil dari daftar stasiun. */
+  stationId: string;
   locationName: string;
   latitude: number;
   longitude: number;
@@ -75,7 +76,7 @@ export interface CalibrationRecord {
   id: string;
   deviceId: string;
   deviceName: string;
-  uptStation: string;
+  stationId: string;
   category: string;
   lastCalibrated: string;
   calibrationValidUntil: string;

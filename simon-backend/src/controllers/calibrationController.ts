@@ -10,7 +10,6 @@ const dateOnlyString = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format ta
 const calibrationInput = z.object({
   deviceId: z.string().trim().min(1),
   deviceName: z.string().trim().max(200).optional(),
-  uptStation: z.string().trim().max(200).optional(),
   category: z.string().trim().max(100).optional(),
   lastCalibrated: dateOnlyString,
   calibrationValidUntil: dateOnlyString,
@@ -51,7 +50,8 @@ export const calibrationController = {
           data: {
             deviceId: device.devicesId,
             deviceName: body.deviceName || device.site,
-            uptStation: body.uptStation || device.uptStation,
+            // Stasiun selalu mengikuti alat (tidak dipercaya dari client).
+            stationId: device.stationId,
             category: body.category || device.category,
             lastCalibrated: lastCalibratedDate,
             calibrationValidUntil: calibrationValidUntilDate,

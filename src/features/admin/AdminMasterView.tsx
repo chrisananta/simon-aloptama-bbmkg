@@ -20,7 +20,7 @@ import { useAuth } from '../auth/AuthContext';
 import { apiClient } from '../../shared/api';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 import { SlaOlaLogRow } from './types';
-import { isSameUpt, findStation } from '../../shared/utils/uptMatch';
+import { getStationName } from '../../shared/utils/stations';
 import { loadPapuaProvinces, findProvince, ProvinceShape } from '../../shared/utils/provinceLookup';
 
 import { MasterStasiunTab } from './tabs/MasterStasiunTab';
@@ -76,16 +76,16 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   const devices = React.useMemo(
     () =>
       isTeknisiAlatMode
-        ? devicesProp.filter((d) => isSameUpt(d.uptStation, user?.uptStation, stationsProp))
+        ? devicesProp.filter((d) => !!user?.stationId && d.stationId === user.stationId)
         : devicesProp,
-    [devicesProp, stationsProp, isTeknisiAlatMode, user?.uptStation]
+    [devicesProp, isTeknisiAlatMode, user?.stationId]
   );
   const stations = React.useMemo(
     () =>
       isTeknisiAlatMode
-        ? stationsProp.filter((st) => isSameUpt(st.stationid, user?.uptStation, stationsProp))
+        ? stationsProp.filter((st) => !!user?.stationId && st.id === user.stationId)
         : stationsProp,
-    [stationsProp, isTeknisiAlatMode, user?.uptStation]
+    [stationsProp, isTeknisiAlatMode, user?.stationId]
   );
 
   const [activeTab, setActiveTab] = useState<TabType>(
@@ -226,7 +226,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       title: 'Operator UPT BMKG',
       nip: '',
       email: '',
-      uptStation: stations[0]?.name || 'Stasiun Meteorologi Dok II Jayapura',
+      stationId: stations[0]?.id ?? null,
     });
     setIsUserModalOpen(true);
   };
@@ -262,7 +262,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         title: userForm.title?.trim() || 'Operator / Pimpinan UPT',
         nip: userForm.nip?.trim() || '',
         email: userForm.email?.trim() || '',
-        uptStation: userForm.uptStation || 'BBMKG Wilayah V Papua',
+        stationId: userForm.stationId || null,
       };
 
       const changes: string[] = [];
@@ -292,7 +292,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         title: userForm.title?.trim() || 'Operator UPT BMKG',
         nip: userForm.nip?.trim() || '',
         email: userForm.email?.trim() || '',
-        uptStation: userForm.uptStation || 'BBMKG Wilayah V Papua',
+        stationId: userForm.stationId || null,
         avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80',
       };
 
@@ -329,7 +329,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       (u.name || '').toLowerCase().includes(query) ||
       (u.username || '').toLowerCase().includes(query) ||
       (u.nip && u.nip.toLowerCase().includes(query)) ||
-      (u.uptStation && u.uptStation.toLowerCase().includes(query));
+      getStationName(stationsProp, u.stationId, '').toLowerCase().includes(query);
 
     const matchRole = userRoleFilter === 'ALL' || u.role === userRoleFilter;
 
@@ -358,7 +358,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       const byCoord = provinceShapes.length > 0
         ? findProvince(Number(d.latitude), Number(d.longitude), provinceShapes)
         : null;
-      const region = byCoord || findStation(d.uptStation, stations)?.regionGroup || '';
+      const region = byCoord || stations.find((st) => st.id === d.stationId)?.regionGroup || '';
       if (region) map.set(d.devicesId, region);
     });
     return map;
@@ -488,7 +488,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     site: '',
     category: 'AWS',
     merk: '',
-    uptStation: stations[0]?.name || 'Stasiun Meteorologi DEO Sorong',
+    stationId: stations[0]?.id || '',
     locationName: '',
     latitude: 0,
     longitude: 0,
@@ -516,7 +516,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       (d.devicesId || '').toLowerCase().includes(alatSearch.toLowerCase()) ||
       (d.site || '').toLowerCase().includes(alatSearch.toLowerCase()) ||
       (d.locationName || '').toLowerCase().includes(alatSearch.toLowerCase());
-    const matchesUpt = alatUptFilter === 'ALL' || d.uptStation === alatUptFilter;
+    const matchesUpt = alatUptFilter === 'ALL' || d.stationId === alatUptFilter;
     const matchesCat = alatCategoryFilter === 'ALL' || d.category === alatCategoryFilter;
     const matchesRegion = alatRegionFilter === 'ALL' || deviceRegionMap.get(d.devicesId) === alatRegionFilter;
     return matchesSearch && matchesUpt && matchesCat && matchesRegion;
@@ -597,7 +597,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       site: '',
       category: 'AWS',
       merk: '',
-      uptStation: stations[0]?.name || 'Stasiun Meteorologi DEO Sorong',
+      stationId: stations[0]?.id || '',
       locationName: '',
       latitude: -0.89,
       longitude: 131.28,
@@ -620,9 +620,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         || (dev.timkalibrasi?.toLowerCase().includes('pusat') ? 'Pusat' : 'Balai');
 
     setDeviceForm({
-      ...dev,
-      // Data lama bisa menyimpan KODE stasiun (mis. MET001); dropdown memakai NAMA.
-      uptStation: findStation(dev.uptStation, stationsProp)?.name || dev.uptStation,
+      ...dev, // stationId ikut terbawa; dropdown stasiun memakai ID
       picKalibrasi: existingPic,
       slaScore: Math.round(dev.slaScore ?? 100),
       olaScore: Math.round(dev.olaScore ?? 100),
@@ -639,7 +637,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     }
 
     // Teknisi UPT hanya boleh mengedit alat yang sudah ada di UPT-nya sendiri.
-    if (isTeknisiAlatMode && (!editingDevice || !isSameUpt(editingDevice.uptStation, user?.uptStation, stationsProp))) {
+    if (isTeknisiAlatMode && (!editingDevice || !user?.stationId || editingDevice.stationId !== user.stationId)) {
       alert('Anda hanya dapat mengedit alat milik UPT Anda sendiri.');
       return;
     }
@@ -680,7 +678,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         site: deviceForm.site,
         category: (deviceForm.category as EquipmentCategory) || 'AWS',
         merk: deviceForm.merk || '',
-        uptStation: isTeknisiAlatMode ? editingDevice.uptStation : (deviceForm.uptStation || stations[0]?.name || ''),
+        stationId: isTeknisiAlatMode ? editingDevice.stationId : (deviceForm.stationId || stations[0]?.id || ''),
         picKalibrasi: pic,
         locationName: deviceForm.locationName || '',
         latitude: Number(deviceForm.latitude) || 0,
@@ -706,7 +704,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       if ((editingDevice.merk || '') !== (updated.merk || '')) changes.push(`Merk: "${editingDevice.merk || '-'}" -> "${updated.merk || '-'}"`);
       if ((editingDevice.locationName || '') !== (updated.locationName || '')) changes.push(`Lokasi: "${editingDevice.locationName || '-'}" -> "${updated.locationName || '-'}"`);
       if (editingDevice.picKalibrasi !== updated.picKalibrasi) changes.push(`PIC Kalibrasi: "${editingDevice.picKalibrasi || '-'}" -> "${updated.picKalibrasi || '-'}"`);
-      if (editingDevice.uptStation !== updated.uptStation) changes.push(`UPT: "${editingDevice.uptStation}" -> "${updated.uptStation}"`);
+      if (editingDevice.stationId !== updated.stationId) changes.push(`UPT: "${getStationName(stationsProp, editingDevice.stationId)}" -> "${getStationName(stationsProp, updated.stationId)}"`);
       if (editingDevice.conditionStatus !== updated.conditionStatus) changes.push(`Status: "${editingDevice.conditionStatus}" -> "${updated.conditionStatus}"`);
       if (editingDevice.slaScore !== updated.slaScore) changes.push(`SLA: ${editingDevice.slaScore ?? 100}% -> ${updated.slaScore}%`);
       if (editingDevice.olaScore !== updated.olaScore) changes.push(`OLA: ${editingDevice.olaScore ?? 100}% -> ${updated.olaScore}%`);
@@ -727,7 +725,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         site: deviceForm.site || '',
         category: (deviceForm.category as EquipmentCategory) || 'AWS',
         merk: deviceForm.merk || '',
-        uptStation: deviceForm.uptStation || stations[0]?.name || '',
+        stationId: deviceForm.stationId || stations[0]?.id || '',
         picKalibrasi: pic,
         locationName: deviceForm.locationName || '',
         latitude: Number(deviceForm.latitude) || 0,
@@ -806,7 +804,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
             </h1>
             {isTeknisiAlatMode ? (
               <p className="text-slate-500 text-[11px] sm:text-xs mt-0.5 leading-relaxed">
-                Perbarui data master alat milik <span className="font-bold text-slate-700">{stations[0]?.name || user?.uptStation || 'UPT Anda'}</span> jika ada perubahan.
+                Perbarui data master alat milik <span className="font-bold text-slate-700">{stations[0]?.name || 'UPT Anda'}</span> jika ada perubahan.
               </p>
             ) : (
             <p className="text-slate-500 text-[11px] sm:text-xs mt-0.5 leading-relaxed">

@@ -267,7 +267,7 @@ function parseDailyEntries(content: string, defaultCategory: string | 'PER_ROW')
   return { entries, deviceIdByLocation };
 }
 
-interface DeviceLite { devicesId: string; site: string; category: string; uptStation: string }
+interface DeviceLite { devicesId: string; site: string; category: string; stationId: string }
 
 async function main() {
   console.log('🔍 Mengambil semua alat dari database...');
@@ -341,7 +341,7 @@ async function main() {
   let incomplete = 0;
   const rowsToInsert: {
     deviceId: string;
-    uptStation: string;
+    stationId: string;
     category: string;
     kondisiSla: boolean;
     kondisiOla: number;
@@ -362,7 +362,7 @@ async function main() {
     const reportDate = new Date(`${entry.date}T00:00:00.000Z`);
     rowsToInsert.push({
       deviceId: entry.deviceId,
-      uptStation: device.uptStation,
+      stationId: device.stationId,
       category: device.category,
       kondisiSla: entry.sla,
       kondisiOla: entry.ola,

@@ -51,10 +51,11 @@ async function main() {
   // 1. Import Master Stasiun (UptStation)
   const stasiunList = readCSV("MASTER_STASIUN.csv");
   let stasiunCount = 0;
+  const stationIdByCode = new Map(); // kode stasiun -> upt_stations.id (untuk FK alat)
   for (const item of stasiunList) {
     if (!item.ID_STASIUN) continue;
     try {
-      await prisma.uptStation.upsert({
+      const station = await prisma.uptStation.upsert({
         where: { stationid: item.ID_STASIUN },
         update: {
           name: item.NAMA_STASIUN,
@@ -70,6 +71,7 @@ async function main() {
           longitude: 0.0,
         },
       });
+      stationIdByCode.set(item.ID_STASIUN, station.id);
       stasiunCount++;
     } catch (e) {
       console.error(`Gagal import stasiun ${item.ID_STASIUN}:`, e.message);
@@ -82,6 +84,11 @@ async function main() {
   let alatCount = 0;
   for (const item of alatList) {
     if (!item.ID_ALAT) continue;
+    const stationId = stationIdByCode.get(item.ID_STASIUN);
+    if (!stationId) {
+      console.error(`Lewati alat ${item.ID_ALAT}: stasiun "${item.ID_STASIUN}" tidak ada di MASTER_STASIUN.csv`);
+      continue;
+    }
     const lat =
       item.LATITUDE && !isNaN(parseFloat(item.LATITUDE))
         ? parseFloat(item.LATITUDE)
@@ -98,7 +105,7 @@ async function main() {
           site: item.NAMA_PERALATAN || item.ID_ALAT,
           category: item.JENIS_PERALATAN || "Umum",
           merk: item.MERK || "",
-          uptStation: item.ID_STASIUN || "-",
+          stationId,
           locationName: item.NAMA_PERALATAN || "-",
           latitude: lat,
           longitude: lng,
@@ -108,7 +115,7 @@ async function main() {
           site: item.NAMA_PERALATAN || item.ID_ALAT,
           category: item.JENIS_PERALATAN || "Umum",
           merk: item.MERK || "",
-          uptStation: item.ID_STASIUN || "-",
+          stationId,
           locationName: item.NAMA_PERALATAN || "-",
           latitude: lat,
           longitude: lng,

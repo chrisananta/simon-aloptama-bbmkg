@@ -9,7 +9,8 @@ export interface AuthUser {
   name: string;
   role: UserRole;
   title: string;
-  uptStation?: string;
+  /** ID stasiun UPT user (UPTStation.id). null/kosong = level Balai. */
+  stationId?: string | null;
   nip?: string;
   email?: string;
   avatarUrl?: string;
@@ -30,7 +31,7 @@ export interface JWTPayload {
   name: string;
   role: UserRole;
   title: string;
-  uptStation?: string;
+  stationId?: string | null;
   iat: number;
   exp: number;
 }

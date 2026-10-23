@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
-import { AuthRequest } from '../middleware/authMiddleware.js';
+import { AuthRequest, canAccessStation } from '../middleware/authMiddleware.js';
 import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE } from '../utils/dateUtils.js';
 import { syncCalibrationListing } from '../utils/calibrationList.js';
 import { loadLatestReportSnapshot } from '../utils/latestSlaOlaReport.js';
@@ -17,7 +17,7 @@ const deviceInput = z.object({
   category: z.string().trim().min(1).max(100),
   merk: z.string().trim().max(100).nullable().optional(),
   subCategory: z.string().trim().max(100).nullable().optional(), // Alias kompatibilitas
-  uptStation: z.string().trim().min(1).max(200),
+  stationId: z.string().trim().min(1).max(64), // upt_stations.id
   picKalibrasi: z.string().trim().max(200).optional(),
   locationName: z.string().trim().max(200).optional(),
   latitude: z.coerce.number().finite().min(-90).max(90),
@@ -45,6 +45,7 @@ function databaseError(res: Response, error: unknown, fallback: string) {
   const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
   if (code === 'P2002') return res.status(409).json({ success: false, message: 'ID perangkat sudah digunakan.' });
   if (code === 'P2025') return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+  if (code === 'P2003') return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan. Pilih stasiun yang terdaftar.' });
   return res.status(500).json({ success: false, message: fallback });
 }
 
@@ -61,44 +62,6 @@ function isNotCalibrated(pic?: string | null, status?: string | null): boolean {
   const p = (pic || '').trim();
   if (p) return p.toLowerCase() === PIC_TIDAK_DIKALIBRASI.toLowerCase();
   return status === 'TIDAK_DIKALIBRASI';
-}
-
-/** Cari stasiun lewat KODE (mis. "MET004") atau NAMA - data lama menyimpan salah satunya. */
-function findStationByNameOrCode(value: string) {
-  const v = value.trim();
-  return prisma.uptStation.findFirst({
-    where: {
-      OR: [
-        { name: { equals: v, mode: 'insensitive' } },
-        { stationid: { equals: v, mode: 'insensitive' } },
-      ],
-    },
-  });
-}
-
-/**
- * Apakah alat ini berada di UPT milik user? Kolom uptStation bisa berisi KODE
- * stasiun (mis. "MET001") atau NAMA stasiun tergantung sumber datanya, jadi
- * dicocokkan lewat entitas stasiun (relasi stationId, kode, atau nama).
- */
-async function isDeviceInUserUpt(
-  device: { uptStation: string; stationId: string | null },
-  userUpt: string | undefined
-): Promise<boolean> {
-  const wanted = (userUpt || '').trim();
-  if (!wanted) return false;
-  const norm = (v: string) => v.trim().toUpperCase();
-  const station = await prisma.uptStation.findFirst({
-    where: {
-      OR: [
-        { stationid: { equals: wanted, mode: 'insensitive' } },
-        { name: { equals: wanted, mode: 'insensitive' } },
-      ],
-    },
-  });
-  if (!station) return norm(device.uptStation) === norm(wanted);
-  if (device.stationId && device.stationId === station.id) return true;
-  return [station.stationid, station.name].map(norm).includes(norm(device.uptStation));
 }
 
 export const deviceController = {
@@ -158,7 +121,7 @@ export const deviceController = {
     if (!parsed.success) return badInput(res, parsed.error);
     try {
       const body = parsed.data;
-      const station = await findStationByNameOrCode(body.uptStation);
+      const station = await prisma.uptStation.findUnique({ where: { id: body.stationId } });
       if (!station) return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan. Buat atau pilih stasiun yang terdaftar.' });
 
       const today = new Date().toISOString().slice(0, 10);
@@ -177,9 +140,8 @@ export const deviceController = {
             site,
             category: body.category,
             merk,
-            uptStation: body.uptStation,
             picKalibrasi: notCalibrated ? PIC_TIDAK_DIKALIBRASI : body.picKalibrasi || 'Balai',
-            locationName: body.locationName || body.uptStation,
+            locationName: body.locationName || station.name,
             latitude: body.latitude,
             longitude: body.longitude,
             conditionStatus: body.conditionStatus || 'NORMAL',
@@ -201,7 +163,7 @@ export const deviceController = {
             recordId: created.devicesId,
             recordName: `${created.site} (${created.category})`,
             actor: actorName(req),
-            details: `Penambahan unit aloptama baru di Stasiun ${created.uptStation}.`
+            details: `Penambahan unit aloptama baru di Stasiun ${station.name}.`
           }
         });
         return created;
@@ -226,12 +188,12 @@ export const deviceController = {
       // field master deskriptif. ID alat tidak pernah bisa diubah (param :id
       // dipakai apa adanya, devicesId/id sudah di-omit dari skema update).
       // Boleh juga: status kalibrasi & tanggal terakhir kalibrasi.
-      // Stasiun UPT, masa berlaku sertifikat, status kondisi, dan skor SLA/OLA
+      // Stasiun UPT (stationId), masa berlaku sertifikat, status kondisi, dan skor SLA/OLA
       // dibuang dari payload sehingga tidak bisa diubah lewat API sekalipun UI dilewati.
       if (req.user?.role === 'TEKNISI_UPT') {
         const existing = await prisma.device.findUnique({ where: { devicesId: req.params.id } });
         if (!existing) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
-        if (!(await isDeviceInUserUpt(existing, req.user.uptStation))) {
+        if (!canAccessStation(req.user, existing.stationId)) {
           return res.status(403).json({
             success: false,
             message: 'Akses ditolak. Anda hanya dapat mengedit alat milik UPT Anda sendiri.',
@@ -253,9 +215,6 @@ export const deviceController = {
           lastCalibrated: body.lastCalibrated,
         };
       }
-      const station = body.uptStation ? await findStationByNameOrCode(body.uptStation) : null;
-      if (body.uptStation && !station) return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan.' });
-
       const site = body.site !== undefined ? body.site : body.name;
       const merk = body.merk !== undefined ? body.merk : body.subCategory;
       let timkalibrasi = body.timkalibrasi !== undefined ? body.timkalibrasi : body.calibrationAgency;
@@ -286,7 +245,6 @@ export const deviceController = {
             site: site !== undefined ? site : undefined,
             category: body.category,
             merk: merk !== undefined ? merk : undefined,
-            uptStation: body.uptStation,
             picKalibrasi: body.picKalibrasi,
             locationName: body.locationName,
             latitude: body.latitude,
@@ -301,7 +259,7 @@ export const deviceController = {
             downtimeDuration: body.downtimeDuration,
             slaScore: body.slaScore,
             olaScore: body.olaScore,
-            stationId: station?.id,
+            stationId: body.stationId, // undefined = tidak diubah; FK menolak ID yang tidak ada (P2003)
           },
         });
         await tx.auditLog.create({

@@ -141,13 +141,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                     Stasiun UPT Terkait
                   </label>
                   <select
-                    value={userForm.uptStation || ''}
-                    onChange={(e) => setUserForm({ ...userForm, uptStation: e.target.value })}
+                    value={userForm.stationId || ''}
+                    onChange={(e) => setUserForm({ ...userForm, stationId: e.target.value || null })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#0052CC] focus:bg-white"
                   >
-                    <option value="BBMKG Wilayah V Papua">BBMKG Wilayah V Papua</option>
+                    <option value="">BBMKG Wilayah V Papua (level Balai, tanpa UPT)</option>
                     {stations.map((s) => (
-                      <option key={s.id} value={s.name}>
+                      <option key={s.id} value={s.id}>
                         {s.name}
                       </option>
                     ))}

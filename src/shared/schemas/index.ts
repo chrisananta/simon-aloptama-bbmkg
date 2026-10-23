@@ -6,7 +6,7 @@ import { getTodayIsoWIT, getIsoDaysAgoWIT } from '../utils/dateUtils';
 export const SLA_OLA_MAX_BACKDATE_DAYS = 10;
 
 export const slaOlaSchema = z.object({
-  uptStation: z.string().min(1, 'Stasiun UPT wajib dipilih'),
+  stationId: z.string().min(1, 'Stasiun UPT wajib dipilih'),
   category: z.string().min(1, 'Jenis peralatan wajib dipilih'),
   deviceId: z.string().min(1, 'Peralatan spesifik wajib dipilih'),
   kondisiSla: z.boolean(),
@@ -46,7 +46,7 @@ export const calibrationSchema = z.object({
   deviceId: z.string().min(1, 'Peralatan wajib dipilih'),
   deviceName: z.string().min(1, 'Nama peralatan wajib terisi'),
   category: z.string().min(1, 'Kategori peralatan wajib terisi'),
-  uptStation: z.string().min(1, 'Stasiun UPT wajib terisi'),
+  stationId: z.string().min(1, 'Stasiun UPT wajib terisi'),
   lastCalibrated: z.string().min(1, 'Tanggal kalibrasi wajib diisi'),
   calibrationValidUntil: z.string().min(1, 'Masa berlaku kalibrasi wajib diisi'),
   calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA']),
@@ -71,7 +71,7 @@ export const deviceSchema = z.object({
   id: z.string().min(3, 'ID Peralatan minimal 3 karakter'),
   name: z.string().min(3, 'Nama peralatan minimal 3 karakter'),
   category: z.string().min(1, 'Kategori peralatan wajib dipilih'),
-  uptStation: z.string().min(1, 'Stasiun UPT tempat alat berada wajib dipilih'),
+  stationId: z.string().min(1, 'Stasiun UPT tempat alat berada wajib dipilih'),
   conditionStatus: z.enum(['NORMAL', 'GANGGUAN', 'MATI']),
   slaScore: z.number().min(0).max(100).optional(),
   olaScore: z.number().min(0).max(100).optional(),

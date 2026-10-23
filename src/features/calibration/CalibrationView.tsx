@@ -89,33 +89,27 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     [devices, listedIds]
   );
 
-  // Map pencarian ID Stasiun -> Nama Stasiun
+  const stationList = useMemo(
+    () => (stations && stations.length > 0 ? stations : apiClient.stations.getAll()),
+    [stations]
+  );
+
+  // Map ID Stasiun -> Nama Stasiun (untuk tampilan)
   const stationMap = useMemo(() => {
     const map = new Map<string, string>();
-    const stationList = stations && stations.length > 0 ? stations : apiClient.stations.getAll();
-    stationList.forEach((s) => {
-      if (s.stationid) map.set(s.stationid, s.name);
-      if (s.id) map.set(s.id, s.name);
-    });
+    stationList.forEach((s) => map.set(s.id, s.name));
     return map;
-  }, [stations]);
+  }, [stationList]);
 
-  // List opsi dropdown { id, name }
+  // List opsi dropdown { id, name }: id = ID stasiun (sama dengan stationId alat/catatan)
   const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
-    const stationIds = new Set<string>();
-    devices.forEach((d) => {
-      if (d.uptStation) {
-        const idStr = typeof d.uptStation === 'string' 
-          ? d.uptStation 
-          : (d.uptStation as any).stationid || (d.uptStation as any).id;
-        if (idStr) stationIds.add(idStr);
-      }
-    });
-    return Array.from(stationIds).sort().map((id) => ({
-      id: String(id),
-      name: stationMap.get(String(id)) || String(id),
-    }));
-  }, [devices, stationMap]);
+    const stationIds = new Set(devices.map((d) => d.stationId));
+    return stationList
+      .filter((st) => stationIds.has(st.id))
+      .slice()
+      .sort((a, b) => (a.stationid || '').localeCompare(b.stationid || ''))
+      .map((st) => ({ id: st.id, name: st.name }));
+  }, [devices, stationList]);
 
   const allRecords = [
     ...listedDevices.map((dev) => ({
@@ -123,7 +117,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       deviceId: dev.devicesId,
       deviceName: dev.site,
       category: dev.category,
-      uptStation: dev.uptStation,
+      stationId: dev.stationId,
       lastCalibrated: dev.lastCalibrated,
       calibrationValidUntil: dev.calibrationValidUntil,
       calibrationStatus: dev.calibrationStatus,
@@ -152,8 +146,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     const matchesSearch =
       searchQuery === '' ||
       (rec.deviceName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (rec.uptStation || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (stationMap.get(rec.uptStation) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (stationMap.get(rec.stationId) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (rec.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (rec.calibrationAgency || '').toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -165,7 +158,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     const matchesYear =
       selectedYear === 'ALL' || (!!yearVal && (rec.lastCalibrated?.startsWith(selectedYear) || yearVal === selectedYear));
 
-    const matchesUpt = selectedUpt === 'ALL' || rec.uptStation === selectedUpt;
+    const matchesUpt = selectedUpt === 'ALL' || rec.stationId === selectedUpt;
 
     const matchesAgency = selectedAgency === 'ALL' || rec.picKalibrasi === selectedAgency;
 
@@ -428,7 +421,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                       </div>
                     </td>
                     <td className="p-3.5 font-medium text-slate-800">
-                      {stationMap.get(rec.uptStation) || rec.uptStation}
+                      {stationMap.get(rec.stationId) || '-'}
                     </td>
                     <td className="p-3.5 font-medium text-slate-700">
                       {formatDateIndo(rec.lastCalibrated)}

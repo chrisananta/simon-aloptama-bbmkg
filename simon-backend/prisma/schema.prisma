@@ -8,93 +8,100 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
+  id           String      @id @default(uuid())
+  username     String      @unique
   passwordHash String?
   name         String
-  role         Role     @default(TEKNISI_UPT)
+  role         Role        @default(TEKNISI_UPT)
   title        String
   nip          String?
   email        String?
-  uptStation   String
+  // Stasiun UPT tempat user bertugas. NULL = level Balai (tidak terikat satu UPT),
+  // mis. Super Admin / Admin Inskal / pimpinan Balai. Teknisi UPT WAJIB punya
+  // stasiun (dicek di userController).
+  stationId    String?
+  station      UptStation? @relation(fields: [stationId], references: [id], onDelete: Restrict)
   avatarUrl    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
+  @@index([stationId])
   @@map("users")
 }
 
 model UptStation {
-  id          String   @id @default(uuid())
-  stationid   String   @unique
-  name        String
-  regionGroup String
-  location    String
-  latitude    Float
-  longitude   Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  devices     Device[]
+  id                 String              @id @default(uuid())
+  stationid          String              @unique
+  name               String
+  regionGroup        String
+  location           String
+  latitude           Float
+  longitude          Float
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  devices            Device[]
+  slaOlaLogs         SlaOlaLog[]
+  calibrationRecords CalibrationRecord[]
+  users              User[]
 
   @@map("upt_stations")
 }
 
 model Device {
-  devicesId             String              @id
+  devicesId             String               @id
   site                  String
   category              String
   merk                  String?
-  uptStation            String
   locationName          String
   latitude              Float
   longitude             Float
-  picKalibrasi          String?             @default("Balai")
-  conditionStatus       EquipmentStatus     @default(NORMAL)
-  calibrationStatus     CalibrationStatus   @default(VALID)
-  lastCalibrated        DateTime?           @db.Date
-  calibrationValidUntil DateTime?           @db.Date
+  picKalibrasi          String?              @default("Balai")
+  conditionStatus       EquipmentStatus      @default(NORMAL)
+  calibrationStatus     CalibrationStatus    @default(VALID)
+  lastCalibrated        DateTime?            @db.Date
+  calibrationValidUntil DateTime?            @db.Date
   timkalibrasi          String
-  lastReportedDate      DateTime?           @db.Date
+  lastReportedDate      DateTime?            @db.Date
   downtimeDuration      String?
   issueDescription      String?
   slaScore              Float?
   olaScore              Float?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  stationId             String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  stationId             String
   calibrationRecords    CalibrationRecord[]
-  station               UptStation?         @relation(fields: [stationId], references: [id])
+  station               UptStation           @relation(fields: [stationId], references: [id], onDelete: Restrict)
   slaOlaLogs            SlaOlaLog[]
   monthlyScores         DeviceMonthlyScore[]
 
-  @@index([uptStation])
   @@index([category])
   @@index([stationId])
   @@map("devices")
 }
 
 model SlaOlaLog {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   deviceId   String?
-  uptStation String
+  stationId  String
   category   String
-  kondisiSla Boolean  @default(true)
-  kondisiOla Float    @default(100)
+  kondisiSla Boolean    @default(true)
+  kondisiOla Float      @default(100)
   kendala    String?
-  status     String   @default("NORMAL")
-  actor      String   @default("Operator UPT")
-  timestamp  DateTime @default(now())
+  status     String     @default("NORMAL")
+  actor      String     @default("Operator UPT")
+  timestamp  DateTime   @default(now())
   // Tanggal kondisi yang dilaporkan (bisa mundur hingga 10 hari dari hari
   // pengisian, untuk mengisi data harian yang terlewat). Beda dengan
   // `timestamp` yang selalu mencatat waktu SUBMIT sebenarnya (untuk audit).
-  reportDate DateTime @db.Date
+  reportDate DateTime   @db.Date
   // true jika reportDate bukan hari ini saat data disimpan (pengisian susulan).
-  isLate     Boolean  @default(false)
-  device     Device?  @relation(fields: [deviceId], references: [devicesId])
+  isLate     Boolean    @default(false)
+  device     Device?    @relation(fields: [deviceId], references: [devicesId])
+  station    UptStation @relation(fields: [stationId], references: [id], onDelete: Restrict)
 
   @@index([timestamp])
   @@index([deviceId])
-  @@index([uptStation])
+  @@index([stationId])
   @@index([reportDate])
   @@map("sla_ola_logs")
 }
@@ -119,7 +126,7 @@ model CalibrationRecord {
   id                    String            @id @default(uuid())
   deviceId              String
   deviceName            String
-  uptStation            String
+  stationId             String
   category              String
   lastCalibrated        DateTime          @db.Date
   calibrationValidUntil DateTime          @db.Date
@@ -129,8 +136,10 @@ model CalibrationRecord {
   notes                 String?
   createdAt             DateTime          @default(now())
   device                Device            @relation(fields: [deviceId], references: [devicesId])
+  station               UptStation        @relation(fields: [stationId], references: [id], onDelete: Restrict)
 
   @@index([deviceId])
+  @@index([stationId])
   @@index([createdAt])
   @@map("calibration_records")
 }
@@ -223,10 +232,10 @@ model GensetMonitoring {
   tanggal       DateTime @db.Date
   jam           String   @default("08:00 WIT")
   gedung        String   @default("Operasional") // "Operasional" atau "Administrasi"
-  petugasList   Json     // Menyimpan array nama petugas: ["Yoga", "Agus", "Caesar"]
-  petugas       String   // String gabungan untuk pencarian & display cepat
-  checklistData Json?    // Menyimpan detail checklist (Baik/Buruk) dari 6 sistem pengamatan
-  kesimpulan    String   // "BAIK", "PERLU PERBAIKAN", atau "RUSAK"
+  petugasList   Json // Menyimpan array nama petugas: ["Yoga", "Agus", "Caesar"]
+  petugas       String // String gabungan untuk pencarian & display cepat
+  checklistData Json? // Menyimpan detail checklist (Baik/Buruk) dari 6 sistem pengamatan
+  kesimpulan    String // "BAIK", "PERLU PERBAIKAN", atau "RUSAK"
   catatan       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -237,22 +246,22 @@ model GensetMonitoring {
 model PerbaikanInstalasi {
   id                 String   @id @default(uuid())
   formType           String   @default("FORM_1_1") // "FORM_1_1" (MKG) atau "FORM_1_2" (Penunjang)
-  jenisLaporan       Json     // Array string: ["Perbaikan", "Pengujian Setelah Perbaikan", ...]
+  jenisLaporan       Json // Array string: ["Perbaikan", "Pengujian Setelah Perbaikan", ...]
   namaAlat           String
   merk               String
   typeSn             String
   lokasiAlat         String
-  jenisPeralatan     String   // Form 1.1: Meteorologi/Klimatologi/Geofisika | Form 1.2: Kelistrikan/Mesin/dll
-  kategoriPeralatan  String?  // Form 1.1: Sederhana Mekanik/Sederhana Elektronik/Canggih
-  akarPenyebab        String   // Kerusakan/Permasalahan/Kondisi Awal
-  analisisKerusakan   String?  // Analisis Terhadap Kerusakan/Permasalahan
+  jenisPeralatan     String // Form 1.1: Meteorologi/Klimatologi/Geofisika | Form 1.2: Kelistrikan/Mesin/dll
+  kategoriPeralatan  String? // Form 1.1: Sederhana Mekanik/Sederhana Elektronik/Canggih
+  akarPenyebab       String // Kerusakan/Permasalahan/Kondisi Awal
+  analisisKerusakan  String? // Analisis Terhadap Kerusakan/Permasalahan
   rekomendasi        String
-  kondisiAlat        String   // LAYAK_NORMAL, LAYAK_SEBAGIAN, LAYAK_MODIFIKASI, TIDAK_LAYAK, OTHER
+  kondisiAlat        String // LAYAK_NORMAL, LAYAK_SEBAGIAN, LAYAK_MODIFIKASI, TIDAK_LAYAK, OTHER
   kondisiOtherDetail String?
   persentaseFungsi   Int      @default(100)
   tanggal            DateTime @db.Date
-  teknisiList        Json     // Array nama teknisi: ["Teknisi 1", "Teknisi 2", "Teknisi 3"]
-  fotoLampiran       Json?    // Array base64 image string / URL foto dokumentasi
+  teknisiList        Json // Array nama teknisi: ["Teknisi 1", "Teknisi 2", "Teknisi 3"]
+  fotoLampiran       Json? // Array base64 image string / URL foto dokumentasi
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
