@@ -1,17 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Activity } from 'lucide-react';
 import { AloptamaDevice, UPTStation, ChangeLog } from '../shared/types';
 import { Sidebar } from '../layouts/Sidebar';
 import { Navbar } from '../layouts/Navbar';
-import { DashboardView } from '../features/dashboard/DashboardView';
-import { SlaOlaView } from '../features/sla-ola/SlaOlaView';
-import { CalibrationView } from '../features/calibration/CalibrationView';
-import { CertificateRedirectView } from '../features/certificates/CertificateRedirectView';
-import { AdminMasterView } from '../features/admin/AdminMasterView';
-import { AuditLogView } from '../features/audit-log/AuditLogView';
 import { ServerStatusModal } from '../shared/components/modals/ServerStatusModal';
-import { SlaOlaInputModal } from '../features/sla-ola/SlaOlaInputModal';
-import { CalibrationInputModal } from '../features/calibration/CalibrationInputModal';
+import { useEverTrue } from '../shared/hooks/useEverTrue';
 import { CalibrationRecord } from '../features/calibration/CalibrationTypes';
 import { ErrorBoundary } from '../shared/components/ErrorBoundary';
 import { apiClient } from '../shared/api';
@@ -19,11 +12,29 @@ import { isSameUpt } from '../shared/utils/uptMatch';
 import { ServerFetchResult } from '../shared/api/serverDataService';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
-import { GensetPage } from '../features/genset/GensetPage';
-import { PerbaikanView } from '../features/perbaikan/PerbaikanView';
-import { PanduanView } from '../features/panduan/PanduanView';
 import { TimeBar } from '../layouts/TimeBar';
 import { useMenuRoute } from './useMenuRoute';
+
+// Code splitting: tiap halaman/modal besar jadi file JS terpisah yang baru diunduh saat
+// pertama kali dibuka (bukan ikut bundle awal). Modul-modul ini memakai named export,
+// jadi dibungkus agar sesuai bentuk { default } yang diminta React.lazy.
+const DashboardView = lazy(() => import('../features/dashboard/DashboardView').then((m) => ({ default: m.DashboardView })));
+const SlaOlaView = lazy(() => import('../features/sla-ola/SlaOlaView').then((m) => ({ default: m.SlaOlaView })));
+const CalibrationView = lazy(() => import('../features/calibration/CalibrationView').then((m) => ({ default: m.CalibrationView })));
+const CertificateRedirectView = lazy(() => import('../features/certificates/CertificateRedirectView').then((m) => ({ default: m.CertificateRedirectView })));
+const AdminMasterView = lazy(() => import('../features/admin/AdminMasterView').then((m) => ({ default: m.AdminMasterView })));
+const AuditLogView = lazy(() => import('../features/audit-log/AuditLogView').then((m) => ({ default: m.AuditLogView })));
+const GensetPage = lazy(() => import('../features/genset/GensetPage').then((m) => ({ default: m.GensetPage })));
+const PerbaikanView = lazy(() => import('../features/perbaikan/PerbaikanView').then((m) => ({ default: m.PerbaikanView })));
+const PanduanView = lazy(() => import('../features/panduan/PanduanView').then((m) => ({ default: m.PanduanView })));
+const SlaOlaInputModal = lazy(() => import('../features/sla-ola/SlaOlaInputModal').then((m) => ({ default: m.SlaOlaInputModal })));
+const CalibrationInputModal = lazy(() => import('../features/calibration/CalibrationInputModal').then((m) => ({ default: m.CalibrationInputModal })));
+
+const PageFallback = () => (
+  <div className="flex items-center justify-center py-24 text-xs font-semibold text-slate-500" role="status">
+    Memuat halaman…
+  </div>
+);
 
 // Penanda sebelum sinkronisasi server pertama selesai (bukan tanggal palsu).
 const BELUM_SINKRON = 'Belum sinkron';
@@ -55,6 +66,8 @@ function AppContent() {
   const [isCalibrationModalOpen, setIsCalibrationModalOpen] = useState(false);
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const slaOlaModalLoaded = useEverTrue(isSlaOlaModalOpen);
+  const calibrationModalLoaded = useEverTrue(isCalibrationModalOpen);
   
   // Initial state loaded via Centralized API Client
   const [devicesData, setDevicesData] = useState<AloptamaDevice[]>(() => apiClient.devices.getAll());
@@ -277,6 +290,7 @@ function AppContent() {
           }`}
         >
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+            <Suspense fallback={<PageFallback />}>
             {activeMenu === 'dashboard' && (
             <DashboardView devices={devicesData} stations={stationsData} lastUpdate={lastUpdate} />
           )}
@@ -325,6 +339,7 @@ function AppContent() {
             {activeMenu === 'perbaikan' && permissions.canManagePerbaikan && (
               <PerbaikanView />
             )}
+            </Suspense>
           </div>
         </main>
 
@@ -341,21 +356,27 @@ function AppContent() {
             dibatasi ke alat UPT sendiri untuk Teknisi/KaUPT. Dashboard,
             daftar SLA OLA, dan Kalibrasi tetap nasional (lihat devicesData
             di atas). */}
-        <SlaOlaInputModal
-          isOpen={isSlaOlaModalOpen}
-          onClose={() => setIsSlaOlaModalOpen(false)}
-          devices={ownUptInputDevices}
-          onSaveSlaOla={handleSaveSlaOla}
-        />
+        {slaOlaModalLoaded && (
+          <Suspense fallback={null}>
+            <SlaOlaInputModal
+              isOpen={isSlaOlaModalOpen}
+              onClose={() => setIsSlaOlaModalOpen(false)}
+              devices={ownUptInputDevices}
+              onSaveSlaOla={handleSaveSlaOla}
+            />
+          </Suspense>
+        )}
 
         {/* Form Modal Tambah Data Kalibrasi INSKAL (hanya jika diizinkan) */}
-        {permissions.canAddCalibration && (
-          <CalibrationInputModal
-            isOpen={isCalibrationModalOpen}
-            onClose={() => setIsCalibrationModalOpen(false)}
-            devices={devicesData}
-            onAddCalibrationRecord={handleAddCalibrationRecord}
-          />
+        {permissions.canAddCalibration && calibrationModalLoaded && (
+          <Suspense fallback={null}>
+            <CalibrationInputModal
+              isOpen={isCalibrationModalOpen}
+              onClose={() => setIsCalibrationModalOpen(false)}
+              devices={devicesData}
+              onAddCalibrationRecord={handleAddCalibrationRecord}
+            />
+          </Suspense>
         )}
 
         {/* Floating Action Button for PENGISIAN SLA OLA (Bottom Right Corner)

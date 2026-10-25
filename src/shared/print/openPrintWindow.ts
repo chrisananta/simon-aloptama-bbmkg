@@ -14,8 +14,13 @@ export interface PrintDocumentOptions {
   css?: string;
   /** Bilah "Cetak / Simpan PDF" di atas dokumen (hilang saat cetak). false = tanpa bilah. */
   toolbar?: false | { text?: string; width?: string };
-  /** Muat Tailwind CDN untuk dokumen yang memakai class Tailwind (butuh internet). */
+  /**
+   * Dokumen memakai class Tailwind. CSS-nya diambil dari stylesheet aplikasi yang sedang
+   * terbuka (bundle sendiri, tidak butuh internet), lihat collectAppStyleHtml().
+   */
   tailwind?: boolean;
+  /** HTML tambahan untuk <head> (mis. <link>/<style> hasil collectAppStyleHtml). */
+  extraHeadHtml?: string;
   /** Jeda (ms) sebelum dialog cetak muncul otomatis. null = tidak otomatis. Bawaan 600. */
   autoPrintDelayMs?: number | null;
   /** HTML footer yang diulang di bawah SETIAP halaman tanpa menimpa isi. */
@@ -40,7 +45,7 @@ export function buildPrintDocument(opts: PrintDocumentOptions): string {
     bodyHtml,
     css = '',
     toolbar = {},
-    tailwind = false,
+    extraHeadHtml = '',
     autoPrintDelayMs = 600,
     repeatFooterHtml,
     footerSpace = '26mm',
@@ -75,7 +80,7 @@ export function buildPrintDocument(opts: PrintDocumentOptions): string {
 <head>
   <meta charset="UTF-8">
   <title>${escapeHtml(title)}</title>
-  ${tailwind ? '<script src="https://cdn.tailwindcss.com"></script>' : ''}
+  ${extraHeadHtml}
   <style>${PRINT_BASE_CSS}
 ${css}</style>
 </head>
@@ -88,6 +93,25 @@ ${css}</style>
 }
 
 /**
+ * Mengumpulkan <link rel="stylesheet"> dan <style> dari halaman aplikasi yang sedang terbuka,
+ * supaya jendela cetak punya Tailwind & CSS yang sama TANPA memuat CDN eksternal.
+ * Production: <link> ke file CSS hasil build (URL dibuat absolut karena jendela cetak
+ * dibuka dari about:blank). Development: Vite menyisipkan <style>, jadi isinya disalin.
+ */
+export function collectAppStyleHtml(): string {
+  const parts: string[] = [];
+  document.querySelectorAll('link[rel="stylesheet"], style').forEach((el) => {
+    if (el instanceof HTMLLinkElement) {
+      if (el.href) parts.push(`<link rel="stylesheet" href="${escapeHtml(el.href)}">`);
+    } else if (el.textContent) {
+      // Cegah "</style>" di dalam isi menutup tag lebih awal.
+      parts.push(`<style>${el.textContent.replace(/<\/style/gi, '<\\/style')}</style>`);
+    }
+  });
+  return parts.join('\n  ');
+}
+
+/**
  * Membuka jendela cetak. Mengembalikan false bila popup diblokir browser —
  */
 export function openPrintWindow(opts: OpenPrintWindowOptions): boolean {
@@ -95,7 +119,8 @@ export function openPrintWindow(opts: OpenPrintWindowOptions): boolean {
   const win = window.open('', '_blank', features);
   if (!win) return false;
   win.document.open();
-  win.document.write(buildPrintDocument(opts));
+  const extraHeadHtml = opts.tailwind ? collectAppStyleHtml() + (opts.extraHeadHtml ?? '') : opts.extraHeadHtml;
+  win.document.write(buildPrintDocument({ ...opts, extraHeadHtml }));
   win.document.close();
   return true;
 }

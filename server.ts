@@ -15,7 +15,6 @@ import {
 } from "./simon-backend/src/db/seedData.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import perbaikanRoutes from './simon-backend/src/routes/perbaikanRoutes.js';
 
 // Bikin password acak yang aman & gampang dibaca manusia
 function generateRandomPassword(): string {
@@ -238,11 +237,8 @@ async function autoSeedDatabase() {
 // Mount Centralized API Router
 app.use("/api", apiRouter);
 app.use("/api/v1", apiRouter);
-// perbaikanRoutes dulu sempat didaftarkan SEBELUM express.json() terpasang
-// (di atas, dekat inisialisasi app) - akibatnya req.body selalu undefined
-// saat submit form Laporan Perbaikan. Sekarang didaftarkan di sini, SETELAH
-// express.json() sudah aktif, supaya body JSON ter-parse dengan benar.
-app.use("/api", perbaikanRoutes);
+// Semua rute (termasuk perbaikan) didaftarkan di apiRouter (routes/index.ts),
+// SETELAH express.json() & cookieParser() terpasang di atas.
 
 async function startServer() {
   // Setup Frontend: Mode Dev (Vite Middleware) vs Production (Static Dist)

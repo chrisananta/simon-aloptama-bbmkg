@@ -4,6 +4,7 @@ import { PerbaikanRecord } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 import { PerbaikanFormModal } from './PerbaikanFormModal';
 import { PerbaikanPrintModal } from './PerbaikanPrintModal';
+import { ConfirmDialog } from '../../shared/components/modals/ConfirmDialog';
 
 export const PerbaikanView: React.FC = () => {
   const [records, setRecords] = useState<PerbaikanRecord[]>([]);
@@ -17,10 +18,20 @@ export const PerbaikanView: React.FC = () => {
 
   useEffect(() => { fetchRecords(); }, []);
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Yakin ingin menghapus laporan perbaikan ini?')) {
-      await apiClient.perbaikan.delete(id);
-      fetchRecords();
+  const [deleteTarget, setDeleteTarget] = useState<PerbaikanRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await apiClient.perbaikan.delete(deleteTarget.id);
+      await fetchRecords();
+      setDeleteTarget(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus laporan perbaikan.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -83,7 +94,7 @@ export const PerbaikanView: React.FC = () => {
                       <button onClick={() => setSelectedRecordForPrint(r)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Cetak PDF">
                         <FileText size={16} />
                       </button>
-                      <button onClick={() => handleDelete(r.id)} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Hapus">
+                      <button onClick={() => setDeleteTarget(r)} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Hapus">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -97,6 +108,17 @@ export const PerbaikanView: React.FC = () => {
 
       <PerbaikanFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSaved={fetchRecords} />
       <PerbaikanPrintModal isOpen={!!selectedRecordForPrint} onClose={() => setSelectedRecordForPrint(null)} record={selectedRecordForPrint} />
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Hapus Laporan Perbaikan?"
+          loading={isDeleting}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={handleConfirmDelete}
+        >
+          Laporan <strong className="text-slate-900">{deleteTarget.namaAlat}</strong> ({deleteTarget.lokasiAlat}) tanggal <strong className="text-slate-900">{deleteTarget.tanggal}</strong> akan dihapus permanen.
+        </ConfirmDialog>
+      )}
     </div>
   );
 };

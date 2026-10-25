@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { 
   BarChart2, 
   Clock, 
@@ -29,8 +29,11 @@ import { AloptamaDevice, UPTStation, YearlyScoreMap, MonthlyDeviceScore } from '
 import { apiClient } from '../../shared/api';
 import { isSameUpt, findStation } from '../../shared/utils/uptMatch';
 import { WaReportModal } from '../monitoring/WaReportModal';
-import { WeeklySlaOlaReportModal } from './WeeklySlaOlaReportModal';
-import { UptSlaOlaReportModal } from './UptSlaOlaReportModal';
+import { useEverTrue } from '../../shared/hooks/useEverTrue';
+
+// Modal laporan besar: dimuat saat pertama kali dibuka, bukan ikut bundle halaman SLA/OLA.
+const WeeklySlaOlaReportModal = lazy(() => import('./WeeklySlaOlaReportModal').then((m) => ({ default: m.WeeklySlaOlaReportModal })));
+const UptSlaOlaReportModal = lazy(() => import('./UptSlaOlaReportModal').then((m) => ({ default: m.UptSlaOlaReportModal })));
 import { SlaOlaHarianTable } from './SlaOlaHarianTable';
 import { useAuth } from '../auth/AuthContext';
 import { averageOfCategories } from '../../shared/utils/slaOlaTotals';
@@ -159,6 +162,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [isWeeklyReportModalOpen, setIsWeeklyReportModalOpen] = useState(false);
   const [isUptReportModalOpen, setIsUptReportModalOpen] = useState(false);
+  const weeklyModalLoaded = useEverTrue(isWeeklyReportModalOpen);
+  const uptModalLoaded = useEverTrue(isUptReportModalOpen);
   // Daftar Alat Gangguan / Mati: tampilkan 10 teratas, sisanya lewat "Lihat selengkapnya"
   const LIST_PREVIEW_LIMIT = 10;
   const [showAllGangguan, setShowAllGangguan] = useState(false);
@@ -1115,12 +1120,18 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         stations={stations}
       />
 
+      {weeklyModalLoaded && (
+      <Suspense fallback={null}>
       <WeeklySlaOlaReportModal
         isOpen={isWeeklyReportModalOpen}
         onClose={() => setIsWeeklyReportModalOpen(false)}
         devices={devices}
       />
+      </Suspense>
+      )}
 
+      {uptModalLoaded && (
+      <Suspense fallback={null}>
       <UptSlaOlaReportModal
         isOpen={isUptReportModalOpen}
         onClose={() => setIsUptReportModalOpen(false)}
@@ -1138,6 +1149,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         totalGangguan={totalGangguanSum}
         totalMati={totalMatiSum}
       />
+      </Suspense>
+      )}
     </div>
   );
 };

@@ -79,13 +79,11 @@ export const historyController = {
         historyLogs: combined,
       });
     } catch (error) {
-      console.warn('getHistoryLogs PostgreSQL note:', (error as any)?.message || error);
-      return res.json({
-        status: 'success',
-        type: 'HISTORICAL_RECORDS',
-        source: 'FALLBACK',
-        totalRecords: 0,
-        historyLogs: [],
+      console.error('getHistoryLogs PostgreSQL error:', (error as any)?.message || error);
+      return res.status(503).json({
+        status: 'error',
+        success: false,
+        message: 'Gagal mengambil riwayat dari database.',
       });
     }
   },

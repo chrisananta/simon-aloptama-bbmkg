@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Maximize2, Minimize2, Layers, Plus, Minus } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import { formatDateIndo } from '../../shared/utils/dateUtils';

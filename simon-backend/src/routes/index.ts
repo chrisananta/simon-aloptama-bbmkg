@@ -14,16 +14,13 @@ import perbaikanRoutes from './perbaikanRoutes.js';
 const apiRouter = Router();
 
 /**
- * Pendaftaran Rute Utama API SIMON Aloptama BBMKG Wilayah V
- * Menghubungkan seluruh modul backend secara terpusat dan konsisten.
+ * Pendaftaran Rute Utama API SIMON Aloptama BBMKG Wilayah V Menghubungkan seluruh modul backend secara terpusat dan konsisten.
  */
 apiRouter.use('/', authRoutes);
 apiRouter.use('/', deviceRoutes);
 apiRouter.use('/', stationRoutes);
 apiRouter.use('/', slaOlaRoutes);
 apiRouter.use('/', calibrationRoutes);
-apiRouter.use('/', auditLogRoutes);
-apiRouter.use('/', petugasRoutes);
 apiRouter.use('/', auditLogRoutes);
 apiRouter.use('/', petugasRoutes);
 apiRouter.use('/', gensetRoutes);

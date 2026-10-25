@@ -47,8 +47,8 @@ export const auditLogController = {
       });
       return res.json({ success: true, count: logs.length, data: logs });
     } catch (error) {
-      console.warn('getAuditLogs PostgreSQL note:', (error as any)?.message || error);
-      return res.json({ success: true, count: 0, data: [] });
+      console.error('getAuditLogs PostgreSQL error:', (error as any)?.message || error);
+      return res.status(503).json({ success: false, message: 'Gagal mengambil audit log dari database.' });
     }
   },
 

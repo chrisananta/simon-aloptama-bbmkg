@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Plus, FileText, Calendar as CalIcon, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Zap, Plus, FileText, Calendar as CalIcon, Trash2, X } from 'lucide-react';
 import { GensetRecord } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 import { GensetFormModal } from './GensetFormModal';
 import { GensetReportModal } from './GensetReportModal';
+import { ConfirmDialog } from '../../shared/components/modals/ConfirmDialog';
 
 export const GensetView: React.FC = () => {
   const [records, setRecords] = useState<GensetRecord[]>([]);
@@ -132,38 +133,14 @@ export const GensetView: React.FC = () => {
 
       {/* Modal Konfirmasi Hapus */}
       {deleteConfirmRecord && (
-        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 text-center space-y-4">
-            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto shrink-0">
-              <AlertTriangle size={24} />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-slate-900 text-base mb-1">Hapus Riwayat Monitoring?</h3>
-              <p className="text-slate-600 text-xs">
-                Data monitoring tanggal <strong className="text-slate-900">{deleteConfirmRecord.tanggal}</strong> ({deleteConfirmRecord.gedung}) oleh <strong className="text-slate-900">{deleteConfirmRecord.petugas}</strong> akan dihapus permanen.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={() => setDeleteConfirmRecord(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={handleDeleteRecord}
-                className="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {isDeleting ? 'Menghapus...' : 'Hapus Data'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="Hapus Riwayat Monitoring?"
+          loading={isDeleting}
+          onCancel={() => setDeleteConfirmRecord(null)}
+          onConfirm={handleDeleteRecord}
+        >
+          Data monitoring tanggal <strong className="text-slate-900">{deleteConfirmRecord.tanggal}</strong> ({deleteConfirmRecord.gedung}) oleh <strong className="text-slate-900">{deleteConfirmRecord.petugas}</strong> akan dihapus permanen.
+        </ConfirmDialog>
       )}
     </div>
   );
