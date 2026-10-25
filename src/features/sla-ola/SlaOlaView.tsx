@@ -864,6 +864,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
       </div>
 
+      {/* TABEL HARIAN SLA & OLA (alat x tanggal) */}
+      <SlaOlaHarianTable devices={uptFilteredDevices} />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
@@ -987,9 +990,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           )}
         </div>
       </div>
-
-      {/* TABEL HARIAN SLA & OLA (alat x tanggal) */}
-      <SlaOlaHarianTable devices={uptFilteredDevices} />
 
       {permissions.canViewUnreportedList && (
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
