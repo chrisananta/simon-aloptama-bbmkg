@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE } from '../utils/dateUtils.js';
+import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE, certificateValidUntil } from '../utils/dateUtils.js';
 import { syncCalibrationListing } from '../utils/calibrationList.js';
 import { loadLatestReportSnapshot } from '../utils/latestSlaOlaReport.js';
 
@@ -251,6 +251,13 @@ export const deviceController = {
           longitude: body.longitude,
           calibrationStatus: body.calibrationStatus,
           lastCalibrated: body.lastCalibrated,
+          // Teknisi tidak boleh mengisi masa berlaku sendiri (nilai dari client dibuang), tapi
+          // bila ia MENGGANTI tanggal kalibrasi, masa berlaku ikut dihitung server (+1 tahun - 1 hari).
+          // Kalau tanggalnya tidak berubah, masa berlaku yang sudah ada tidak disentuh.
+          calibrationValidUntil:
+            body.lastCalibrated && body.lastCalibrated !== formatDateOnly(existing.lastCalibrated)
+              ? certificateValidUntil(body.lastCalibrated)
+              : undefined,
         };
       }
       const station = body.uptStation ? await findStationByNameOrCode(body.uptStation) : null;

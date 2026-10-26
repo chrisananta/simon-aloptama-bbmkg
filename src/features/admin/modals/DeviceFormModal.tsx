@@ -4,6 +4,15 @@ import { UPTStation, AloptamaDevice, EquipmentCategory, CalibrationStatus } from
 import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../../shared/utils/calibration';
 import { getTodayIsoWIT } from '../../../shared/utils/dateUtils';
 
+// Masa berlaku sertifikat = tanggal kalibrasi + 1 tahun - 1 hari (sama dengan form Kalibrasi).
+const nextCertificateDate = (dateStr: string): string => {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  if (isNaN(d.getTime())) return '';
+  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+};
+
 interface DeviceFormModalProps {
   stations: UPTStation[];
   categories: EquipmentCategory[];
@@ -204,7 +213,15 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                     <input
                       type="date"
                       value={deviceForm.lastCalibrated || ''}
-                      onChange={(e) => setDeviceForm({ ...deviceForm, lastCalibrated: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setDeviceForm({
+                          ...deviceForm,
+                          lastCalibrated: value,
+                          // Masa berlaku ikut dihitung otomatis; admin masih bisa mengubahnya manual sesudahnya.
+                          calibrationValidUntil: value ? nextCertificateDate(value) : deviceForm.calibrationValidUntil,
+                        });
+                      }}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white"
                     />
                   </div>

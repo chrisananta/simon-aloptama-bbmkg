@@ -44,6 +44,18 @@ export function formatDateOnly(value: Date | null | undefined): string | null {
 }
 
 /**
+ * Masa berlaku sertifikat kalibrasi = tanggal kalibrasi + 1 tahun - 1 hari
+ * (aturan yang sama dengan form input Kalibrasi di frontend). Pakai metode UTC agar
+ * hasilnya tidak bergeser oleh zona waktu server.
+ */
+export function certificateValidUntil(lastCalibrated: string): string {
+  const d = parseDateOnly(lastCalibrated);
+  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
  * Tanggal "hari ini" (YYYY-MM-DD) menurut zona waktu BBMKG V, Asia/Jayapura
  * (WIT, UTC+9). Dipakai sebagai patokan validasi pengisian SLA/OLA susulan
  * (backdate) supaya konsisten dengan jam operasional UPT, bukan UTC server.
