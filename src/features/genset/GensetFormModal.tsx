@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Zap, Plus, Trash2, Clock, Building, CheckCircle, Users } from 'lucide-react';
 import { apiClient } from '../../shared/api';
 import { getTodayIsoWIT } from '../../shared/utils/dateUtils';
@@ -115,6 +115,28 @@ export const GensetFormModal: React.FC<{ isOpen: boolean; onClose: () => void; o
       setCatatan('');
     }
   }, [isOpen, masterPetugas]);
+
+  // Otomatis: kesimpulan & catatan mengikuti komponen yang berstatus Buruk
+  const lastAutoCatatan = useRef('');
+  useEffect(() => {
+    const buruk: string[] = [];
+    (Object.keys(CHECKLIST_SECTIONS) as Array<keyof typeof CHECKLIST_SECTIONS>).forEach(secKey => {
+      CHECKLIST_SECTIONS[secKey].items.forEach(item => {
+        if (checklist[secKey]?.[item] === 'Buruk') buruk.push(item);
+      });
+    });
+
+    // Kesimpulan: "RUSAK" yang dipilih manual tidak ditimpa
+    setKesimpulan(prev => {
+      if (buruk.length > 0) return prev === 'RUSAK' ? prev : 'PERLU PERBAIKAN';
+      return prev === 'PERLU PERBAIKAN' ? 'BAIK' : prev;
+    });
+
+    // Catatan: hanya diganti bila kosong atau masih berisi teks otomatis sebelumnya
+    const autoText = buruk.length > 0 ? `${buruk.join(', ')} perlu perbaikan.` : '';
+    setCatatan(prev => (prev === '' || prev === lastAutoCatatan.current ? autoText : prev));
+    lastAutoCatatan.current = autoText;
+  }, [checklist]);
 
   if (!isOpen) return null;
 
@@ -246,7 +268,7 @@ export const GensetFormModal: React.FC<{ isOpen: boolean; onClose: () => void; o
             <div className="flex items-center justify-between">
               <label className="font-bold text-slate-800 flex items-center gap-1.5">
                 <Users size={16} className="text-[#0052CC]" />
-                Petugas Monitoring ({selectedPetugas.length} Personel) *
+                Petugas Monitoring ({selectedPetugas.length} Petugas) *
               </label>
               {selectedPetugas.length < masterPetugas.length && selectedPetugas.length < 5 && (
                 <button
@@ -254,7 +276,7 @@ export const GensetFormModal: React.FC<{ isOpen: boolean; onClose: () => void; o
                   onClick={handleAddPetugasSlot}
                   className="text-xs font-bold text-[#0052CC] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <Plus size={14} /> Tambah Slot Petugas
+                  <Plus size={14} /> Tambah Petugas
                 </button>
               )}
             </div>

@@ -1,18 +1,22 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { EquipmentCategory, UPTStation } from '../../shared/types';
+import { ActiveNavMenu, EquipmentCategory, UPTStation } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 import { MapContainer } from '../monitoring/MapContainer';
 import { DashboardPageProps } from './DashboardTypes';
 import { DashboardCard } from './DashboardCard';
 import { MapFilterControls } from './MapFilterControls';
+import { KondisiAloptamaSection } from './KondisiAloptamaSection';
+import { AksesInformasiSection } from './AksesInformasiSection';
 import { findStation } from '../../shared/utils/uptMatch';
 import { loadPapuaProvinces, findProvince, ProvinceShape } from '../../shared/utils/provinceLookup';
 
 interface ExtendedDashboardProps extends DashboardPageProps {
   stations?: UPTStation[];
+  /** Pindah menu (dipakai tautan "Lihat Semuanya" di Kondisi Aloptama). */
+  onNavigate?: (menu: ActiveNavMenu) => void;
 }
 
-export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stations }) => {
+export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stations, onNavigate }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('ALL');
   const [selectedUpt, setSelectedUpt] = useState('ALL');
@@ -118,7 +122,13 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8 sm:space-y-12">
+      {/* Satu sub bab: judul + kartu ringkasan + peta, jaraknya dibuat rapat */}
+      <div className="space-y-4 sm:space-y-5">
+      <h2 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 leading-tight mb-2 sm:mb-5">
+        Dashboard Monitoring Aloptama
+      </h2>
+
       <DashboardCard
         totalCount={totalCount}
         normalCount={normalCount}
@@ -178,6 +188,14 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
           />
         </div>
       </div>
+      </div>
+
+      <KondisiAloptamaSection
+        devices={devices}
+        onViewAll={onNavigate ? () => onNavigate('sla-ola') : undefined}
+      />
+
+      <AksesInformasiSection onNavigate={onNavigate} />
     </div>
   );
 };

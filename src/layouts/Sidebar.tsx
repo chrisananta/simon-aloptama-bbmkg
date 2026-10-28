@@ -39,6 +39,8 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   mobileHidden?: boolean;
   onHideMobile?: () => void;
+  /** Dari kondisi hanya-logo, buka rail ikon. */
+  onRevealMobile?: () => void;
   totalDevices?: number;
   normalCount?: number;
   gangguanCount?: number;
@@ -53,6 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   mobileHidden = false,
   onHideMobile,
+  onRevealMobile,
   devices,
 }) => {
   const { user, isMenuAllowed, logout } = useAuth();
@@ -117,6 +120,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   // Filter menus according to logged-in user RBAC
+  // Tiga kondisi: (1) hanya logo -> klik -> (2) rail ikon -> klik logo -> (3) penuh + latar blur.
+  const logoOnly = collapsed && mobileHidden;
+
   const visibleMenuItems = allMenuItems.filter((item) => isMenuAllowed(item.id));
 
   return (
@@ -127,13 +133,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onToggleCollapse();
             onHideMobile?.();
           }}
-          className="fixed inset-0 bg-slate-900/40 z-20 md:hidden backdrop-blur-xs transition-opacity"
+          className="fixed inset-0 bg-slate-900/40 z-[25] backdrop-blur-sm transition-opacity"
         />
       )}
 
       <aside
-        className={`fixed top-7 left-0 bottom-0 z-30 flex flex-col bg-white border-r border-slate-200 text-slate-800 transition-all duration-300 shadow-md ${
-          collapsed ? 'w-16 md:w-20' : 'w-64 md:w-72'
+        className={`fixed top-7 left-0 ${logoOnly ? 'bottom-auto' : 'bottom-0'} z-30 flex flex-col bg-white border-r border-slate-200 text-slate-800 transition-all duration-300 ${
+          collapsed
+            ? `w-16 md:w-20 ${logoOnly ? 'shadow-none' : 'shadow-md'}`
+            : 'w-64 md:w-72 shadow-md'
         } ${mobileHidden ? '-translate-x-full sm:translate-x-0' : 'translate-x-0'}`}
       >
         {/* Header sidebar: putih & tinggi sama dengan Navbar (65px = h-16 + border)
@@ -146,8 +154,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {collapsed ? (
             // Sidebar tertutup: logo S menggantikan tombol panah — klik untuk membuka sidebar.
             <button
-              onClick={onToggleCollapse}
-              title="Buka Sidebar"
+              onClick={logoOnly ? onRevealMobile : onToggleCollapse}
+              title={logoOnly ? 'Tampilkan menu' : 'Buka Sidebar'}
               aria-label="Buka sidebar"
               className="flex items-center justify-center rounded-xl p-0.5 cursor-pointer transition-transform duration-200 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50"
             >
@@ -179,7 +187,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        <div className="flex-1 py-3 md:py-4 px-2 md:px-3 overflow-y-auto space-y-1.5">
+        <div className={`flex-1 py-3 md:py-4 px-2 md:px-3 overflow-y-auto space-y-1.5 ${logoOnly ? 'hidden' : ''}`}>
           <div className={`px-2 pb-2 ${collapsed ? 'hidden' : 'block'}`}>
             <p className="text-[10px] md:text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               NAVIGASI OPERASIONAL
@@ -194,10 +202,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={item.id}
                 onClick={() => {
                   onSelectMenu(item.id);
-                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                    if (!collapsed) onToggleCollapse();
-                    onHideMobile?.();
-                  }
+                  // Setelah memilih menu, sidebar langsung kembali ke kondisi hanya-logo
+                  // (sama di desktop dan HP), baik dari rail ikon maupun dari tampilan penuh.
+                  if (!collapsed) onToggleCollapse();
+                  onHideMobile?.();
                 }}
                 className={`w-full flex items-center px-2.5 md:px-3 py-2.5 md:py-3 rounded-xl transition-all duration-200 text-left font-medium text-xs md:text-sm group ${
                   isActive
@@ -232,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
 
-        <div className="p-3 border-t border-slate-200 bg-slate-50/80 flex flex-col gap-2">
+        <div className={`p-3 border-t border-slate-200 bg-slate-50/80 flex flex-col gap-2 ${logoOnly ? 'hidden' : ''}`}>
           {!collapsed ? (
             <>
               {user && (

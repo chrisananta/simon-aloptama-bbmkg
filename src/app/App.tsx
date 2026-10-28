@@ -12,6 +12,7 @@ import { isSameUpt } from '../shared/utils/uptMatch';
 import { ServerFetchResult } from '../shared/api/serverDataService';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
+import { DashboardFooter } from '../features/dashboard/DashboardFooter';
 import { TimeBar } from '../layouts/TimeBar';
 import { useMenuRoute } from './useMenuRoute';
 
@@ -262,6 +263,7 @@ function AppContent() {
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           mobileHidden={mobileSidebarHidden}
           onHideMobile={() => setMobileSidebarHidden(true)}
+          onRevealMobile={() => setMobileSidebarHidden(false)}
           totalDevices={totalDevices}
           normalCount={normalCount}
           gangguanCount={gangguanCount}
@@ -286,13 +288,13 @@ function AppContent() {
         <main
           className={`flex-1 pt-[108px] sm:pt-[116px] pb-10 px-3 sm:px-4 md:px-6 transition-all duration-300 ${
             mobileSidebarHidden ? 'ml-0 sm:ml-16' : !sidebarCollapsed ? 'ml-0' : 'ml-16'
-          } ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-72'}
+          } ${mobileSidebarHidden ? 'md:ml-0' : 'md:ml-20'}
           }`}
         >
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             <Suspense fallback={<PageFallback />}>
             {activeMenu === 'dashboard' && (
-            <DashboardView devices={devicesData} stations={stationsData} lastUpdate={lastUpdate} />
+            <DashboardView devices={devicesData} stations={stationsData} lastUpdate={lastUpdate} onNavigate={(menu) => navigateMenu(menu)} />
           )}
 
             {activeMenu === 'sla-ola' && <SlaOlaView devices={devicesData} stations={stationsData} />}
@@ -341,6 +343,9 @@ function AppContent() {
             )}
             </Suspense>
           </div>
+
+          {activeMenu === 'dashboard' && <DashboardFooter />}
+
         </main>
 
         {/* BMKG Server Data Sync & Status Modal */}

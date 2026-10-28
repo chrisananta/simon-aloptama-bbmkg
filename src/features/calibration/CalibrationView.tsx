@@ -404,7 +404,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     ) : activeTab === 'latest' && listedStatus === 'error' ? (
                       <div className="space-y-1">
                         <p className="font-semibold text-rose-600">Daftar alat kalibrasi tidak dapat dimuat.</p>
-                        <p className="text-xs">Pastikan migration database sudah dijalankan, lalu muat ulang halaman.</p>
+                        <p className="text-xs">Pastikan database sudah dijalankan, lalu muat ulang halaman.</p>
                       </div>
                     ) : activeTab === 'latest' && listedStatus === 'ready' && listedIds.length === 0 ? (
                       <div className="space-y-2">

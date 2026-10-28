@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Calendar, CalendarDays, Layers, Loader2 } from 'lucide-react';
+import { Activity, Layers, Loader2 } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 
@@ -13,6 +13,9 @@ const MONTHS = [
 interface SlaOlaHarianTableProps {
   /** Daftar alat yang ditampilkan (sudah mengikuti filter UPT di header halaman). */
   devices: AloptamaDevice[];
+  /** Bulan (0-11) dan tahun mengikuti filter periode di header halaman. */
+  month: number;
+  year: number;
 }
 
 // Gaya sama dengan filter di header halaman SLA & OLA (SlaOlaView).
@@ -23,13 +26,10 @@ const selectClass =
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices }) => {
-  const now = new Date();
+export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices, month, year }) => {
   const [jenis, setJenis] = useState<'SLA' | 'OLA'>('SLA');
   // '' = belum dipilih user -> otomatis AWOS Kat.I (supaya tabel tidak terlalu panjang).
   const [category, setCategory] = useState('');
-  const [month, setMonth] = useState(now.getMonth()); // 0-11
-  const [year, setYear] = useState(now.getFullYear());
 
   const [daily, setDaily] = useState<DailyMap>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -153,30 +153,12 @@ export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices })
               ))}
             </select>
           </div>
-
-          <div className={filterBoxClass}>
-            <Calendar size={14} className="text-[#0052CC] shrink-0" />
-            <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className={selectClass} aria-label="Bulan">
-              {MONTHS.map((m, i) => (
-                <option key={m} value={i}>{m}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={filterBoxClass}>
-            <span>Tahun:</span>
-            <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={selectClass} aria-label="Tahun">
-              {Array.from({ length: 3 }, (_, i) => 2026 + i).map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
       {loadFailed && (
         <div className="px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
-          Gagal memuat isian harian dari server. Coba ganti periode atau muat ulang halaman.
+          Gagal memuat isian harian dari server. 
         </div>
       )}
 
@@ -191,7 +173,7 @@ export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices })
             <tr className="bg-slate-100 font-bold uppercase text-center">
               <th className="border border-slate-300 py-1.5 px-1 w-8">No</th>
               <th className="border border-slate-300 py-1.5 px-2 text-left min-w-[150px]">Nama Alat</th>
-              <th className="border border-slate-300 py-1.5 px-2 text-left min-w-[100px]">Kategori</th>
+              <th className="border border-slate-300 py-1.5 px-2 text-center min-w-[100px]">Kategori</th>
               {dayColumns.map((d) => (
                 <th key={d} className="border border-slate-300 py-1.5 px-0.5 min-w-[26px]">{d}</th>
               ))}
@@ -212,7 +194,7 @@ export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices })
                   <tr key={dev.devicesId} className="hover:bg-blue-50/40">
                     <td className="border border-slate-300 py-1 px-1 text-center font-semibold">{idx + 1}</td>
                     <td className="border border-slate-300 py-1 px-2 font-semibold">{dev.site}</td>
-                    <td className="border border-slate-300 py-1 px-2 text-slate-600">{dev.category}</td>
+                    <td className="border border-slate-300 py-1 px-2 text-center text-slate-600">{dev.category}</td>
                     {dayColumns.map((d) => (
                       <td
                         key={d}

@@ -395,9 +395,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Terapkan nilai kondisi/OLA/kendala yang SAMA ke semua alat yang
-      // dicentang, satu per satu ke backend (biar tiap alat tetap tercatat
-      // sebagai baris histori tersendiri).
+      // Terapkan nilai kondisi/OLA/kendala yang SAMA ke semua alat yang dicentang, satu per satu ke backend.
       for (const deviceId of targetIds) {
         await onSaveSlaOla({
           uptStation: data.uptStation,
@@ -421,13 +419,9 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       setTimeout(() => {
         setIsSubmitted(false);
         // Reset kalkulator ke default netral untuk batch berikutnya
-        // (alat dengan nilai kondisi yang berbeda).
         setValue("kondisiSla", true);
         setValue("kondisiOla", 100);
         setValue("kendala", "");
-        // Modal TETAP terbuka - user tinggal centang alat berikutnya
-        // yang nilainya berbeda, atau ganti filter jenis peralatan,
-        // atau tutup manual kalau semua sudah selesai.
       }, 1200);
     } catch (err: any) {
       console.error("Gagal menyimpan SLA/OLA:", err);
@@ -461,7 +455,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "2.14%" },
         { key: "radiasiMatahari", label: "Sensor Radiasi Matahari", weight: "2.14%" },
         { key: "curahHujan", label: "Sensor Curah Hujan", weight: "2.14%" },
-        { key: "celo", label: "Sensor Ceilometer (Celo)", weight: "2.14%" },
+        { key: "celo", label: "Sensor Ceilometer", weight: "2.14%" },
         { key: "visibility", label: "Sensor Visibility (RVR)", weight: "2.14%" },
         { key: "ld", label: "Sensor Lightning Detector (LD)", weight: "2.14%" },
       ];
@@ -474,7 +468,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "suhu", label: "Sensor Suhu Udara", weight: "3.00%" },
         { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "3.00%" },
         { key: "curahHujan", label: "Sensor Curah Hujan", weight: "3.00%" },
-        { key: "celo", label: "Sensor Ceilometer (Celo)", weight: "3.00%" },
+        { key: "celo", label: "Sensor Ceilometer", weight: "3.00%" },
         { key: "visibility", label: "Sensor Visibility", weight: "3.00%" },
       ];
     }
@@ -618,7 +612,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <WrenchIcon size={14} className="text-[#0052CC]" />
-                  JENIS PERALATAN ALOPTAMA:
+                  JENIS PERALATAN :
                 </label>
                 <select
                   {...register("category")}
@@ -639,9 +633,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            {/* Field Pemilihan Unit Alat Spesifik - List + Tombol Checklist,
-                supaya UPT bisa mengisi banyak alat sekaligus dalam satu
-                sesi buka modal, tanpa perlu buka-tutup berulang kali. */}
+            {/* Field Pemilihan Unit Alat Spesifik - List + Tombol Checklist, */}
             {matchingDevices.length > 0 ? (
               <div className="space-y-1.5 bg-blue-50/60 p-3 rounded-xl border border-blue-200 animate-fade-in">
                 <div className="flex items-center justify-between gap-2">
@@ -662,13 +654,12 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                       }}
                       className="text-[10px] font-bold text-[#0052CC] hover:underline cursor-pointer disabled:opacity-50 shrink-0"
                     >
-                      Pilih Semua Sisa
+                      Pilih Semua
                     </button>
                   )}
                 </div>
                 <p className="text-[10px] text-blue-800/80 -mt-0.5">
-                  Centang semua unit yang nilainya SAMA, isi kalkulator/manual di bawah sekali,
-                  lalu Simpan. Alat dengan nilai berbeda bisa dicentang & disimpan terpisah setelahnya.
+                  Centang semua alat jika nilainya sama. Alat dengan nilai berbeda bisa dicentang & disimpan terpisah.
                 </p>
                 <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
                   {matchingDevices.map((d) => {
@@ -712,7 +703,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 </div>
                 {selectedDeviceIds.size > 0 && (
                   <span className="text-[10px] text-blue-700 font-bold block mt-0.5">
-                    {selectedDeviceIds.size} alat dipilih - nilai di bawah akan diterapkan ke semuanya.
+                    {selectedDeviceIds.size} alat dipilih - nilai OLA akan diterapkan ke semuanya.
                   </span>
                 )}
                 {matchingDevices.length > 0 && matchingDevices.every((d) => filledDeviceIds.has(d.devicesId)) && (
@@ -722,11 +713,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 )}
               </div>
             ) : (
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-medium flex items-center gap-2">
+              <div className="p-2.5 bg-amber-50/20 border border-amber-200/80 rounded-xl text-[11px] text-amber-800 font-medium flex items-center gap-2">
 
                 <span>⚠️</span>
                 <span>
-                  Tidak ada unit spesifik <strong>{watchCategory}</strong> yang terdaftar di <strong>{targetStationName}</strong>.
+                  Tidak ada alat <strong>{watchCategory}</strong> yang terdaftar di <strong>{targetStationName}</strong>.
                 </span>
               </div>
             )}
@@ -766,9 +757,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                     <Info size={14} className="text-[#0052CC] shrink-0" />
                     Pilih Kondisi Kelayakan Aspek Peralatan ({watchCategory}):
                   </h4>
-                  <span className="text-[11px] font-bold text-[#0052CC] bg-blue-100 px-2.5 py-0.5 rounded-lg border border-blue-200 shrink-0">
-                    Kalkulasi OLA: {watchKondisiOla}%
-                  </span>
                 </div>
 
                 {(watchCategory === "AWS" ||
@@ -1401,9 +1389,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   <label className="block text-xs font-bold text-slate-800">
                     KONDISI SLA (Service Level Agreement):
                   </label>
-                  <p className="text-[11px] text-slate-500">
-                    Keberadaan/ketersediaan peralatan dalam kondisi ON (aktif)
-                  </p>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <button
@@ -1453,13 +1438,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 <div>
                   <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                     Total Persentase OLA
-                  </p>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
-                    {!watchKondisiSla
-                      ? "Kondisi SLA OFF — OLA otomatis 0%"
-                      : modeInput === "KALKULATOR"
-                        ? "Hasil kalkulasi matriks aspek"
-                        : "Hasil input manual slider OLA"}
                   </p>
                 </div>
               </div>

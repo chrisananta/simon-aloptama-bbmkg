@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const getMenuTitle = () => {
     switch (activeMenu) {
       case 'dashboard':
-        return 'Dashboard Monitoring Aloptama';
+        return 'SIMON BMKG';
       case 'sla-ola':
         return 'SLA & OLA Aloptama';
       case 'kalibrasi':
@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header
       className={`fixed top-7 right-0 z-20 bg-white border-b border-slate-200 shadow-xs transition-all duration-300 ${
         mobileSidebarHidden ? 'left-0 sm:left-16' : 'left-16'
-      } ${collapsed ? 'md:left-20' : 'md:left-72'}`}
+      } md:left-20`}
     >
       {/* Bar tanggal & jam sudah dipindah ke <TimeBar /> (lihat App.tsx) —
           full-width dari ujung ke ujung layar, tidak lagi kepentok sidebar.
