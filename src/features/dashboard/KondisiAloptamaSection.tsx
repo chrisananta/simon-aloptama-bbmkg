@@ -10,32 +10,53 @@ const MONTH_NAMES = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ];
 
+// Cache sementara (per sesi browser) agar kembali ke Dashboard tidak menunggu lagi.
+const CACHE_TTL_MS = 60_000;
+const summaryCache = new Map<string, { data: YearlyScoreMap; at: number }>();
+
 interface KondisiAloptamaSectionProps {
   devices: AloptamaDevice[];
-  /** "Lihat Semuanya" diklik (mis. pindah ke halaman SLA & OLA). */
+  /** Dipanggil saat "Lihat Semuanya" diklik (mis. pindah ke halaman SLA & OLA). */
   onViewAll?: () => void;
 }
 
 const fmt = (v: number) => `${v.toFixed(1).replace('.', ',')}%`;
 
+/**
+ * "Kondisi Aloptama": kartu SLA & OLA per kategori peralatan untuk BULAN BERJALAN.
+ * Angkanya memakai rumus yang sama dengan tabel "Rekapitulasi, Kondisi & Analisa SLA OLA"
+ * (helper bersama di shared/utils/slaOlaCategory.ts), jadi selalu konsisten.
+ */
 export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ devices, onViewAll }) => {
   const now = new Date();
   const monthIdx = now.getMonth();
   const year = now.getFullYear();
 
-  const [scores, setScores] = useState<YearlyScoreMap>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const cacheKey = `${year}-${monthIdx + 1}`;
+  const cached = summaryCache.get(cacheKey);
+  const [scores, setScores] = useState<YearlyScoreMap>(() => cached?.data ?? {});
+  // Kalau ada cache, kartu langsung tampil; data baru tetap diambil di belakang layar.
+  const [isLoading, setIsLoading] = useState(!cached);
   const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
-    apiClient.slaOlaSummary.fetch(year).then((result) => {
+    const hit = summaryCache.get(cacheKey);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+      setScores(hit.data);
+      setIsLoading(false);
+      return;
+    }
+    // Hanya bulan berjalan yang diminta (bukan satu tahun penuh) supaya cepat.
+    apiClient.slaOlaSummary.fetch(year, monthIdx + 1).then((result) => {
       if (cancelled) return;
       if (result === null) {
-        setScores({});
-        setLoadFailed(true);
+        if (!hit) {
+          setScores({});
+          setLoadFailed(true);
+        }
       } else {
+        summaryCache.set(cacheKey, { data: result, at: Date.now() });
         setScores(result);
         setLoadFailed(false);
       }
@@ -44,7 +65,7 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
     return () => {
       cancelled = true;
     };
-  }, [year]);
+  }, [cacheKey, year, monthIdx]);
 
   const cards = useMemo(() => {
     const rows = categoryPercentsForMonth(devices, scores, monthIdx + 1);
@@ -53,7 +74,7 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
       .filter((c) => c.jumlahLokasi > 0);
   }, [devices, scores, monthIdx]);
 
-  // Carousel: geser dengan swipe/scroll atau tombol panah
+  // Carousel: geser dengan swipe/scroll atau tombol panah, seperti bmkg.go.id
   const { trackRef, canPrev, canNext, updateArrows, slide } = useCarousel([cards.length, isLoading]);
 
   const arrowClass =
@@ -61,11 +82,11 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
 
   return (
     <section className="pt-6 sm:pt-12 lg:pt-16">
-
+      {/* Judul + tautan, mengikuti pola "Kualitas Udara — Lihat Semuanya" di bmkg.go.id */}
       <div className="mb-6 sm:mb-10">
         {/* Judul dan "Lihat Semuanya" satu baris, sejajar secara vertikal */}
         <div className="flex items-center justify-between gap-4">
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+          <h2 className="font-heading text-2xl sm:text-4xl font-bold text-slate-900 leading-tight">
             Kondisi Aloptama
           </h2>
           {onViewAll && (
@@ -79,7 +100,7 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
           )}
         </div>
         <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
-          Rata-rata SLA &amp; OLA bulan {MONTH_NAMES[monthIdx]} {year}
+          Rata-rata SLA &amp; OLA per kategori peralatan · {MONTH_NAMES[monthIdx]} {year}
         </p>
       </div>
 

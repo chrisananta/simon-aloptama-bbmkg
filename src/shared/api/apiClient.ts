@@ -396,9 +396,12 @@ export const apiClient = {
   // ----------------------------------------------------
   slaOlaSummary: {
     /** Mengembalikan null kalau gagal dimuat (beda dengan {} = memang belum ada data). */
-    fetch: async (tahun: number): Promise<YearlyScoreMap | null> => {
+    /** `bulan` (1-12) opsional: bila diisi, server hanya mengambil bulan itu (jauh lebih cepat). */
+    fetch: async (tahun: number, bulan?: number): Promise<YearlyScoreMap | null> => {
       try {
-        const res = await authFetch(`/api/sla-ola/summary?tahun=${tahun}`);
+        const res = await authFetch(
+          `/api/sla-ola/summary?tahun=${tahun}${bulan ? `&bulan=${bulan}` : ''}`
+        );
         if (res.ok) {
           const json = await res.json();
           if (json?.success) return (json.data || {}) as YearlyScoreMap;

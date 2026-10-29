@@ -242,15 +242,19 @@ export const slaOlaController = {
    */
   getYearlySummary: async (req: AuthRequest, res: Response) => {
     const parsedQuery = z
-      .object({ tahun: z.coerce.number().int().min(2000).max(2100) })
+      .object({
+        tahun: z.coerce.number().int().min(2000).max(2100),
+        // Opsional: batasi ke satu bulan (1-12) supaya query jauh lebih ringan (dipakai Dashboard).
+        bulan: z.coerce.number().int().min(1).max(12).optional(),
+      })
       .safeParse(req.query);
     if (!parsedQuery.success) {
       return res.status(400).json({ success: false, message: 'Query tahun wajib diisi dengan benar.' });
     }
     try {
-      const { tahun } = parsedQuery.data;
-      const start = new Date(Date.UTC(tahun, 0, 1));
-      const end = new Date(Date.UTC(tahun + 1, 0, 1));
+      const { tahun, bulan } = parsedQuery.data;
+      const start = new Date(Date.UTC(tahun, bulan ? bulan - 1 : 0, 1));
+      const end = bulan ? new Date(Date.UTC(tahun, bulan, 1)) : new Date(Date.UTC(tahun + 1, 0, 1));
 
       const [logs, adminActors] = await Promise.all([
         prisma.slaOlaLog.findMany({

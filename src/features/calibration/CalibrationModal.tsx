@@ -181,9 +181,6 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <h3 className="font-heading text-sm sm:text-lg font-bold">Input Data Kalibrasi Lapang</h3>
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-300 mt-0.5">
-                Penambahan Keterangan & Pelaksanaan Kalibrasi Lapang
-              </p>
             </div>
           </div>
           <button

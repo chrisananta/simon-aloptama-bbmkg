@@ -211,7 +211,6 @@ export const GensetFormModal: React.FC<{ isOpen: boolean; onClose: () => void; o
             </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base">Form Pengisian Monitoring Genset</h3>
-              <p className="text-[11px] text-slate-300">BBMKG Wilayah V Papua</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className="hover:bg-white/20 p-1.5 rounded-lg text-slate-300 hover:text-white transition-colors">
