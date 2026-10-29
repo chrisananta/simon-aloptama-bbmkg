@@ -119,8 +119,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  // Filter menus according to logged-in user RBAC
-  // Tiga kondisi: (1) hanya logo -> klik -> (2) rail ikon -> klik logo -> (3) penuh + latar blur.
   const logoOnly = collapsed && mobileHidden;
 
   const visibleMenuItems = allMenuItems.filter((item) => isMenuAllowed(item.id));
@@ -144,15 +142,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : 'w-64 md:w-72 shadow-md'
         } ${mobileHidden ? '-translate-x-full sm:translate-x-0' : 'translate-x-0'}`}
       >
-        {/* Header sidebar: putih & tinggi sama dengan Navbar (65px = h-16 + border)
-            supaya garis bawahnya lurus menyambung dengan Navbar. */}
+        {/* Header sidebar: putih & tinggi sama dengan Navbar (65px = h-16 + border)*/}
         <div
           className={`flex items-center border-b border-slate-200 bg-white h-[65px] shrink-0 transition-all duration-300 ${
             collapsed ? 'justify-center px-2' : 'justify-between px-3 md:px-4'
           }`}
         >
           {collapsed ? (
-            // Sidebar tertutup: logo S menggantikan tombol panah — klik untuk membuka sidebar.
+            // logo S untuk membuka sidebar.
             <button
               onClick={logoOnly ? onRevealMobile : onToggleCollapse}
               title={logoOnly ? 'Tampilkan menu' : 'Buka Sidebar'}
@@ -203,7 +200,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => {
                   onSelectMenu(item.id);
                   // Setelah memilih menu, sidebar langsung kembali ke kondisi hanya-logo
-                  // (sama di desktop dan HP), baik dari rail ikon maupun dari tampilan penuh.
                   if (!collapsed) onToggleCollapse();
                   onHideMobile?.();
                 }}

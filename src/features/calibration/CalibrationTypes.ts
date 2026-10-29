@@ -1,4 +1,4 @@
-import { AloptamaDevice, CalibrationRecord } from '../../shared/types';
+import { AloptamaDevice, CalibrationRecord, UPTStation } from '../../shared/types';
 
 export type { CalibrationRecord };
 
@@ -12,5 +12,7 @@ export interface CalibrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   devices: AloptamaDevice[];
-  onAddCalibrationRecord: (record: Omit<CalibrationRecord, 'id' | 'createdAt'> & { yearCreated?: string }) => void;
+  /** Daftar stasiun untuk dropdown Nama Stasiun UPT. */
+  stations?: UPTStation[];
+  onAddCalibrationRecord: (record: Omit<CalibrationRecord, 'id' | 'createdAt'> & { yearCreated?: string }) => void | Promise<void>;
 }

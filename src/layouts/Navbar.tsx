@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const getMenuTitle = () => {
     switch (activeMenu) {
       case 'dashboard':
-        return 'SIMON BMKG';
+        return 'SIMON BBMKG V';
       case 'sla-ola':
         return 'SLA & OLA Aloptama';
       case 'kalibrasi':
@@ -49,12 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         mobileSidebarHidden ? 'left-0 sm:left-16' : 'left-16'
       } md:left-20`}
     >
-      {/* Bar tanggal & jam sudah dipindah ke <TimeBar /> (lihat App.tsx) —
-          full-width dari ujung ke ujung layar, tidak lagi kepentok sidebar.
-          Header ini sekarang cuma berisi judul halaman — logo S pindah ke
-          header Sidebar (klik logo itu untuk membuka sidebar). Tombol logo
-          kecil di bawah ini HANYA muncul di HP saat sidebar tersembunyi
-          total, sebagai pemicu pertama untuk memunculkan rail ikon sidebar. */}
+
       <div className="h-16 flex items-center justify-between px-2.5 sm:px-4 md:px-6">
         <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 min-w-0 flex-1 mr-2 sm:mr-4">
           {mobileSidebarHidden && (

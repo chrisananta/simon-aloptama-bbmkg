@@ -379,6 +379,7 @@ function AppContent() {
               isOpen={isCalibrationModalOpen}
               onClose={() => setIsCalibrationModalOpen(false)}
               devices={devicesData}
+              stations={stationsData}
               onAddCalibrationRecord={handleAddCalibrationRecord}
             />
           </Suspense>

@@ -218,8 +218,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
 
-  // Pembanding "bulan kemarin" untuk kolom Analisa Perubahan. Untuk Januari, bulan kemarin
-  // adalah Desember tahun sebelumnya, jadi data tahun sebelumnya ikut diambil (hanya saat Januari).
   const [prevYearScores, setPrevYearScores] = useState<YearlyScoreMap>({});
   useEffect(() => {
     if (monthIdx !== 0) {
@@ -268,7 +266,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const rekapTableData = useMemo(() => {
     const targetMonthNum = monthIdx + 1;
-    // Bulan kemarin: bulan sebelumnya di tahun yang sama, atau Desember tahun lalu bila sekarang Januari.
     const prevScores = monthIdx === 0 ? prevYearScores : yearlyScores;
     const prevMonthNum = monthIdx === 0 ? 12 : monthIdx;
 
@@ -299,9 +296,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
       const sla = jumlahLokasi > 0 ? Number((totalSla / jumlahLokasi).toFixed(1)) : 0;
 
-      // Analisa perubahan = SLA bulan ini dikurangi SLA bulan kemarin (poin persen, dihitung dari
-      // angka SLA yang tampil di tabel). Hanya dihitung bila kedua bulan sama-sama punya data di
-      // kategori ini; kalau salah satunya kosong, tidak ada pembanding yang adil -> tampil "---".
+      // Analisa perubahan = SLA bulan ini dikurangi SLA bulan kemarin (poin persen, dihitung dari angka SLA yang tampil di tabel). Hanya dihitung bila kedua bulan sama-sama punya data; kalau salah satunya kosong, tidak ada pembanding yang adil -> tampil "---".
       let prevTotalSla = 0;
       let reportedPrev = 0;
       for (const d of catDevs) {
@@ -330,8 +325,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     });
   }, [yearlyScores, prevYearScores, monthIdx, uptFilteredDevices]);
 
-  // TOTAL PERSENTASE bulan terpilih = rata-rata sederhana persentase tiap jenis alat
-  // (jumlah persentase 11 jenis alat dibagi 11), BUKAN rata-rata berbobot jumlah lokasi.
+  // TOTAL PERSENTASE bulan terpilih = rata-rata sederhana persentase tiap jenis alatn(jumlah persentase 11 jenis alat dibagi 11)
   const monthlySlaValue = useMemo(() => {
     const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, monthIdx + 1);
     return averageOfCategories(rows.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.sla })));

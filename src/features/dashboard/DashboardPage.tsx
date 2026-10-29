@@ -124,7 +124,7 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
   return (
     <div className="space-y-8 sm:space-y-12">
       {/* Satu sub bab: judul + kartu ringkasan + peta, jaraknya dibuat rapat */}
-      <div className="space-y-4 sm:space-y-5">
+      <div className="space-y-4 sm:space-y-5 pt-4 sm:pt-8 lg:pt-12">
       <h2 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 leading-tight mb-2 sm:mb-5">
         Dashboard Monitoring Aloptama
       </h2>

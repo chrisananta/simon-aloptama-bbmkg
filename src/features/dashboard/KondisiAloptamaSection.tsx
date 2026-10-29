@@ -12,17 +12,12 @@ const MONTH_NAMES = [
 
 interface KondisiAloptamaSectionProps {
   devices: AloptamaDevice[];
-  /** Dipanggil saat "Lihat Semuanya" diklik (mis. pindah ke halaman SLA & OLA). */
+  /** "Lihat Semuanya" diklik (mis. pindah ke halaman SLA & OLA). */
   onViewAll?: () => void;
 }
 
 const fmt = (v: number) => `${v.toFixed(1).replace('.', ',')}%`;
 
-/**
- * "Kondisi Aloptama": kartu SLA & OLA per kategori peralatan untuk BULAN BERJALAN.
- * Angkanya memakai rumus yang sama dengan tabel "Rekapitulasi, Kondisi & Analisa SLA OLA"
- * (helper bersama di shared/utils/slaOlaCategory.ts), jadi selalu konsisten.
- */
 export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ devices, onViewAll }) => {
   const now = new Date();
   const monthIdx = now.getMonth();
@@ -58,7 +53,7 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
       .filter((c) => c.jumlahLokasi > 0);
   }, [devices, scores, monthIdx]);
 
-  // Carousel: geser dengan swipe/scroll atau tombol panah, seperti bmkg.go.id
+  // Carousel: geser dengan swipe/scroll atau tombol panah
   const { trackRef, canPrev, canNext, updateArrows, slide } = useCarousel([cards.length, isLoading]);
 
   const arrowClass =
@@ -66,25 +61,26 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
 
   return (
     <section className="pt-6 sm:pt-12 lg:pt-16">
-      {/* Judul + tautan, mengikuti pola "Kualitas Udara — Lihat Semuanya" di bmkg.go.id */}
-      <div className="flex items-end justify-between gap-4 mb-6 sm:mb-10">
-        <div>
+
+      <div className="mb-6 sm:mb-10">
+        {/* Judul dan "Lihat Semuanya" satu baris, sejajar secara vertikal */}
+        <div className="flex items-center justify-between gap-4">
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
             Kondisi Aloptama
           </h2>
-          <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
-            Rata-rata SLA &amp; OLA per kategori peralatan · {MONTH_NAMES[monthIdx]} {year}
-          </p>
+          {onViewAll && (
+            <button
+              type="button"
+              onClick={onViewAll}
+              className="shrink-0 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0052CC] hover:underline"
+            >
+              Lihat Semuanya <ArrowRight size={16} />
+            </button>
+          )}
         </div>
-        {onViewAll && (
-          <button
-            type="button"
-            onClick={onViewAll}
-            className="shrink-0 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0052CC] hover:underline"
-          >
-            Lihat Semuanya <ArrowRight size={16} />
-          </button>
-        )}
+        <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
+          Rata-rata SLA &amp; OLA bulan {MONTH_NAMES[monthIdx]} {year}
+        </p>
       </div>
 
       {loadFailed ? (

@@ -168,9 +168,6 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
               <h2 className="font-heading font-bold text-base sm:text-xl text-slate-900 leading-snug">
                 Audit Log Aktivitas &amp; Perubahan Sistem
               </h2>
-              <span className="inline-flex mt-1.5 px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0052CC] text-[10px] font-bold uppercase tracking-wider border border-blue-200">
-                Audit Trail Terpusat
-              </span>
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-2">

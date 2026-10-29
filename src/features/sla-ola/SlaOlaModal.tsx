@@ -7,6 +7,8 @@ import { slaOlaSchema, SLA_OLA_MAX_BACKDATE_DAYS } from "../../shared/schemas";
 import { getTodayIsoWIT, getIsoDaysAgoWIT, formatDateIndo } from "../../shared/utils/dateUtils";
 import { SlaOlaModalProps } from "./SlaOlaTypes";
 import { isSameUpt } from "../../shared/utils/uptMatch";
+import { isInCategory } from "../../shared/utils/slaOlaCategory";
+import type { AloptamaDevice } from "../../shared/types";
 import {
   X as XIcon,
   Percent as PercentIcon,
@@ -35,6 +37,44 @@ const EQUIPMENT_CATEGORIES: string[] = [
   "Sirine Tsunami",
 ];
 
+// Apakah alat termasuk jenis peralatan yang dipilih di dropdown.
+// Untuk AWOS, field `category` di database sudah memuat kategorinya ("AWOS Kat.I/II/III"),
+// jadi dicocokkan persis; bila tidak memuat, jatuh ke pencocokan lama berdasarkan nama site.
+const deviceMatchesCategory = (d: AloptamaDevice, category: string): boolean => {
+  if (!category || category === "ALL") return true;
+
+  const devCat = (d.category || "").toLowerCase();
+  const devSite = (d.site || "").toLowerCase();
+  const selCat = category.toLowerCase();
+
+  if (selCat.startsWith("awos")) {
+    if (!devCat.includes("awos")) return false;
+    if (/kat/.test(devCat)) return isInCategory(d, category);
+    if (category === "AWOS Kat. I")
+      return devSite.includes("kat i") && !devSite.includes("kat iii");
+    if (category === "AWOS Kat. II") return devSite.includes("kat ii");
+    if (category === "AWOS Kat. III")
+      return (
+        devSite.includes("kat iii") ||
+        (!devSite.includes("kat i") && !devSite.includes("kat ii"))
+      );
+    return true;
+  }
+
+  if (selCat.includes("sirine")) return devCat.includes("sirine") || devCat.includes("siren");
+  if (selCat.includes("seismometer")) return devCat.includes("seismometer") || devCat.includes("seismo");
+  if (selCat.includes("accelerograph")) return devCat.includes("accelerograph") || devCat.includes("akselero");
+  if (selCat.includes("wrs")) return devCat.includes("wrs");
+  if (selCat.includes("lightning")) return devCat.includes("lightning") || devCat.includes("petir");
+  if (selCat.includes("radar")) return devCat.includes("radar");
+  if (selCat.includes("aws")) {
+    return (devCat.includes("aws") || devCat.includes("automatic weather")) && !devCat.includes("awos");
+  }
+  if (selCat.includes("arg")) return devCat.includes("arg") || devCat.includes("automatic rain");
+
+  return devCat.includes(selCat) || selCat.includes(devCat);
+};
+
 export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   isOpen,
   onClose,
@@ -42,15 +82,12 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   onSaveSlaOla,
 }) => {
   const { user, permissions } = useAuth();
-  // Teknisi UPT & KaUPT hanya mengisi untuk UPT mereka sendiri - dropdown
-  // stasiun disembunyikan untuk mereka (lihat isScopedToOwnUpt).
+  // Teknisi UPT & KaUPT hanya mengisi untuk UPT mereka sendiri 
   const isScopedToOwnUpt = permissions.isScopedToOwnUpt;
 
   // Melacak alat mana saja yang SUDAH diisi dalam sesi buka-modal ini.
   const [filledDeviceIds, setFilledDeviceIds] = useState<Set<string>>(new Set());
-  // Alat-alat yang SEDANG dicentang untuk diisi nilai yang SAMA sekaligus
-  // (mis. 20 unit AWS yang semuanya NORMAL 100% - cukup centang semua,
-  // isi kalkulator sekali, submit sekali untuk semuanya).
+
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<Set<string>>(new Set());
 
   const [awosCategory, setAwosCategory] = useState<
@@ -112,8 +149,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   );
   const isLateEntry = !!watchTanggal && watchTanggal !== todayIsoWIT;
 
-  // Reset ke tanggal hari ini setiap kali modal dibuka, supaya tidak
-  // "nyangkut" di tanggal susulan terakhir yang pernah dipilih user.
+  // Reset ke tanggal hari ini setiap kali modal dibuka
   useEffect(() => {
     if (isOpen) {
       setValue("tanggal", getTodayIsoWIT());
@@ -177,74 +213,43 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const targetStationId = selectedStationObj?.stationid || selectedStationObj?.id;
   const targetStationName = selectedStationObj?.name || watchUptStation;
 
-  const matchingDevices = useMemo(() => {
-    return devices.filter((d) => {
-      // Cocokkan berdasarkan ID Stasiun maupun Nama Stasiun
-      const matchesUpt =
+  // Semua alat milik stasiun terpilih (belum difilter jenis peralatan)
+  const stationDevices = useMemo(() => {
+    return devices.filter(
+      (d) =>
+        // Cocokkan berdasarkan ID Stasiun maupun Nama Stasiun
         isSameUpt(d.uptStation, watchUptStation, stationsList) ||
         d.uptStation === watchUptStation ||
         (targetStationId && d.uptStation === targetStationId) ||
-        (targetStationName && d.uptStation === targetStationName);
+        (targetStationName && d.uptStation === targetStationName)
+    );
+  }, [devices, stationsList, watchUptStation, targetStationId, targetStationName]);
 
-      if (!matchesUpt) return false;
-      if (!watchCategory || watchCategory === "ALL") return true;
+  // Jenis peralatan yang benar-benar ada di stasiun terpilih. Bila stasiun belum punya alat tampilkan semua jenis supaya form
+  const availableCategories = useMemo(() => {
+    const present = EQUIPMENT_CATEGORIES.filter((cat) =>
+      stationDevices.some((d) => deviceMatchesCategory(d, cat))
+    );
+    return present.length > 0 ? present : EQUIPMENT_CATEGORIES;
+  }, [stationDevices]);
 
-      const devCat = (d.category || "").toLowerCase();
-      const devSite = (d.site || "").toLowerCase();
-      const selCat = watchCategory.toLowerCase();
+  // Jika jenis yang sedang dipilih tidak ada di stasiun ini, pindah ke jenis pertama yang tersedia.
+  useEffect(() => {
+    if (!availableCategories.includes(watchCategory)) {
+      setValue("category", availableCategories[0]);
+    }
+  }, [availableCategories, watchCategory, setValue]);
 
-      if (selCat.startsWith("awos")) {
-        if (!devCat.includes("awos")) return false;
-        if (watchCategory === "AWOS Kat. I")
-          return devSite.includes("kat i") && !devSite.includes("kat iii");
-        if (watchCategory === "AWOS Kat. II")
-          return devSite.includes("kat ii");
-        if (watchCategory === "AWOS Kat. III")
-          return (
-            devSite.includes("kat iii") ||
-            (!devSite.includes("kat i") && !devSite.includes("kat ii"))
-          );
-        return true;
-      }
-
-      if (selCat.includes("sirine")) {
-        return devCat.includes("sirine") || devCat.includes("siren");
-      }
-      if (selCat.includes("seismometer")) {
-        return devCat.includes("seismometer") || devCat.includes("seismo");
-      }
-      if (selCat.includes("accelerograph")) {
-        return devCat.includes("accelerograph") || devCat.includes("akselero");
-      }
-      if (selCat.includes("wrs")) {
-        return devCat.includes("wrs");
-      }
-      if (selCat.includes("lightning")) {
-        return devCat.includes("lightning") || devCat.includes("petir");
-      }
-      if (selCat.includes("radar")) {
-        return devCat.includes("radar");
-      }
-      if (selCat.includes("aws")) {
-        return (devCat.includes("aws") || devCat.includes("automatic weather")) && !devCat.includes("awos");
-      }
-      if (selCat.includes("arg")) {
-        return devCat.includes("arg") || devCat.includes("automatic rain");
-      }
-
-      return devCat.includes(selCat) || selCat.includes(devCat);
-    });
-  }, [devices, stationsList, watchUptStation, targetStationId, targetStationName, watchCategory]);
+  const matchingDevices = useMemo(
+    () => stationDevices.filter((d) => deviceMatchesCategory(d, watchCategory)),
+    [stationDevices, watchCategory]
+  );
 
   useEffect(() => {
     setErrorMessage(null);
-    // Filter (kategori/stasiun) berubah -> reset centang alat yang lama,
-    // supaya tidak nyangkut alat dari kategori sebelumnya.
+
     setSelectedDeviceIds(new Set());
     if (matchingDevices.length > 0) {
-      // deviceId di sini hanya "placeholder" teknis supaya validasi form
-      // tidak error - nilai kondisi SEBENARNYA ditentukan dari kalkulator
-      // di bawah dan diterapkan ke SEMUA alat yang dicentang saat submit.
       setValue("deviceId", matchingDevices[0].devicesId);
       setValue("kondisiSla", true);
       setValue("kondisiOla", 100);
@@ -381,9 +386,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const onSubmit = async (data: any) => {
     setErrorMessage(null);
 
-    // Validasi manual: minimal harus ada 1 alat yang dicentang, karena
-    // deviceId di form cuma placeholder teknis (nilai kondisi diterapkan
-    // ke SEMUA alat yang dicentang, bukan cuma 1 deviceId di form).
+    // Validasi manual: minimal harus ada 1 alat yang dicentang
     const targetIds = Array.from(selectedDeviceIds).filter(
       (id) => !filledDeviceIds.has(id)
     );
@@ -395,7 +398,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Terapkan nilai kondisi/OLA/kendala yang SAMA ke semua alat yang dicentang, satu per satu ke backend.
       for (const deviceId of targetIds) {
         await onSaveSlaOla({
           uptStation: data.uptStation,
@@ -455,7 +457,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "2.14%" },
         { key: "radiasiMatahari", label: "Sensor Radiasi Matahari", weight: "2.14%" },
         { key: "curahHujan", label: "Sensor Curah Hujan", weight: "2.14%" },
-        { key: "celo", label: "Sensor Ceilometer", weight: "2.14%" },
+        { key: "celo", label: "Sensor Ceilometer (Celo)", weight: "2.14%" },
         { key: "visibility", label: "Sensor Visibility (RVR)", weight: "2.14%" },
         { key: "ld", label: "Sensor Lightning Detector (LD)", weight: "2.14%" },
       ];
@@ -468,7 +470,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         { key: "suhu", label: "Sensor Suhu Udara", weight: "3.00%" },
         { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "3.00%" },
         { key: "curahHujan", label: "Sensor Curah Hujan", weight: "3.00%" },
-        { key: "celo", label: "Sensor Ceilometer", weight: "3.00%" },
+        { key: "celo", label: "Sensor Ceilometer (Celo)", weight: "3.00%" },
         { key: "visibility", label: "Sensor Visibility", weight: "3.00%" },
       ];
     }
@@ -612,14 +614,14 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <WrenchIcon size={14} className="text-[#0052CC]" />
-                  JENIS PERALATAN :
+                  JENIS PERALATAN:
                 </label>
                 <select
                   {...register("category")}
                   disabled={isSubmitting}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50"
                 >
-                  {EQUIPMENT_CATEGORIES.map((cat) => (
+                  {availableCategories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
                     </option>
@@ -633,13 +635,15 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            {/* Field Pemilihan Unit Alat Spesifik - List + Tombol Checklist, */}
+            {/* Field Pemilihan Unit Alat Spesifik - List + Tombol Checklist,
+                supaya UPT bisa mengisi banyak alat sekaligus dalam satu
+                sesi buka modal, tanpa perlu buka-tutup berulang kali. */}
             {matchingDevices.length > 0 ? (
               <div className="space-y-1.5 bg-blue-50/60 p-3 rounded-xl border border-blue-200 animate-fade-in">
                 <div className="flex items-center justify-between gap-2">
                   <label className="block text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
                     <WrenchIcon size={13} className="text-[#0052CC]" />
-                    CENTANG ALAT DENGAN KONDISI SAMA ({matchingDevices.length} Unit):
+                    CENTANG ALAT DENGAN KONDISI SAMA:
                   </label>
                   {matchingDevices.some((d) => !filledDeviceIds.has(d.devicesId)) && (
                     <button
@@ -659,7 +663,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   )}
                 </div>
                 <p className="text-[10px] text-blue-800/80 -mt-0.5">
-                  Centang semua alat jika nilainya sama. Alat dengan nilai berbeda bisa dicentang & disimpan terpisah.
+                  Centang semua unit yang nilainya sama. Alat dengan nilai berbeda bisa dicentang & disimpan terpisah.
                 </p>
                 <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
                   {matchingDevices.map((d) => {
@@ -703,7 +707,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 </div>
                 {selectedDeviceIds.size > 0 && (
                   <span className="text-[10px] text-blue-700 font-bold block mt-0.5">
-                    {selectedDeviceIds.size} alat dipilih - nilai OLA akan diterapkan ke semuanya.
+                    {selectedDeviceIds.size} alat dipilih - nilai di bawah akan diterapkan ke semuanya.
                   </span>
                 )}
                 {matchingDevices.length > 0 && matchingDevices.every((d) => filledDeviceIds.has(d.devicesId)) && (
@@ -713,11 +717,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 )}
               </div>
             ) : (
-              <div className="p-2.5 bg-amber-50/20 border border-amber-200/80 rounded-xl text-[11px] text-amber-800 font-medium flex items-center gap-2">
+              <div className="p-2.5 bg-amber-50/90 border border-amber-200 rounded-xl text-[11px] text-amber-900 font-medium flex items-center gap-2">
 
                 <span>⚠️</span>
                 <span>
-                  Tidak ada alat <strong>{watchCategory}</strong> yang terdaftar di <strong>{targetStationName}</strong>.
+                  Tidak ada unit spesifik <strong>{watchCategory}</strong> yang terdaftar di <strong>{targetStationName}</strong>.
                 </span>
               </div>
             )}
@@ -757,6 +761,9 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                     <Info size={14} className="text-[#0052CC] shrink-0" />
                     Pilih Kondisi Kelayakan Aspek Peralatan ({watchCategory}):
                   </h4>
+                  <span className="text-[11px] font-bold text-[#0052CC] bg-blue-100 px-2.5 py-0.5 rounded-lg border border-blue-200 shrink-0">
+                    Kalkulasi OLA: {watchKondisiOla}%
+                  </span>
                 </div>
 
                 {(watchCategory === "AWS" ||
