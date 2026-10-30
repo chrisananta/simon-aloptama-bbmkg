@@ -11,7 +11,7 @@ export const DashboardFooter: React.FC = () => {
         <div className="border-t border-white/15" />
         <div className="pt-8 sm:pt-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            © {new Date().getFullYear()} - Badan Meteorologi, Klimatologi, dan Geofisika
+            © {new Date().getFullYear()} - Balai Besar Meteorologi, Klimatologi, dan Geofisika Wilayah V - Jayapura
           </p>
           <button
             type="button"
