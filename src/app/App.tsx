@@ -47,17 +47,13 @@ function AppContent() {
   const [activeMenu, navigateMenu] = useMenuRoute();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
-  // Setelah LOGOUT, URL dikembalikan ke Dashboard supaya pengguna berikutnya tidak mendarat di
-  // halaman milik sesi sebelumnya. Hanya saat transisi login -> logout: pengunjung yang belum
-  // login dan membuka link langsung (mis. /sla-ola) tetap diarahkan ke halaman itu setelah login.
+  // Setelah LOGOUT, URL dikembalikan ke Dashboard supaya pengguna berikutnya tidak mendarat dihalaman milik sesi sebelumnya. 
   const wasAuthenticated = React.useRef(false);
   useEffect(() => {
     if (wasAuthenticated.current && !isAuthenticated) navigateMenu('dashboard', { replace: true });
     wasAuthenticated.current = isAuthenticated;
   }, [isAuthenticated, navigateMenu]);
-  // Khusus tampilan HP: sidebar (bahkan rail ikonnya) tersembunyi total by
-  // default. Baru muncul rail ikon setelah tombol logo di Navbar ditekan.
-  // Tidak berlaku di tablet/PC (di sana sidebar selalu tampil seperti biasa).
+  // Khusus tampilan HP: sidebar (bahkan rail ikonnya) tersembunyi total
   const [mobileSidebarHidden, setMobileSidebarHidden] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(BELUM_SINKRON);
   const [isServerModalOpen, setIsServerModalOpen] = useState(false);
@@ -88,10 +84,6 @@ function AppContent() {
     lastSync: BELUM_SINKRON,
   });
 
-  // Alat yang boleh DIISI (form SLA OLA) oleh Teknisi UPT/KaUPT - dibatasi
-  // ke UPT mereka sendiri. Ini HANYA dipakai di form input SLA OLA;
-  // Dashboard, daftar SLA OLA, dan Kalibrasi tetap menampilkan data
-  // nasional (semua UPT) untuk semua role, sesuai arahan pimpinan.
   const ownUptInputDevices = React.useMemo(() => {
     if (permissions.isScopedToOwnUpt && user?.uptStation) {
       // isSameUpt: UPT bisa tersimpan sebagai KODE (GEO001) atau NAMA stasiun.
@@ -192,9 +184,6 @@ function AppContent() {
   };
 
   // Handlers for Master Alat CRUD via Centralized API
-  // Handler alat mengembalikan true jika sukses, false jika gagal (alert error
-  // sudah ditampilkan di sini) - dipakai UI untuk menampilkan notifikasi
-  // "berhasil" dan menahan modal tetap terbuka saat gagal.
   const handleAddDevice = async (device: AloptamaDevice, actor: string): Promise<boolean> => {
     try {
       await apiClient.devices.add(device, actor || currentActor);
@@ -237,12 +226,6 @@ function AppContent() {
   };
 
   // Ambil data dari server setiap kali status login berubah jadi TERAUTENTIKASI.
-  // PENTING: AppContent ini mount SEKALI saat app dibuka (SEBELUM user sempat
-  // login), jadi kalau cuma dependency [] di sini, sync pertama pasti gagal
-  // (belum ada token -> semua request 401) dan TIDAK PERNAH dicoba ulang begitu
-  // login berhasil, karena AppContent sendiri tidak remount saat transisi
-  // login->dashboard (itu murni ProtectedRoute yang ganti tampilan di dalamnya).
-  // Makanya dependency [isAuthenticated] wajib ada di sini.
   useEffect(() => {
     if (isAuthenticated) {
       handleSyncServer();
@@ -286,12 +269,12 @@ function AppContent() {
 
         {/* Main Content Workspace */}
         <main
-          className={`flex-1 pt-[108px] sm:pt-[116px] pb-10 px-3 sm:px-4 md:px-6 transition-all duration-300 ${
+          className={`flex-1 flex flex-col pt-[108px] sm:pt-[116px] pb-10 px-3 sm:px-4 md:px-6 transition-all duration-300 ${
             mobileSidebarHidden ? 'ml-0 sm:ml-16' : !sidebarCollapsed ? 'ml-0' : 'ml-16'
           } ${mobileSidebarHidden ? 'md:ml-0' : 'md:ml-20'}
           }`}
         >
-          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+          <div className="w-full flex-1 max-w-7xl mx-auto space-y-4 sm:space-y-6">
             <Suspense fallback={<PageFallback />}>
             {activeMenu === 'dashboard' && (
             <DashboardView devices={devicesData} stations={stationsData} lastUpdate={lastUpdate} onNavigate={(menu) => navigateMenu(menu)} />
@@ -344,7 +327,7 @@ function AppContent() {
             </Suspense>
           </div>
 
-          {activeMenu === 'dashboard' && <DashboardFooter />}
+          <DashboardFooter />
 
         </main>
 
@@ -357,10 +340,7 @@ function AppContent() {
           isSyncing={isSyncing}
         />
 
-        {/* Form Modal Pengisian SLA & OLA UPT — satu-satunya bagian yang
-            dibatasi ke alat UPT sendiri untuk Teknisi/KaUPT. Dashboard,
-            daftar SLA OLA, dan Kalibrasi tetap nasional (lihat devicesData
-            di atas). */}
+        {/* Form Modal Pengisian SLA & OLA UPT*/}
         {slaOlaModalLoaded && (
           <Suspense fallback={null}>
             <SlaOlaInputModal

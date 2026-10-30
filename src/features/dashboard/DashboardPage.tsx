@@ -12,7 +12,6 @@ import { loadPapuaProvinces, findProvince, ProvinceShape } from '../../shared/ut
 
 interface ExtendedDashboardProps extends DashboardPageProps {
   stations?: UPTStation[];
-  /** Pindah menu (dipakai tautan "Lihat Semuanya" di Kondisi Aloptama). */
   onNavigate?: (menu: ActiveNavMenu) => void;
 }
 
@@ -40,15 +39,12 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
     [stations]
   );
 
-  // Batas provinsi (GeoJSON) untuk menentukan wilayah dari KOORDINAT alat.
+  // Batas provinsi (GeoJSON)
   const [provinceShapes, setProvinceShapes] = useState<ProvinceShape[]>([]);
   useEffect(() => {
     loadPapuaProvinces().then(setProvinceShapes);
   }, []);
 
-  // Wilayah (provinsi) alat = lokasi fisik alat (titik koordinat di dalam batas
-  // provinsi). Satu UPT bisa mengelola alat di banyak provinsi, jadi provinsi
-  // kantor UPT TIDAK dipakai - kecuali GeoJSON belum termuat / koordinat tidak valid.
   const regionOfDevice = (dev: { uptStation?: string; latitude?: number; longitude?: number }): string => {
     if (provinceShapes.length > 0) {
       const byCoord = findProvince(Number(dev.latitude), Number(dev.longitude), provinceShapes);
@@ -123,8 +119,7 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
 
   return (
     <div className="space-y-8 sm:space-y-12">
-      {/* Satu sub bab: judul + kartu ringkasan + peta, jaraknya dibuat rapat */}
-      <div className="space-y-4 sm:space-y-5 pt-8 sm:pt-10 lg:pt-12">
+      <div className="space-y-4 sm:space-y-5 pt-6 sm:pt-8 lg:pt-8">
       <h2 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 leading-tight mb-2 sm:mb-5">
         Dashboard Monitoring Aloptama
       </h2>
@@ -166,7 +161,6 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
                 selectedRegion={selectedRegion}
                 onRegionChange={(region) => {
                   setSelectedRegion(region);
-                  // UPT yang dipilih sebelumnya bisa jadi bukan di wilayah baru.
                   setSelectedUpt('ALL');
                 }}
                 regionOptions={regionOptions}

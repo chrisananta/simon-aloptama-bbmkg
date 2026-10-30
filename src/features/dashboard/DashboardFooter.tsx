@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowUp } from 'lucide-react';
 
-/** Footer gelap Hanya dipasang di halaman Dashboard (SIMON BMKG). */
+/** Footer gelap ala bmkg.go.id. Dipasang di App.tsx sehingga tampil di semua halaman. */
 export const DashboardFooter: React.FC = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -11,7 +11,7 @@ export const DashboardFooter: React.FC = () => {
         <div className="border-t border-white/15" />
         <div className="pt-8 sm:pt-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            © {new Date().getFullYear()} - Balai Besar Meteorologi, Klimatologi, dan Geofisika Wilayah V - Jayapura
+            © {new Date().getFullYear()} - Badan Meteorologi, Klimatologi, dan Geofisika
           </p>
           <button
             type="button"

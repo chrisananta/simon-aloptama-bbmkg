@@ -81,12 +81,11 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
     'hidden sm:flex absolute top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center rounded-full bg-white border border-slate-200 shadow-md text-slate-700 hover:bg-slate-50 disabled:opacity-0 disabled:pointer-events-none transition';
 
   return (
-    <section className="pt-6 sm:pt-12 lg:pt-16">
-      {/* Judul + tautan, mengikuti pola "Kualitas Udara — Lihat Semuanya" di bmkg.go.id */}
+    <section className="pt-6 sm:pt-8 lg:pt-8">
       <div className="mb-6 sm:mb-10">
-        {/* Judul dan "Lihat Semuanya" satu baris, sejajar secara vertikal */}
+        {/* Judul dan "Lihat Semuanya" satu baris*/}
         <div className="flex items-center justify-between gap-4">
-          <h2 className="font-heading text-2xl sm:text-4xl font-bold text-slate-900 leading-tight">
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
             Kondisi Aloptama
           </h2>
           {onViewAll && (
@@ -100,7 +99,7 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
           )}
         </div>
         <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
-          Rata-rata SLA &amp; OLA per kategori peralatan · {MONTH_NAMES[monthIdx]} {year}
+          Rata-rata SLA &amp; OLA bulan {MONTH_NAMES[monthIdx]} {year}
         </p>
       </div>
 
