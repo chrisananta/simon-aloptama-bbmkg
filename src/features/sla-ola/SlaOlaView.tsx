@@ -102,6 +102,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     };
   }, [selectedYear]);
 
+  // Keterangan kendala terbaru per alat untuk bulan terpilih (kolom `kendala` di sla_ola_logs).
+  const [kendalaMap, setKendalaMap] = useState<Record<string, { text: string; day: number }>>({});
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'NORMAL' | 'GANGGUAN' | 'MATI'>('ALL');
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
@@ -394,13 +397,25 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   // Alat yang belum punya isian di bulan itu tidak dimasukkan ke daftar.
   const periodLabel = `${selectedMonth} ${selectedYear}`;
 
+  useEffect(() => {
+    let cancelled = false;
+    setKendalaMap({});
+    apiClient.slaOlaKendala.fetch(monthIdx + 1, Number(selectedYear)).then((result) => {
+      if (!cancelled) setKendalaMap(result ?? {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [monthIdx, selectedYear]);
+
   const { displayGangguan, displayMati } = useMemo(() => {
     type ListRow = {
       id: string;
       name: string;
       category: string;
       uptStation: string;
-      keterangan: string;
+      kendala: string;
+      kendalaDay: number | null;
     };
     const gangguan: ListRow[] = [];
     const mati: ListRow[] = [];
@@ -415,14 +430,15 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         name: d.site,
         category: d.category,
         uptStation: d.uptStation,
-        keterangan: `SLA ${sc.sla}% • OLA ${sc.ola}%`,
+        kendala: kendalaMap[d.devicesId]?.text ?? '',
+        kendalaDay: kendalaMap[d.devicesId]?.day ?? null,
       };
       (kondisi === 'MATI' ? mati : gangguan).push(row);
     }
 
     const byName = (x: ListRow, y: ListRow) => x.name.localeCompare(y.name);
     return { displayGangguan: gangguan.sort(byName), displayMati: mati.sort(byName) };
-  }, [uptFilteredDevices, yearlyScores, monthIdx]);
+  }, [uptFilteredDevices, yearlyScores, monthIdx, kendalaMap]);
 
   const visibleGangguan = showAllGangguan ? displayGangguan : displayGangguan.slice(0, LIST_PREVIEW_LIMIT);
   const visibleMati = showAllMati ? displayMati : displayMati.slice(0, LIST_PREVIEW_LIMIT);
@@ -822,8 +838,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
                 <tr>
                   <th className="p-2.5">Nama Alat</th>
-                  <th className="p-2.5 text-center">PIC</th>
-                  <th className="p-2.5 text-center">Keterangan</th>
+                  <th className="p-2.5">PIC</th>
+                  <th className="p-2.5">Kendala</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -843,8 +859,19 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                       <td className="p-2.5 text-slate-600 font-medium">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
                       </td>
-                      <td className="p-2.5 font-medium text-slate-700 whitespace-nowrap">
-                        {dev.keterangan}
+                      <td className="p-2.5 font-medium text-slate-700 min-w-[180px]">
+                        {dev.kendala ? (
+                          <>
+                            <span className="block whitespace-pre-line">{dev.kendala}</span>
+                            {dev.kendalaDay && (
+                              <span className="block text-[10px] text-slate-400 font-normal">
+                                Dilaporkan {dev.kendalaDay} {selectedMonth} {selectedYear}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -883,8 +910,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
                 <tr>
                   <th className="p-2.5">Nama Alat</th>
-                  <th className="p-2.5 text-center">PIC</th>
-                  <th className="p-2.5 text-center">Keterangan</th>
+                  <th className="p-2.5">PIC</th>
+                  <th className="p-2.5">Kendala</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -904,8 +931,19 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                       <td className="p-2.5 text-slate-600 font-medium">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
                       </td>
-                      <td className="p-2.5 font-medium text-slate-700  whitespace-nowrap">
-                        {dev.keterangan}
+                      <td className="p-2.5 font-medium text-slate-700 min-w-[180px]">
+                        {dev.kendala ? (
+                          <>
+                            <span className="block whitespace-pre-line">{dev.kendala}</span>
+                            {dev.kendalaDay && (
+                              <span className="block text-[10px] text-slate-400 font-normal">
+                                Dilaporkan {dev.kendalaDay} {selectedMonth} {selectedYear}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </td>
                     </tr>
                   ))

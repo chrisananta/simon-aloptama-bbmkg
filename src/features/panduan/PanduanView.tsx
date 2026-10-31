@@ -4,15 +4,15 @@ import {
   BookOpen,
   Clock,
   FileText,
+  Download,
   Loader2,
-  Printer,
   Search,
   ShieldCheck,
   X,
 } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import type { PanduanAlat, PanduanNode, PanduanTab } from './panduanTypes';
-import { openPrintWindow } from '../../shared/print/openPrintWindow';
+import { downloadFlowAsPdf, MM_TO_PX } from '../../shared/print/downloadPagesAsPdf';
 import {
   TabDef,
   buildPrintDoc,
@@ -244,15 +244,39 @@ export const PanduanView: React.FC<PanduanViewProps> = () => {
     setTabId(nextTab);
   };
 
-  const handlePrint = () => {
-    if (!selectedEntry) return;
-    const opened = openPrintWindow({
-      ...buildPrintDoc(selectedEntry),
-      toolbar: false,
-      autoPrintDelayMs: 300,
-    });
-    if (!opened) {
-      window.alert('Pop-up diblokir oleh browser. Izinkan pop-up untuk situs ini agar panduan bisa dicetak.');
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  /** Unduh panduan sebagai PDF langsung. Dokumen disusun di iframe tersembunyi agar CSS-nya tidak mengubah tampilan aplikasi. */
+  const handleDownload = async () => {
+    if (!selectedEntry || isDownloading) return;
+    setIsDownloading(true);
+    const MARGIN_MM = 12;
+    const doc = buildPrintDoc(selectedEntry);
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = `position:fixed;left:-100000px;top:0;width:${Math.round((210 - MARGIN_MM * 2) * MM_TO_PX)}px;height:1000px;border:0;`;
+    document.body.appendChild(iframe);
+    try {
+      const idoc = iframe.contentDocument;
+      if (!idoc) throw new Error('iframe tidak tersedia');
+      idoc.open();
+      idoc.write(
+        `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${doc.css}</style><style>body{margin:0 !important}</style></head><body>${doc.bodyHtml}</body></html>`
+      );
+      idoc.close();
+      iframe.style.height = `${idoc.body.scrollHeight + 20}px`;
+      await downloadFlowAsPdf({
+        element: idoc.body,
+        mounted: true,
+        filename: `${doc.title}.pdf`,
+        orientation: 'portrait',
+        marginMm: MARGIN_MM,
+      });
+    } catch (err) {
+      console.error('Gagal membuat PDF:', err);
+      window.alert('Gagal membuat PDF panduan. Coba lagi.');
+    } finally {
+      document.body.removeChild(iframe);
+      setIsDownloading(false);
     }
   };
 
@@ -409,11 +433,12 @@ export const PanduanView: React.FC<PanduanViewProps> = () => {
               </div>
               <button
                 type="button"
-                onClick={handlePrint}
-                className="flex h-[38px] shrink-0 items-center gap-2 rounded-[10px] border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="flex h-[38px] shrink-0 items-center gap-2 rounded-[10px] border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Printer size={16} />
-                <span className="hidden sm:inline">Cetak panduan</span>
+                {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                <span className="hidden sm:inline">{isDownloading ? 'Membuat PDF...' : 'Unduh panduan'}</span>
               </button>
             </div>
 

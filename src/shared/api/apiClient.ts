@@ -457,6 +457,28 @@ export const apiClient = {
   },
 
   // ----------------------------------------------------
+  // KETERANGAN KENDALA SLA/OLA (kolom `kendala` di sla_ola_logs, terbaru per alat)
+  // ----------------------------------------------------
+  slaOlaKendala: {
+    /** deviceId -> { text, day }. null kalau gagal dimuat ({} = tidak ada kendala tercatat). */
+    fetch: async (
+      bulan: number,
+      tahun: number
+    ): Promise<Record<string, { text: string; day: number }> | null> => {
+      try {
+        const res = await authFetch(`/api/sla-ola/kendala?bulan=${bulan}&tahun=${tahun}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success) return json.data || {};
+        }
+      } catch (e) {
+        console.warn("apiClient.slaOlaKendala.fetch failed:", e);
+      }
+      return null;
+    },
+  },
+
+  // ----------------------------------------------------
   // SLA/OLA LOG MONITORING API (tabel monitoring pengisian — Admin)
   // ----------------------------------------------------
   slaOlaLogs: {

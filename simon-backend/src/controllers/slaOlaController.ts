@@ -339,6 +339,50 @@ export const slaOlaController = {
   },
 
   /**
+   * Keterangan kendala terbaru per alat pada satu bulan (kolom `kendala` di sla_ola_logs).
+   * Dipakai tabel "Daftar Alat Gangguan / Mati" di halaman SLA & OLA (semua role).
+   * Diambil dari log TERBARU (reportDate lalu timestamp) yang kolom kendalanya tidak kosong.
+   */
+  getKendalaSummary: async (req: AuthRequest, res: Response) => {
+    const parsedQuery = z
+      .object({
+        bulan: z.coerce.number().int().min(1).max(12),
+        tahun: z.coerce.number().int().min(2000).max(2100),
+      })
+      .safeParse(req.query);
+    if (!parsedQuery.success) {
+      return res.status(400).json({ success: false, message: 'Query bulan/tahun wajib diisi dengan benar.' });
+    }
+    try {
+      const { bulan, tahun } = parsedQuery.data;
+      const start = new Date(Date.UTC(tahun, bulan - 1, 1));
+      const end = new Date(Date.UTC(tahun, bulan, 1));
+
+      const logs = await prisma.slaOlaLog.findMany({
+        where: {
+          deviceId: { not: null },
+          kendala: { not: null },
+          reportDate: { gte: start, lt: end },
+        },
+        select: { deviceId: true, kendala: true, reportDate: true },
+        orderBy: [{ reportDate: 'asc' }, { timestamp: 'asc' }],
+      });
+
+      // deviceId -> { teks, tanggal (1-31) }. Urut naik, jadi yang terakhir menimpa.
+      const data: Record<string, { text: string; day: number }> = {};
+      for (const log of logs) {
+        const text = (log.kendala || '').trim();
+        if (!log.deviceId || !text) continue;
+        data[log.deviceId] = { text, day: log.reportDate.getUTCDate() };
+      }
+      return res.json({ success: true, bulan, tahun, data });
+    } catch (error) {
+      console.error('Error getKendalaSummary:', error);
+      return res.status(500).json({ success: false, message: 'Gagal mengambil keterangan kendala SLA/OLA.' });
+    }
+  },
+
+  /**
    * Rekap SLA/OLA per alat untuk RENTANG TANGGAL (sumber Laporan Mingguan Monitoring).
    * Dihitung dari isian harian UPT di tabel sla_ola_logs berdasarkan `reportDate`:
    * satu nilai per alat per tanggal (isian terakhir bila diisi lebih dari sekali),

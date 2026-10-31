@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import printlogobmkg from '../../assets/images/BMKGLogo.png';
-import { X, Printer, FileText, Eye } from 'lucide-react';
+import { X, Download, Loader2, FileText, Eye } from 'lucide-react';
 import { AloptamaDevice } from '../../shared/types';
 import { apiClient } from '../../shared/api';
-import { openPrintWindow } from '../../shared/print/openPrintWindow';
 
 export interface UptRekapRow {
   no: number;
@@ -56,7 +55,7 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
   totalGangguan,
   totalMati,
 }) => {
-  const [jabatanMengetahui, setJabatanMengetahui] = useState<string>('Kepala UPT');
+  const [jabatanMengetahui, setJabatanMengetahui] = useState<string>('Kepala');
   const [namaMengetahui, setNamaMengetahui] = useState<string>('');
   const [namaPembuat, setNamaPembuat] = useState<string>('');
 
@@ -199,45 +198,79 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
     </table>
   );
 
-  const handleOpenPrintWindow = () => {
-    const element = document.getElementById('upt-printable-report-area');
-    if (!element) return;
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
-    const opened = openPrintWindow({
-      title: `Laporan Kinerja Aloptama - ${uptName} (${month} ${year})`,
-      bodyHtml: `<div class="print-container">${element.outerHTML}</div>`,
-      tailwind: true,
-      toolbar: { text: 'Dokumen Siap Cetak.', width: '1024px' },
-      width: 1100,
-      height: 900,
-      css: `
-        @page { margin: ${PAGE_MARGIN_MM}mm; }
-        @page page-portrait { size: A4 portrait; }
-        @page page-landscape { size: A4 landscape; }
+  /**
+   * Unduh PDF langsung (tanpa dialog cetak): tiap halaman (portrait/landscape) di preview
+   * dirender ke gambar lalu disusun menjadi satu file PDF A4.
+   */
+  const handleDownloadPdf = async () => {
+    const area = document.getElementById('upt-printable-report-area');
+    if (!area || isDownloading) return;
+    setIsDownloading(true);
+    setDownloadError(null);
 
-        .page-portrait { page: page-portrait; }
-        .page-landscape { page: page-landscape; break-before: page; }
-        div.SectionLandscape { page: SectionLandscape; }
+    const MM_TO_PX = 96 / 25.4;
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas-pro'),
+        import('jspdf'),
+      ]);
+      const pageEls = Array.from(area.querySelectorAll<HTMLElement>('.page-portrait, .page-landscape'));
+      if (pageEls.length === 0) throw new Error('Tidak ada halaman untuk diunduh.');
+      if (document.fonts?.ready) await document.fonts.ready;
 
-        .print-container { background: white; margin: 0 auto; }
-        table { border-collapse: collapse; }
-        #upt-printable-report-area { transform: none !important; width: auto !important; }
+      let pdf: InstanceType<typeof jsPDF> | null = null;
 
-        @media print {
-          .print-container { padding: 0; margin: 0; box-shadow: none; }
-          .page-portrait, .page-landscape {
-            min-height: auto !important;
-            box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 auto !important;
+      for (const el of pageEls) {
+        const landscape = el.classList.contains('page-landscape');
+        const pageW = landscape ? 297 : 210;
+        const pageH = landscape ? 210 : 297;
+        const contentW = pageW - PAGE_MARGIN_MM * 2;
+        const contentH = pageH - PAGE_MARGIN_MM * 2;
+
+        // Salin halaman ke wadah di luar layar dengan ukuran asli (tanpa scale/padding preview).
+        const holder = document.createElement('div');
+        holder.style.cssText = `position:fixed;left:-100000px;top:0;width:${contentW * MM_TO_PX}px;background:#fff;`;
+        const clone = el.cloneNode(true) as HTMLElement;
+        clone.style.cssText +=
+          ';width:100%;max-width:none;min-height:0;padding:0;margin:0;box-shadow:none;border:none;transform:none;';
+        holder.appendChild(clone);
+        document.body.appendChild(holder);
+
+        try {
+          await Promise.all(
+            Array.from(clone.querySelectorAll('img')).map((img) =>
+              img.complete ? Promise.resolve() : new Promise<void>((r) => { img.onload = () => r(); img.onerror = () => r(); })
+            )
+          );
+          const canvas = await html2canvas(clone, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+
+          let w = contentW;
+          let h = (canvas.height * w) / canvas.width;
+          if (h > contentH) {
+            h = contentH;
+            w = (canvas.width * h) / canvas.height;
           }
-        }
-      `,
-    });
-    if (!opened) window.print();
-  };
 
+          const orientation = landscape ? 'landscape' : 'portrait';
+          if (!pdf) pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+          else pdf.addPage('a4', orientation);
+          pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', PAGE_MARGIN_MM + (contentW - w) / 2, PAGE_MARGIN_MM, w, h);
+        } finally {
+          document.body.removeChild(holder);
+        }
+      }
+
+      pdf?.save(`Laporan Kinerja Aloptama - ${uptName} (${month} ${year}).pdf`);
+    } catch (err) {
+      console.error('Gagal membuat PDF:', err);
+      setDownloadError('Gagal membuat PDF. Coba lagi.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -329,7 +362,7 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">Dibuat Oleh (Teknisi UPT)</label>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">Dibuat Oleh (Teknisi)</label>
               <input
                 type="text"
                 value={namaPembuat}
@@ -360,13 +393,15 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
               <span>Preview Dokumen.</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {downloadError && <span className="text-[11px] font-semibold text-rose-600">{downloadError}</span>}
               <button
                 type="button"
-                onClick={handleOpenPrintWindow}
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
+                onClick={handleDownloadPdf}
+                disabled={isDownloading || dailyLoading}
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
               >
-                <Printer size={14} />
-                <span>Cetak / Simpan PDF</span>
+                {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                <span>{isDownloading ? 'Membuat PDF...' : 'Unduh PDF'}</span>
               </button>
             </div>
           </div>
@@ -501,6 +536,7 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
                   <div className="text-center min-w-[240px] text-xs font-semibold text-black space-y-1">
                     <p>Mengetahui,</p>
                     <p>{jabatanMengetahui}</p>
+                    <p>{uptName}</p>
                     <div className="h-20" />
                     <p className="font-extrabold underline text-sm">{namaMengetahui || '(...........................)'}</p>
                   </div>
@@ -535,13 +571,15 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
                       <div className="flex justify-between mt-8 max-w-4xl mx-auto">
                         <div className="text-center min-w-[180px] text-xs font-semibold text-black space-y-1">
                           <p>Diisi Oleh,</p>
-                          <p>Teknisi UPT</p>
+                          <p>Teknisi</p>
+                          <p>{uptName}</p>
                           <div className="h-14" />
                           <p className="font-extrabold underline text-sm">{namaPembuat || '(...........................)'}</p>
                         </div>
                         <div className="text-center min-w-[180px] text-xs font-semibold text-black space-y-1">
                           <p>Diperiksa Oleh,</p>
                           <p>{jabatanMengetahui}</p>
+                          <p>{uptName}</p>
                           <div className="h-14" />
                           <p className="font-extrabold underline text-sm">{namaMengetahui || '(...........................)'}</p>
                         </div>

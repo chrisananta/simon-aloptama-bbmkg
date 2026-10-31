@@ -1,40 +1,42 @@
-import React from 'react';
-import { X, Printer } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Download, Loader2 } from 'lucide-react';
 import { PerbaikanRecord } from '../../shared/types';
 import bmkgLogo from '../../assets/images/BMKGLogo.png';
-import { openPrintWindow } from '../../shared/print/openPrintWindow';
+import { downloadFlowAsPdf } from '../../shared/print/downloadPagesAsPdf';
 
 export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => void; record: PerbaikanRecord | null }> = ({
   isOpen,
   onClose,
   record,
 }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
   if (!isOpen || !record) return null;
 
   const isForm11 = record.formType === 'FORM_1_1';
 
-  const handlePrint = () => {
-    const printContent = document.getElementById('perbaikan-printable');
-    if (!printContent) return;
-
-    const opened = openPrintWindow({
-      title: `Form Laporan ${record.namaAlat}`,
-      bodyHtml: `<div class="page">${printContent.innerHTML}</div>`,
-      tailwind: true,
-      toolbar: false,
-      autoPrintDelayMs: 500,
-      css: `
-        @page { size: A4 portrait; margin: 10mm; }
-        body { padding: 20px; }
-        .page { background: white; padding: 30px; border-radius: 8px; max-width: 900px; margin: auto; }
-        @media print {
-          body { padding: 0; }
-          .page { padding: 0; max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
-          .page-break { page-break-before: always; }
-        }
-      `,
-    });
-    if (!opened) window.print();
+  /** Unduh PDF langsung (tanpa dialog cetak). Lampiran foto (.page-break) dimulai di halaman baru. */
+  const handleDownload = async () => {
+    const element = document.getElementById('perbaikan-printable');
+    if (!element || isDownloading) return;
+    setIsDownloading(true);
+    setDownloadError(null);
+    try {
+      await downloadFlowAsPdf({
+        element,
+        filename: `Form Laporan ${record.namaAlat}.pdf`,
+        orientation: 'portrait',
+        marginMm: 10,
+        cloneCss: 'width:100%;max-width:none;padding:0;margin:0;border:none;box-shadow:none;',
+        pageBreakBeforeSelector: '.page-break',
+      });
+    } catch (err) {
+      console.error('Gagal membuat PDF:', err);
+      setDownloadError('Gagal membuat PDF. Coba lagi.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -43,8 +45,9 @@ export const PerbaikanPrintModal: React.FC<{ isOpen: boolean; onClose: () => voi
         <div className="bg-[#0A203C] text-white p-4 flex justify-between items-center shrink-0">
           <h3 className="font-bold text-sm sm:text-base">Pratinjau Dokumen PDF Resmi</h3>
           <div className="flex items-center gap-2">
-            <button onClick={handlePrint} className="px-3 py-1.5 bg-[#0052CC] text-white text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer">
-              <Printer size={15}/> Cetak PDF
+            {downloadError && <span className="text-[11px] font-semibold text-rose-300">{downloadError}</span>}
+            <button onClick={handleDownload} disabled={isDownloading} className="px-3 py-1.5 bg-[#0052CC] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer">
+              {isDownloading ? <Loader2 size={15} className="animate-spin"/> : <Download size={15}/>} {isDownloading ? 'Membuat PDF...' : 'Unduh PDF'}
             </button>
             <button onClick={onClose} className="p-1 text-slate-300 hover:text-white"><X size={18}/></button>
           </div>

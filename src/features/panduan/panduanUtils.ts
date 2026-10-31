@@ -182,7 +182,7 @@ const listHtml = (nodes: PanduanNode[]): string =>
     .map((n) => `<li>${esc(n.text)}${n.children && n.children.length ? listHtml(n.children) : ''}</li>`)
     .join('')}</ul>`;
 
-/** Bagian-bagian dokumen cetak panduan; dibungkus jendela cetak oleh openPrintWindow(). */
+/** Bagian-bagian dokumen cetak panduan; dirender menjadi PDF oleh downloadFlowAsPdf(). */
 export function buildPrintDoc(entry: PanduanAlat): { title: string; css: string; bodyHtml: string } {
   const parts: string[] = [];
   parts.push(`<h1>${esc(entry.nama)}</h1>`);

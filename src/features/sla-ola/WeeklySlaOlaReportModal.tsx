@@ -3,7 +3,8 @@ import printlogobmkg from '../../assets/images/BMKGLogo.png';
 import footerTte from '../../assets/images/FooterTTE.png';
 import { 
   X, 
-  Printer, 
+  Download, 
+  Loader2, 
   FileText, 
   Plus, 
   Trash2, 
@@ -25,7 +26,7 @@ import { apiClient } from '../../shared/api';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 import { averageOfCategories } from '../../shared/utils/slaOlaTotals';
 import { getLastWorkWeek, formatIsoDateId } from '../../shared/utils/dateRange';
-import { openPrintWindow } from '../../shared/print/openPrintWindow';
+import { downloadPagesAsPdf } from '../../shared/print/downloadPagesAsPdf';
 
 interface WeeklySlaOlaReportModalProps {
   isOpen: boolean;
@@ -449,26 +450,37 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
   const totalTanpaIsian = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.tanpaIsian, 0), [rekapData]);
   const totalMatiSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.mati, 0), [rekapData]);
 
-  const handleOpenPrintWindow = () => {
-    if (isRangeLoading || rangeLoadFailed || !isRangeValid) return;
-    const element = document.getElementById('printable-report-area');
-    if (!element) return;
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
-    // Nama berkas PDF mengikuti kebiasaan: DDMMYYYY (tanggal akhir)_Laporan_Mingguan_Monitoring
+  /** Unduh PDF langsung (tanpa dialog cetak): tiap lembar A4 (.wr-sheet) jadi satu halaman PDF. */
+  const handleDownloadPdf = async () => {
+    if (isRangeLoading || rangeLoadFailed || !isRangeValid || isDownloading) return;
+    const area = document.getElementById('printable-report-area');
+    if (!area) return;
+
+    // Nama berkas mengikuti kebiasaan: DDMMYYYY (tanggal akhir)_Laporan_Mingguan_Monitoring
     const [yy, mm, dd] = endDateIso.split('-');
     const docTitle = yy && mm && dd
       ? `${dd}${mm}${yy}_Laporan_Mingguan_Monitoring`
       : `Laporan_Mingguan_Monitoring (${startDate} - ${endDate})`;
 
-    const opened = openPrintWindow({
-      title: docTitle,
-      bodyHtml: element.outerHTML,
-      css: REPORT_CSS,
-      toolbar: { text: 'Dokumen siap dicetak atau disimpan sebagai PDF (BBMKG Wilayah V)' },
-      width: 950,
-      height: 1000,
-    });
-    if (!opened) window.print();
+    setIsDownloading(true);
+    setDownloadError(null);
+    try {
+      const pages = Array.from(area.querySelectorAll<HTMLElement>('.wr-sheet')).map((element) => ({
+        element,
+        orientation: 'portrait' as const,
+        marginMm: 0, // lembar sudah berukuran penuh A4 (210 x 297 mm)
+        cloneCss: 'margin:0;box-shadow:none;',
+      }));
+      await downloadPagesAsPdf(pages, `${docTitle}.pdf`);
+    } catch (err) {
+      console.error('Gagal membuat PDF:', err);
+      setDownloadError('Gagal membuat PDF. Coba lagi.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -983,14 +995,15 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                   <span>Pratinjau Hasil Cetak Laporan.</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                  {downloadError && <span className="text-[11px] font-semibold text-rose-600">{downloadError}</span>}
                   <button
                     type="button"
-                    onClick={handleOpenPrintWindow}
-                    disabled={isRangeLoading || rangeLoadFailed || !isRangeValid}
+                    onClick={handleDownloadPdf}
+                    disabled={isRangeLoading || rangeLoadFailed || !isRangeValid || isDownloading}
                     className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Printer size={14} />
-                    <span>Cetak / Simpan PDF</span>
+                    {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                    <span>{isDownloading ? 'Membuat PDF...' : 'Unduh PDF'}</span>
                   </button>
                 </div>
               </div>

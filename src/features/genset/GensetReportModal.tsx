@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { X, Printer, Filter } from 'lucide-react';
+import { X, Download, Loader2, Filter } from 'lucide-react';
 import { GensetRecord } from '../../shared/types';
 import { getTodayIsoWIT } from '../../shared/utils/dateUtils';
 import bmkgLogo from '../../assets/images/BMKGLogo.png';
-import { openPrintWindow } from '../../shared/print/openPrintWindow';
+import { downloadFlowAsPdf } from '../../shared/print/downloadPagesAsPdf';
 
 export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void; records: GensetRecord[] }> = ({
   isOpen,
@@ -47,37 +47,30 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
     }).sort((a,b) => a.tanggal.localeCompare(b.tanggal));
   }, [records, startDate, endDate, selectedPetugas]);
 
-  const handlePrint = () => {
-    const printContent = document.getElementById('genset-report-printable');
-    if (!printContent) return;
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
-    // Footer TTE dipisah dari isi: diulang di bawah SETIAP halaman cetak dengan ruang
-    // cadangan, jadi tidak lagi menimpa baris tabel (lihat shared/print/printBaseCss.ts).
-    const bodyClone = printContent.cloneNode(true) as HTMLElement;
-    const footerEl = bodyClone.querySelector('.tte-footer');
-    const footerHtml = footerEl ? footerEl.outerHTML : undefined;
-    footerEl?.remove();
-
-    const opened = openPrintWindow({
-      title: 'Laporan Rekapitulasi Genset BMKG',
-      bodyHtml: `<div class="page">${bodyClone.innerHTML}</div>`,
-      repeatFooterHtml: footerHtml,
-      footerSpace: '22mm',
-      tailwind: true,
-      toolbar: false,
-      autoPrintDelayMs: 500,
-      css: `
-        @page { size: A4 landscape; margin: 10mm; }
-        body { padding: 20px; }
-        .page { background: white; padding: 12mm; max-width: 297mm; margin: auto; }
-        .print-footer-fixed .tte-footer { margin: 0 !important; }
-        @media print {
-          body { padding: 0; }
-          .page { padding: 0; max-width: none; margin: 0; box-shadow: none; }
-        }
-      `,
-    });
-    if (!opened) window.print();
+  /** Unduh PDF langsung (tanpa dialog cetak). Footer TTE diulang di bawah tiap halaman. */
+  const handleDownload = async () => {
+    const element = document.getElementById('genset-report-printable');
+    if (!element || isDownloading) return;
+    setIsDownloading(true);
+    setDownloadError(null);
+    try {
+      await downloadFlowAsPdf({
+        element,
+        filename: 'Laporan Rekapitulasi Genset BMKG.pdf',
+        orientation: 'landscape',
+        marginMm: 10,
+        cloneCss: 'width:100%;min-width:0;max-width:none;padding:0;margin:0;border:none;box-shadow:none;',
+        footerSelector: '.tte-footer',
+      });
+    } catch (err) {
+      console.error('Gagal membuat PDF:', err);
+      setDownloadError('Gagal membuat PDF. Coba lagi.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -112,8 +105,9 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
               {petugasOptions.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
-          <button onClick={handlePrint} className="sm:ml-auto w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-[#0052CC] hover:bg-blue-800 text-white rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
-            <Printer size={15}/> Cetak / Export PDF
+          {downloadError && <span className="sm:ml-auto text-[11px] font-semibold text-rose-600">{downloadError}</span>}
+          <button onClick={handleDownload} disabled={isDownloading} className={`${downloadError ? '' : 'sm:ml-auto '}w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-[#0052CC] hover:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer`}>
+            {isDownloading ? <Loader2 size={15} className="animate-spin"/> : <Download size={15}/>} {isDownloading ? 'Membuat PDF...' : 'Unduh PDF'}
           </button>
         </div>
 
