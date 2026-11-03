@@ -62,6 +62,8 @@ model Device {
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
   stationId             String?
+  aktifSejak            String?             @db.VarChar(7)
+  aktifSampai           String?             @db.VarChar(7)
   calibrationRecords    CalibrationRecord[]
   station               UptStation?         @relation(fields: [stationId], references: [id])
   slaOlaLogs            SlaOlaLog[]
