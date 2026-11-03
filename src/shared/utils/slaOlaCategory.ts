@@ -1,4 +1,5 @@
 import { AloptamaDevice, YearlyScoreMap, MonthlyDeviceScore } from '../types';
+import { isDeviceActiveInMonth, monthKey } from './deviceActivity';
 
 // Kategori resmi sesuai field `category` di database (lihat dropdown di
 // AdminMasterView.tsx). Pencocokan exact-match (bukan substring) supaya
@@ -32,16 +33,20 @@ export const pickScore = (
 
 /**
  * Persentase SLA/OLA per JENIS alat untuk satu bulan (dibulatkan 1 desimal, sama dengan tabel rekap).
- * Alat yang belum punya nilai di bulan itu tetap ada di pembagi (jumlah lokasi) sebagai 0%.
+ * Alat aktif yang belum punya nilai di bulan itu tetap ada di pembagi (jumlah lokasi) sebagai 0%.
  * Dipakai bersama oleh tabel, kartu bulanan, dan grafik tren supaya angkanya selalu sama.
  */
 export const categoryPercentsForMonth = (
   devices: AloptamaDevice[],
   yearlyScores: Parameters<typeof pickScore>[0],
-  monthNum: number
+  monthNum: number,
+  year: number
 ) => {
+  // Hanya alat yang aktif pada bulan itu yang dihitung (alat baru tidak menurunkan bulan
+  // sebelum ia diinput, alat yang dihentikan berhenti dihitung setelah bulan terakhirnya).
+  const ym = monthKey(year, monthNum);
   return CATEGORY_DEFS.map((cat) => {
-    const catDevs = devices.filter((d) => isInCategory(d, cat.key));
+    const catDevs = devices.filter((d) => isInCategory(d, cat.key) && isDeviceActiveInMonth(d, ym));
     const jumlahLokasi = catDevs.length;
     let totalSla = 0;
     let totalOla = 0;

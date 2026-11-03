@@ -39,6 +39,7 @@ import { DeleteUserModal } from './modals/DeleteUserModal';
 import { PetugasFormModal } from './modals/PetugasFormModal';
 import { DeletePetugasModal } from './modals/DeletePetugasModal';
 import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../shared/utils/calibration';
+import { getTodayIsoWIT } from '../../shared/utils/dateUtils';
 
 
 interface AdminMasterViewProps {
@@ -595,6 +596,9 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     setDeviceForm({
       devicesId: newId,
       site: '',
+      // Alat baru dihitung di rekap mulai bulan ia diinput (bulan sebelumnya tidak terpengaruh).
+      aktifSejak: getTodayIsoWIT().slice(0, 7),
+      aktifSampai: null,
       category: 'AWS',
       merk: '',
       uptStation: stations[0]?.name || 'Stasiun Meteorologi DEO Sorong',
@@ -641,6 +645,11 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     // Teknisi UPT hanya boleh mengedit alat yang sudah ada di UPT-nya sendiri.
     if (isTeknisiAlatMode && (!editingDevice || !isSameUpt(editingDevice.uptStation, user?.uptStation, stationsProp))) {
       alert('Anda hanya dapat mengedit alat milik UPT Anda sendiri.');
+      return;
+    }
+
+    if (deviceForm.aktifSejak && deviceForm.aktifSampai && deviceForm.aktifSampai < deviceForm.aktifSejak) {
+      alert('Bulan dihentikan tidak boleh lebih awal dari bulan mulai aktif.');
       return;
     }
 
@@ -696,6 +705,9 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         timkalibrasi: notCalibrated ? PIC_TIDAK_DIKALIBRASI : (deviceForm.timkalibrasi || defaultAgency),
         slaScore: isTeknisiAlatMode ? editingDevice.slaScore : sla,
         olaScore: isTeknisiAlatMode ? editingDevice.olaScore : ola,
+        // Periode aktif hanya bisa diubah Admin; kosong = tidak dibatasi.
+        aktifSejak: isTeknisiAlatMode ? editingDevice.aktifSejak : (deviceForm.aktifSejak || null),
+        aktifSampai: isTeknisiAlatMode ? editingDevice.aktifSampai : (deviceForm.aktifSampai || null),
       };
 
       const changes: string[] = [];
@@ -710,6 +722,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       if (editingDevice.conditionStatus !== updated.conditionStatus) changes.push(`Status: "${editingDevice.conditionStatus}" -> "${updated.conditionStatus}"`);
       if (editingDevice.slaScore !== updated.slaScore) changes.push(`SLA: ${editingDevice.slaScore ?? 100}% -> ${updated.slaScore}%`);
       if (editingDevice.olaScore !== updated.olaScore) changes.push(`OLA: ${editingDevice.olaScore ?? 100}% -> ${updated.olaScore}%`);
+      if ((editingDevice.aktifSejak || null) !== (updated.aktifSejak || null)) changes.push(`Aktif sejak: "${editingDevice.aktifSejak || 'awal'}" -> "${updated.aktifSejak || 'awal'}"`);
+      if ((editingDevice.aktifSampai || null) !== (updated.aktifSampai || null)) changes.push(`Dihentikan setelah bulan: "${editingDevice.aktifSampai || '-'}" -> "${updated.aktifSampai || '-'}"`);
       if (editingDevice.latitude !== updated.latitude || editingDevice.longitude !== updated.longitude) {
         changes.push(`Koordinat: (${editingDevice.latitude}, ${editingDevice.longitude}) -> (${updated.latitude}, ${updated.longitude})`);
       }
@@ -739,6 +753,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         timkalibrasi: notCalibrated ? PIC_TIDAK_DIKALIBRASI : (deviceForm.timkalibrasi || defaultAgency),
         slaScore: sla,
         olaScore: ola,
+        aktifSejak: deviceForm.aktifSejak || null,
+        aktifSampai: deviceForm.aktifSampai || null,
       };
 
       const ok = await onAddDevice(newDev, adminActor);

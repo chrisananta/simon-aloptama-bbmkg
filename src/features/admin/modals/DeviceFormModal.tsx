@@ -263,6 +263,40 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                 </div>
               </div>
 
+              {!restrictedMode && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <div>
+                    <p className="font-bold text-slate-800">Periode Aktif di Rekap SLA &amp; OLA</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Alat hanya dihitung di rekap pada bulan-bulan dalam periode ini. Nilai bulan di luar periode tidak dihapus, hanya tidak ikut dihitung.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Mulai dihitung sejak</label>
+                      <input
+                        type="month"
+                        value={deviceForm.aktifSejak || ''}
+                        onChange={(e) => setDeviceForm({ ...deviceForm, aktifSejak: e.target.value || null })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl outline-none focus:border-[#0052CC]"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">Alat baru: isi bulan pertama alat beroperasi. Kosong = dihitung sejak awal.</p>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Dihentikan (bulan terakhir dihitung)</label>
+                      <input
+                        type="month"
+                        value={deviceForm.aktifSampai || ''}
+                        min={deviceForm.aktifSejak || undefined}
+                        onChange={(e) => setDeviceForm({ ...deviceForm, aktifSampai: e.target.value || null })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl outline-none focus:border-[#0052CC]"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">Alat sudah tidak beroperasi: isi bulan terakhirnya. Kosong = masih beroperasi.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-[11px] text-blue-800">
                 Pembaruan alat ini akan langsung memperbarui pemetaan peta interaktif dan tercatat pada <strong className="font-bold">Audit Log</strong>.
                 {restrictedMode && (

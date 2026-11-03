@@ -68,7 +68,7 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
   }, [cacheKey, year, monthIdx]);
 
   const cards = useMemo(() => {
-    const rows = categoryPercentsForMonth(devices, scores, monthIdx + 1);
+    const rows = categoryPercentsForMonth(devices, scores, monthIdx + 1, Number(year));
     return CATEGORY_DEFS.map((cat, i) => ({ key: cat.key, name: cat.key, ...rows[i] }))
       // Kategori yang belum punya alat terdaftar tidak ditampilkan.
       .filter((c) => c.jumlahLokasi > 0);

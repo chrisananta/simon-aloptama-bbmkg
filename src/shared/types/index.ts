@@ -1,150 +1,68 @@
-export type EquipmentStatus = 'NORMAL' | 'GANGGUAN' | 'MATI';
-export type CalibrationStatus = 'VALID' | 'SEGERA_DIKALIBRASI' | 'KADALUWARSA' | 'TIDAK_DIKALIBRASI';
+import { AloptamaDevice, YearlyScoreMap, MonthlyDeviceScore } from '../types';
+import { isDeviceActiveInMonth, monthKey } from './deviceActivity';
 
-export type EquipmentCategory = 
-  | 'AWOS' 
-  | 'AWS' 
-  | 'ARG' 
-  | 'Radar Cuaca' 
-  | 'Lightning Detector' 
-  | 'Seismometer' 
-  | 'Accelerograph' 
-  | 'WRS NG'
-  | 'Sirene'
-  | string;
+// Kategori resmi sesuai field `category` di database (lihat dropdown di
+// AdminMasterView.tsx). Pencocokan exact-match (bukan substring) supaya
+// "AWOS Kat.I", "AWOS Kat.II", dan "AWOS Kat.III" tidak pernah saling tertukar.
+export const normalizeCategory = (s: string) => (s || '').toLowerCase().replace(/[.\s]/g, '');
 
-export interface AloptamaDevice {
-  devicesId: string;      
-  site: string;            
-  category: EquipmentCategory;
-  merk?: string;           
-  uptStation: string;
-  locationName: string;
-  latitude: number;
-  longitude: number;
-  picKalibrasi?: string; 
-  conditionStatus: EquipmentStatus;
-  calibrationStatus: CalibrationStatus;
-  /** null = alat memang tidak dikalibrasi (mis. sirene). */
-  lastCalibrated: string | null;
-  lastReportedDate?: string;
-  calibrationValidUntil: string | null;
-  timkalibrasi: string;    
-  downtimeDuration?: string;
-  issueDescription?: string;
-  slaScore?: number;
-  olaScore?: number;
-}
-export interface UPTStation {
-  id: string;
-  stationid: string;       
-  name: string;
-  regionGroup: string;
-  location: string;
-  latitude: number;
-  longitude: number;
-}
-export interface FilterState {
-  searchQuery: string;
-  selectedUpt: string;
-  selectedCategory: string;
-  selectedConditionStatus: string;
-  selectedCalibrationStatus: string;
-  month: string;
-  year: string;
-}
-export type ActiveNavMenu = 'dashboard' | 'sla-ola' | 'kalibrasi' | 'sertifikat' | 'admin-master' | 'audit-log' | 'genset' | 'perbaikan' | 'panduan';
+export const CATEGORY_DEFS = [
+  { no: 1, key: 'AWOS Kat.I', tableName: 'AWOS KAT. I', chartName: 'AWOS Kat I' },
+  { no: 2, key: 'AWOS Kat.II', tableName: 'AWOS KAT II', chartName: 'AWOS Kat II' },
+  { no: 3, key: 'AWOS Kat.III', tableName: 'AWOS KAT III', chartName: 'AWOS Kat III' },
+  { no: 4, key: 'Radar Cuaca', tableName: 'RADAR CUACA', chartName: 'Radar Cuaca' },
+  { no: 5, key: 'AWS', tableName: 'AWS', chartName: 'AWS' },
+  { no: 6, key: 'ARG', tableName: 'ARG', chartName: 'ARG' },
+  { no: 7, key: 'Seismometer', tableName: 'SEISMOMETER', chartName: 'Seismometer' },
+  { no: 8, key: 'Lightning Detector', tableName: 'LIGHTNING DETECTOR', chartName: 'Lightning' },
+  { no: 9, key: 'Accelerograph', tableName: 'ACCELEROGRAPH NC', chartName: 'Accelerograph' },
+  { no: 10, key: 'WRS NG', tableName: 'WRS NEW GENERATION', chartName: 'WRS NG' },
+  { no: 11, key: 'Sirene', tableName: 'SIRENE', chartName: 'Sirene' },
+];
 
-export type LogAction = 'TAMBAH' | 'EDIT' | 'HAPUS' | 'SIMPAN_SLA_OLA' | 'SIMPAN_KALIBRASI' | 'SYNC_SERVER' | 'RESET_DATA' | 'EXPORT_DATA' | 'LOGIN' | 'LOGOUT' | 'REFRESH_TOKEN';
-export type LogTable = 'master_stasiun' | 'master_alat' | 'master_sla_ola' | 'master_petugas' | 'master_akun' | 'kalibrasi' | 'sistem' | 'pengaturan' | 'autentikasi';
+export const isInCategory = (d: AloptamaDevice, categoryKey: string) =>
+  normalizeCategory(d.category) === normalizeCategory(categoryKey);
 
-export interface ChangeLog {
-  id: string;
-  timestamp: string;
-  table: LogTable;
-  action: LogAction;
-  recordId: string;
-  recordName: string;
-  actor: string;
-  details: string;
-  status?: 'SUCCESS' | 'WARNING' | 'FAILED';
-  ipOrSource?: string;
-}
+// Nilai bulanan satu alat dari data setahun (undefined = belum ada log bulan itu).
+export const pickScore = (
+  scores: YearlyScoreMap,
+  deviceId: string,
+  monthNum: number
+): MonthlyDeviceScore | undefined => scores[deviceId]?.[String(monthNum)];
 
-export interface CalibrationRecord {
-  id: string;
-  deviceId: string;
-  deviceName: string;
-  uptStation: string;
-  category: string;
-  lastCalibrated: string;
-  calibrationValidUntil: string;
-  calibrationAgency: string;
-  certificateNumber?: string;
-  calibrationStatus: CalibrationStatus;
-  notes?: string;
-  createdAt: string;
-}
-export interface GensetChecklist {
-  bahanBakar: Record<string, 'Baik' | 'Buruk'>;
-  pelumasan: Record<string, 'Baik' | 'Buruk'>;
-  pendinginan: Record<string, 'Baik' | 'Buruk'>;
-  baterai: Record<string, 'Baik' | 'Buruk'>;
-  pemanasan: Record<string, 'Baik' | 'Buruk'>;
-  ats: Record<string, 'Baik' | 'Buruk'>;
-}
 
-export interface GensetRecord {
-  id: string;
-  tanggal: string;
-  jam: string;
-  gedung: 'Operasional' | 'Administrasi' | string;
-  petugasList: string[];
-  petugas: string;
-  checklistData?: GensetChecklist;
-  kesimpulan: string;
-  catatan?: string;
-}
-
-export interface PerbaikanRecord {
-  id: string;
-  formType: 'FORM_1_1' | 'FORM_1_2';
-  jenisLaporan: string[];
-  namaAlat: string;
-  merk: string;
-  typeSn: string;
-  lokasiAlat: string;
-  jenisPeralatan: string;
-  kategoriPeralatan?: string;
-  akarPenyebab: string;
-  analisisKerusakan?: string;
-  rekomendasi: string;
-  kondisiAlat: 'LAYAK_NORMAL' | 'LAYAK_SEBAGIAN' | 'LAYAK_MODIFIKASI' | 'TIDAK_LAYAK' | 'OTHER';
-  kondisiOtherDetail?: string;
-  persentaseFungsi: number;
-  tanggal: string;
-  teknisiList: string[];
-  fotoLampiran?: string[]; // Array Base64 Foto
-}
-
-/** Nilai SLA/OLA bulanan satu alat (hasil resolusi di backend: input admin, atau rata-rata log UPT). */
-export interface MonthlyDeviceScore {
-  sla: number;
-  ola: number;
-  source: 'ADMIN' | 'UPT';
-  jumlahLog: number;
-}
-
-/** deviceId -> nomor bulan ("1".."12") -> nilai bulanan. Bulan tanpa log tidak ada di map. */
-export type YearlyScoreMap = Record<string, Record<string, MonthlyDeviceScore>>;
-
-/** Nilai SLA/OLA satu alat untuk rentang tanggal (rata-rata isian harian UPT pada rentang itu). */
-export interface RangeDeviceScore {
-  sla: number;
-  ola: number;
-  /** Jumlah hari yang punya isian di dalam rentang. */
-  jumlahLog: number;
-}
-
-/** deviceId -> nilai rentang. Alat tanpa isian di rentang itu tidak ada di map. */
-export type RangeScoreMap = Record<string, RangeDeviceScore>;
+/**
+ * Persentase SLA/OLA per JENIS alat untuk satu bulan (dibulatkan 1 desimal, sama dengan tabel rekap).
+ * Alat aktif yang belum punya nilai di bulan itu tetap ada di pembagi (jumlah lokasi) sebagai 0%.
+ * Dipakai bersama oleh tabel, kartu bulanan, dan grafik tren supaya angkanya selalu sama.
+ */
+export const categoryPercentsForMonth = (
+  devices: AloptamaDevice[],
+  yearlyScores: Parameters<typeof pickScore>[0],
+  monthNum: number,
+  year: number
+) => {
+  // Hanya alat yang aktif pada bulan itu yang dihitung (alat baru tidak menurunkan bulan
+  // sebelum ia diinput, alat yang dihentikan berhenti dihitung setelah bulan terakhirnya).
+  const ym = monthKey(year, monthNum);
+  return CATEGORY_DEFS.map((cat) => {
+    const catDevs = devices.filter((d) => isInCategory(d, cat.key) && isDeviceActiveInMonth(d, ym));
+    const jumlahLokasi = catDevs.length;
+    let totalSla = 0;
+    let totalOla = 0;
+    let withData = 0;
+    for (const d of catDevs) {
+      const sc = pickScore(yearlyScores, d.devicesId, monthNum);
+      if (!sc) continue;
+      withData += 1;
+      totalSla += sc.sla;
+      totalOla += sc.ola;
+    }
+    return {
+      jumlahLokasi,
+      withData,
+      sla: jumlahLokasi > 0 ? Number((totalSla / jumlahLokasi).toFixed(1)) : 0,
+      ola: jumlahLokasi > 0 ? Number((totalOla / jumlahLokasi).toFixed(1)) : 0,
+    };
+  });
+};

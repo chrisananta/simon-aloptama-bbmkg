@@ -15,6 +15,7 @@ import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { DashboardFooter } from '../features/dashboard/DashboardFooter';
 import { TimeBar } from '../layouts/TimeBar';
 import { useMenuRoute } from './useMenuRoute';
+import { isDeviceActiveForReporting } from '../shared/utils/deviceActivity';
 
 // Code splitting: tiap halaman/modal besar jadi file JS terpisah yang baru diunduh saat
 // pertama kali dibuka (bukan ikut bundle awal). Modul-modul ini memakai named export,
@@ -87,16 +88,18 @@ function AppContent() {
   const ownUptInputDevices = React.useMemo(() => {
     if (permissions.isScopedToOwnUpt && user?.uptStation) {
       // isSameUpt: UPT bisa tersimpan sebagai KODE (GEO001) atau NAMA stasiun.
-      return devicesData.filter((d) => isSameUpt(d.uptStation, user.uptStation, stationsData));
+      return devicesData.filter((d) => isSameUpt(d.uptStation, user.uptStation, stationsData) && isDeviceActiveForReporting(d));
     }
-    return devicesData;
+    return devicesData.filter(isDeviceActiveForReporting);
   }, [devicesData, stationsData, permissions.isScopedToOwnUpt, user?.uptStation]);
 
   // Calculate high-level totals (data NASIONAL - semua UPT, untuk semua role)
-  const totalDevices = devicesData.length;
-  const normalCount = devicesData.filter((d) => d.conditionStatus === 'NORMAL').length;
-  const gangguanCount = devicesData.filter((d) => d.conditionStatus === 'GANGGUAN').length;
-  const matiCount = devicesData.filter((d) => d.conditionStatus === 'MATI').length;
+  // Alat yang sudah dihentikan tidak ikut hitungan kondisi saat ini.
+  const liveDevicesData = devicesData.filter(isDeviceActiveForReporting);
+  const totalDevices = liveDevicesData.length;
+  const normalCount = liveDevicesData.filter((d) => d.conditionStatus === 'NORMAL').length;
+  const gangguanCount = liveDevicesData.filter((d) => d.conditionStatus === 'GANGGUAN').length;
+  const matiCount = liveDevicesData.filter((d) => d.conditionStatus === 'MATI').length;
 
   // Current actor identifier for audit log tracking
   const currentActor = user ? `${user.name} (${user.role})` : 'Operator SIMON';

@@ -7,6 +7,8 @@ import {
   parseDateOnly,
   formatDateOnly,
   getTodayDateOnlyWIT,
+  getYesterdayDateOnlyWIT,
+  isDeviceActiveInMonth,
   diffDaysDateOnly,
 } from '../utils/dateUtils.js';
 import { isSameUptStation } from '../utils/uptMatch.js';
@@ -55,11 +57,13 @@ export const slaOlaController = {
       }
 
       // Validasi & resolusi tanggal laporan (mendukung pengisian susulan/backdate).
+      // Pengisian hari ini adalah untuk kondisi KEMARIN: tanggal laporan default & maksimal = kemarin (WIT).
       const todayStr = getTodayDateOnlyWIT();
-      const reportDateStr = tanggal || todayStr;
+      const yesterdayStr = getYesterdayDateOnlyWIT();
+      const reportDateStr = tanggal || yesterdayStr;
 
-      if (reportDateStr > todayStr) {
-        return res.status(400).json({ success: false, message: 'Tanggal laporan tidak boleh di masa depan.' });
+      if (reportDateStr > yesterdayStr) {
+        return res.status(400).json({ success: false, message: 'Tanggal laporan maksimal kemarin. Kondisi hari ini diisi besok.' });
       }
       const daysBack = diffDaysDateOnly(todayStr, reportDateStr);
       if (daysBack > MAX_BACKDATE_DAYS) {
@@ -70,7 +74,7 @@ export const slaOlaController = {
       }
 
       const reportDateObj = parseDateOnly(reportDateStr);
-      const isLate = reportDateStr !== todayStr;
+      const isLate = reportDateStr < yesterdayStr;
 
       const slaOn = kondisiSla === true || kondisiSla === 'true' || kondisiSla === 1 || kondisiSla === '1';
       const ola = kondisiOla;
@@ -165,9 +169,10 @@ export const slaOlaController = {
             }
           }
         } else {
-          const matchingDevices = await tx.device.findMany({
+          // Alat yang tidak aktif pada bulan laporan (belum dipasang / sudah dihentikan) dilewati.
+          const matchingDevices = (await tx.device.findMany({
             where: { uptStation, category },
-          });
+          })).filter((dev) => isDeviceActiveInMonth(dev, reportDateStr.slice(0, 7)));
 
           for (const dev of matchingDevices) {
             updatedDeviceName = dev.site;

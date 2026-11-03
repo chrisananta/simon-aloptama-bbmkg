@@ -37,6 +37,16 @@ export function getTodayIsoWIT(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jayapura' });
 }
 
+/**
+ * Tanggal "kemarin" (YYYY-MM-DD) menurut WIT. Pengisian SLA/OLA yang dilakukan
+ * hari ini adalah untuk kondisi KEMARIN (hari ini belum selesai), jadi inilah
+ * tanggal laporan yang dipakai sebagai default, batas maksimal, dan patokan
+ * "sudah lapor".
+ */
+export function getYesterdayIsoWIT(): string {
+  return getIsoDaysAgoWIT(1);
+}
+
 /** Tanggal ISO (YYYY-MM-DD) mundur `daysBack` hari dari hari ini (WIT). */
 export function getIsoDaysAgoWIT(daysBack: number): string {
   const todayWitStr = getTodayIsoWIT();

@@ -37,7 +37,8 @@ const UptSlaOlaReportModal = lazy(() => import('./UptSlaOlaReportModal').then((m
 import { SlaOlaHarianTable } from './SlaOlaHarianTable';
 import { useAuth } from '../auth/AuthContext';
 import { averageOfCategories } from '../../shared/utils/slaOlaTotals';
-import { formatDateIndo } from '../../shared/utils/dateUtils';
+import { formatDateIndo, getYesterdayIsoWIT } from '../../shared/utils/dateUtils';
+import { isDeviceActiveInMonth, isDeviceActiveForReporting, monthKey } from '../../shared/utils/deviceActivity';
 import {
   CATEGORY_DEFS,
   isInCategory,
@@ -163,16 +164,13 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const [reportedTodayIds, setReportedTodayIds] = useState<string[]>([]);
 
+  // Pengisian hari ini adalah untuk kondisi KEMARIN (WIT). Alat dianggap sudah lapor
+  // bila tanggal laporan terakhirnya sudah mencapai kemarin atau lebih baru.
+  const expectedReportDate = getYesterdayIsoWIT();
+
   const isReportedToday = (dev: AloptamaDevice) => {
     if (reportedTodayIds.includes(dev.devicesId)) return true;
-    const todayIso = new Date().toISOString().split('T')[0];
-    if (
-      dev.lastReportedDate === todayIso ||
-      dev.lastCalibrated === todayIso
-    ) {
-      return true;
-    }
-    return false;
+    return !!dev.lastReportedDate && dev.lastReportedDate >= expectedReportDate;
   };
 
   const handleResetReportedStatus = () => {
@@ -201,7 +199,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
   const slaTrendData = useMemo(() => {
     return MONTHS_LIST.map((mObj, idx) => {
-      const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, idx + 1);
+      const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, idx + 1, Number(selectedYear));
       const withDataCount = rows.reduce((acc, r) => acc + r.withData, 0);
 
       // Bulan tanpa satu pun data dikosongkan (null) supaya garis grafik
@@ -217,7 +215,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         ola: averageOfCategories(rows.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.ola }))),
       };
     });
-  }, [yearlyScores, uptFilteredDevices]);
+  }, [yearlyScores, uptFilteredDevices, selectedYear]);
 
   const monthIdx = MONTH_INDEX_MAP[selectedMonth] ?? 7;
 
@@ -240,7 +238,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     const targetMonthNum = monthIdx + 1;
 
     return CATEGORY_DEFS.map((cat) => {
-      const catDevs = uptFilteredDevices.filter((d) => isInCategory(d, cat.key));
+      const catDevs = uptFilteredDevices.filter(
+        (d) => isInCategory(d, cat.key) && isDeviceActiveInMonth(d, monthKey(Number(selectedYear), targetMonthNum))
+      );
       const jumlahLokasi = catDevs.length;
 
       let totalOla = 0;
@@ -255,10 +255,11 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         count: jumlahLokasi,
       };
     }).filter((row) => row.count > 0); // hanya kategori yang dimiliki UPT terpilih
-  }, [yearlyScores, monthIdx, uptFilteredDevices]);
+  }, [yearlyScores, monthIdx, uptFilteredDevices, selectedYear]);
 
+  // Kartu kalibrasi mengikuti kondisi saat ini: alat yang sudah dihentikan tidak ikut dihitung.
   const balaiDevices = uptFilteredDevices.filter(
-    (d) => (d.picKalibrasi || 'Balai').toLowerCase() === 'balai'
+    (d) => (d.picKalibrasi || 'Balai').toLowerCase() === 'balai' && isDeviceActiveForReporting(d)
   );
   const balaiTotalDevs = balaiDevices.length || 1;
   const balaiTidakTerlambatCount = balaiDevices.filter(
@@ -273,7 +274,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     const prevMonthNum = monthIdx === 0 ? 12 : monthIdx;
 
     return CATEGORY_DEFS.map((cat) => {
-      const catDevs = uptFilteredDevices.filter((d) => isInCategory(d, cat.key));
+      const catDevs = uptFilteredDevices.filter(
+        (d) => isInCategory(d, cat.key) && isDeviceActiveInMonth(d, monthKey(Number(selectedYear), targetMonthNum))
+      );
       const jumlahLokasi = catDevs.length;
 
       let totalSla = 0;
@@ -300,17 +303,22 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       const sla = jumlahLokasi > 0 ? Number((totalSla / jumlahLokasi).toFixed(1)) : 0;
 
       // Analisa perubahan = SLA bulan ini dikurangi SLA bulan kemarin (poin persen, dihitung dari angka SLA yang tampil di tabel). Hanya dihitung bila kedua bulan sama-sama punya data; kalau salah satunya kosong, tidak ada pembanding yang adil -> tampil "---".
+      // Pembanding memakai alat yang aktif di BULAN LALU (alat baru tidak ikut menurunkan pembanding).
+      const prevYm = monthKey(monthIdx === 0 ? Number(selectedYear) - 1 : Number(selectedYear), prevMonthNum);
+      const prevCatDevs = uptFilteredDevices.filter(
+        (d) => isInCategory(d, cat.key) && isDeviceActiveInMonth(d, prevYm)
+      );
       let prevTotalSla = 0;
       let reportedPrev = 0;
-      for (const d of catDevs) {
+      for (const d of prevCatDevs) {
         const psc = pickScore(prevScores, d.devicesId, prevMonthNum);
         if (!psc) continue;
         reportedPrev += 1;
         prevTotalSla += psc.sla;
       }
       let diff: number | null = null;
-      if (jumlahLokasi > 0 && reportedNow > 0 && reportedPrev > 0) {
-        const prevSla = Number((prevTotalSla / jumlahLokasi).toFixed(1));
+      if (jumlahLokasi > 0 && prevCatDevs.length > 0 && reportedNow > 0 && reportedPrev > 0) {
+        const prevSla = Number((prevTotalSla / prevCatDevs.length).toFixed(1));
         diff = Number((sla - prevSla).toFixed(1));
       }
 
@@ -326,18 +334,18 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         diff,
       };
     });
-  }, [yearlyScores, prevYearScores, monthIdx, uptFilteredDevices]);
+  }, [yearlyScores, prevYearScores, monthIdx, uptFilteredDevices, selectedYear]);
 
   // TOTAL PERSENTASE bulan terpilih = rata-rata sederhana persentase tiap jenis alatn(jumlah persentase 11 jenis alat dibagi 11)
   const monthlySlaValue = useMemo(() => {
-    const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, monthIdx + 1);
+    const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, monthIdx + 1, Number(selectedYear));
     return averageOfCategories(rows.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.sla })));
-  }, [yearlyScores, monthIdx, uptFilteredDevices]);
+  }, [yearlyScores, monthIdx, uptFilteredDevices, selectedYear]);
 
   const monthlyOlaValue = useMemo(() => {
-    const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, monthIdx + 1);
+    const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, monthIdx + 1, Number(selectedYear));
     return averageOfCategories(rows.map((r) => ({ jumlahLokasi: r.jumlahLokasi, value: r.ola })));
-  }, [yearlyScores, monthIdx, uptFilteredDevices]);
+  }, [yearlyScores, monthIdx, uptFilteredDevices, selectedYear]);
 
   const totalLokasiSum = useMemo(
     () => rekapTableData.reduce((acc, curr) => acc + curr.jumlahLokasi, 0),
@@ -361,7 +369,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   );
   
   const filteredDevices = devices.filter((dev) => {
-    if (isReportedToday(dev)) {
+    if (isReportedToday(dev) || !isDeviceActiveForReporting(dev)) {
       return false;
     }
 
@@ -420,7 +428,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     const gangguan: ListRow[] = [];
     const mati: ListRow[] = [];
 
+    const ym = monthKey(Number(selectedYear), monthIdx + 1);
     for (const d of uptFilteredDevices) {
+      if (!isDeviceActiveInMonth(d, ym)) continue;
       const sc = pickScore(yearlyScores, d.devicesId, monthIdx + 1);
       if (!sc) continue;
       const kondisi = classifyScore(sc);
@@ -438,7 +448,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
     const byName = (x: ListRow, y: ListRow) => x.name.localeCompare(y.name);
     return { displayGangguan: gangguan.sort(byName), displayMati: mati.sort(byName) };
-  }, [uptFilteredDevices, yearlyScores, monthIdx, kendalaMap]);
+  }, [uptFilteredDevices, yearlyScores, monthIdx, kendalaMap, selectedYear]);
 
   const visibleGangguan = showAllGangguan ? displayGangguan : displayGangguan.slice(0, LIST_PREVIEW_LIMIT);
   const visibleMati = showAllMati ? displayMati : displayMati.slice(0, LIST_PREVIEW_LIMIT);
@@ -454,8 +464,16 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     [yearlyScores, monthIdx, uptFilteredDevices]
   );
 
-  const reportedCount = uptFilteredDevices.filter((dev) => isReportedToday(dev)).length;
-  const totalDevicesCount = uptFilteredDevices.length;
+  // Tabel harian: hanya alat yang aktif pada bulan terpilih.
+  const monthDevices = useMemo(
+    () => uptFilteredDevices.filter((d) => isDeviceActiveInMonth(d, monthKey(Number(selectedYear), monthIdx + 1))),
+    [uptFilteredDevices, selectedYear, monthIdx]
+  );
+
+  // Hanya alat yang masih beroperasi yang perlu melapor (alat yang sudah dihentikan tidak dihitung).
+  const reportableDevices = uptFilteredDevices.filter(isDeviceActiveForReporting);
+  const reportedCount = reportableDevices.filter((dev) => isReportedToday(dev)).length;
+  const totalDevicesCount = reportableDevices.length;
 
   return (
     <div className="space-y-6">
@@ -820,7 +838,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       </div>
 
       {/* TABEL HARIAN SLA & OLA (alat x tanggal) */}
-      <SlaOlaHarianTable devices={uptFilteredDevices} month={monthIdx} year={Number(selectedYear)} />
+      <SlaOlaHarianTable devices={monthDevices} month={monthIdx} year={Number(selectedYear)} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
@@ -834,12 +852,17 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
+            <table className="w-full min-w-[560px] table-fixed text-left text-xs text-slate-700">
+              <colgroup>
+                <col className="w-[32%]" />
+                <col className="w-[26%]" />
+                <col className="w-[42%]" />
+              </colgroup>
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
                 <tr>
-                  <th className="p-2.5">Nama Alat</th>
-                  <th className="p-2.5">PIC</th>
-                  <th className="p-2.5">Kendala</th>
+                  <th className="px-3 py-3">Nama Alat</th>
+                  <th className="px-3 py-3">PIC</th>
+                  <th className="px-3 py-3">Kendala</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -852,14 +875,14 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 ) : (
                   visibleGangguan.map((dev) => (
                     <tr key={dev.id} className="hover:bg-amber-50/40 transition-colors">
-                      <td className="p-2.5 font-semibold text-slate-900">
+                      <td className="px-3 py-3 font-semibold text-slate-900 break-words align-top">
                         {dev.name}
                         <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {periodLabel}</span>
                       </td>
-                      <td className="p-2.5 text-slate-600 font-medium">
+                      <td className="px-3 py-3 text-slate-600 font-medium break-words align-top">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
                       </td>
-                      <td className="p-2.5 font-medium text-slate-700 min-w-[180px]">
+                      <td className="px-3 py-3 font-medium text-slate-700 break-words align-top">
                         {dev.kendala ? (
                           <>
                             <span className="block whitespace-pre-line">{dev.kendala}</span>
@@ -906,12 +929,17 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
+            <table className="w-full min-w-[560px] table-fixed text-left text-xs text-slate-700">
+              <colgroup>
+                <col className="w-[32%]" />
+                <col className="w-[26%]" />
+                <col className="w-[42%]" />
+              </colgroup>
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
                 <tr>
-                  <th className="p-2.5">Nama Alat</th>
-                  <th className="p-2.5">PIC</th>
-                  <th className="p-2.5">Kendala</th>
+                  <th className="px-3 py-3">Nama Alat</th>
+                  <th className="px-3 py-3">PIC</th>
+                  <th className="px-3 py-3">Kendala</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -924,14 +952,14 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 ) : (
                   visibleMati.map((dev) => (
                     <tr key={dev.id} className="hover:bg-rose-50/40 transition-colors">
-                      <td className="p-2.5 font-semibold text-slate-900">
+                      <td className="px-3 py-3 font-semibold text-slate-900 break-words align-top">
                         {dev.name}
                         <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {periodLabel}</span>
                       </td>
-                      <td className="p-2.5 text-slate-600 font-medium">
+                      <td className="px-3 py-3 text-slate-600 font-medium break-words align-top">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
                       </td>
-                      <td className="p-2.5 font-medium text-slate-700 min-w-[180px]">
+                      <td className="px-3 py-3 font-medium text-slate-700 break-words align-top">
                         {dev.kendala ? (
                           <>
                             <span className="block whitespace-pre-line">{dev.kendala}</span>
@@ -974,11 +1002,11 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
-                Daftar Aloptama yang Belum Dilaporkan Hari Ini 
+                Daftar Aloptama yang Belum Melaporkan Kondisi {formatDateIndo(expectedReportDate)}
               </h3>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                 <CheckCircle2 size={13} />
-                {reportedCount} / {totalDevicesCount} Alat Sudah Lapor Hari Ini
+                {reportedCount} / {totalDevicesCount} Alat Sudah Lapor
               </span>
             </div>
           </div>
@@ -1019,7 +1047,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <button
                 onClick={handleResetReportedStatus}
                 className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                title="Reset status pengisian SLA OLA hari ini"
+                title="Reset status pengisian SLA OLA"
               >
                 <RefreshCw size={13} />
                 <span>Reset Status</span>
@@ -1034,7 +1062,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <tr>
                 <th className="p-3">Nama &amp; ID Peralatan</th>
                 <th className="p-3">Stasiun UPT</th>
-                <th className="p-3">Terakhir Update</th>
+                <th className="p-3">Terakhir Lapor</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -1044,7 +1072,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     <div className="flex flex-col items-center justify-center gap-2">
                       <CheckCircle2 size={36} className="text-emerald-600" />
                       <span className="font-bold text-slate-800 text-sm">
-                        Semua UPT Telah Mengisi SLA OLA Hari Ini
+                        Semua UPT Telah Mengisi SLA OLA {formatDateIndo(expectedReportDate)}
                       </span>
                       <span className="text-xs text-slate-500 max-w-md">
                         Tidak ada peralatan yang belum dilaporkan. Jika ada UPT yang belum mengisi SLA OLA, peralatan tersebut akan muncul di daftar ini.
@@ -1079,7 +1107,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                           {dev.lastReportedDate ? formatDateIndo(dev.lastReportedDate) : 'Belum pernah lapor'}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400">Belum Lapor Hari Ini</span>
+                      <span className="text-[10px] text-slate-400">Belum lapor kondisi {formatDateIndo(expectedReportDate)}</span>
                     </td>
                   </tr>
                 ))
@@ -1112,7 +1140,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
       <UptSlaOlaReportModal
         isOpen={isUptReportModalOpen}
         onClose={() => setIsUptReportModalOpen(false)}
-        devices={uptFilteredDevices}
+        devices={monthDevices}
         uptName={selectedUptName}
         month={selectedMonth}
         year={selectedYear}

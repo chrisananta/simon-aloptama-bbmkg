@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Copy, Check, Share2, MessageSquare, Calendar, RefreshCw } from 'lucide-react';
 import { AloptamaDevice, UPTStation } from '../../shared/types';
 import { apiClient } from '../../shared/api';
+import { getYesterdayIsoWIT } from '../../shared/utils/dateUtils';
 
 interface WaReportModalProps {
   isOpen: boolean;
@@ -30,24 +31,21 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
     return map;
   }, [stations]);
 
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 1);
-  const day = d.getUTCDate();
+  // Tanggal "kemarin" menurut WIT (bukan UTC, supaya tidak meleset sehari di pagi hari WIT).
+  const yesterdayStr = getYesterdayIsoWIT();
+  const [yYear, yMonth, yDay] = yesterdayStr.split('-').map(Number);
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
-  const month = monthNames[d.getUTCMonth()];
-  const year = d.getUTCFullYear();
-  const dateStrUTC = `${day} ${month} ${year}`;
+  const dateStrUTC = `${yDay} ${monthNames[yMonth - 1]} ${yYear}`;
 
   // Tanggal "kemarin" dalam format YYYY-MM-DD, dipakai untuk cek siapa yang
   // BELUM lapor. Laporan WA ini jalan jam 9 pagi — jam yang sama persis
   // dengan mulainya jendela pelaporan alat hari ini — jadi yang relevan
   // dicek adalah status pelaporan KEMARIN, bukan hari ini (hari ini belum
   // mungkin ada laporan sama sekali di jam segitu).
-  const yesterdayStr = `${year}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  const belumLaporKemarin = (dev: AloptamaDevice) => (dev.lastReportedDate || '') !== yesterdayStr;
+  const belumLaporKemarin = (dev: AloptamaDevice) => (dev.lastReportedDate || '') < yesterdayStr;
 
   const formatUptName = (uptName: string) => {
     if (!uptName) return '';

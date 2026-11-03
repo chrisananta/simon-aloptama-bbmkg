@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "../../shared/api";
 import { useAuth } from "../auth/AuthContext";
 import { slaOlaSchema, SLA_OLA_MAX_BACKDATE_DAYS } from "../../shared/schemas";
-import { getTodayIsoWIT, getIsoDaysAgoWIT, formatDateIndo } from "../../shared/utils/dateUtils";
+import { getYesterdayIsoWIT, getIsoDaysAgoWIT, formatDateIndo } from "../../shared/utils/dateUtils";
 import { SlaOlaModalProps } from "./SlaOlaTypes";
 import { isSameUpt } from "../../shared/utils/uptMatch";
 import { isInCategory } from "../../shared/utils/slaOlaCategory";
@@ -132,7 +132,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       kondisiSla: true,
       kondisiOla: 100,
       kendala: "",
-      tanggal: getTodayIsoWIT(),
+      tanggal: getYesterdayIsoWIT(),
     },
   });
 
@@ -142,17 +142,18 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const watchKondisiSla = watch("kondisiSla");
   const watchTanggal = watch("tanggal");
 
-  const todayIsoWIT = useMemo(() => getTodayIsoWIT(), []);
+  // Tanggal default & maksimal = KEMARIN (pengisian hari ini untuk kondisi kemarin).
+  const todayIsoWIT = useMemo(() => getYesterdayIsoWIT(), []);
   const minBackdateIsoWIT = useMemo(
     () => getIsoDaysAgoWIT(SLA_OLA_MAX_BACKDATE_DAYS),
     []
   );
   const isLateEntry = !!watchTanggal && watchTanggal !== todayIsoWIT;
 
-  // Reset ke tanggal hari ini setiap kali modal dibuka
+  // Reset ke tanggal kemarin setiap kali modal dibuka
   useEffect(() => {
     if (isOpen) {
-      setValue("tanggal", getTodayIsoWIT());
+      setValue("tanggal", getYesterdayIsoWIT());
       setFilledDeviceIds(new Set());
       setSelectedDeviceIds(new Set());
     }

@@ -9,6 +9,7 @@ import { KondisiAloptamaSection } from './KondisiAloptamaSection';
 import { AksesInformasiSection } from './AksesInformasiSection';
 import { findStation } from '../../shared/utils/uptMatch';
 import { loadPapuaProvinces, findProvince, ProvinceShape } from '../../shared/utils/provinceLookup';
+import { isDeviceActiveForReporting } from '../../shared/utils/deviceActivity';
 
 interface ExtendedDashboardProps extends DashboardPageProps {
   stations?: UPTStation[];
@@ -22,6 +23,10 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+
+  // Peta & hitungan kondisi hanya untuk alat yang masih beroperasi. Alat yang sudah dihentikan
+  // tetap ada di `devices` untuk rekap bulan-bulan sebelumnya (KondisiAloptamaSection).
+  const liveDevices = useMemo(() => devices.filter(isDeviceActiveForReporting), [devices]);
 
   // Map pencarian ID Stasiun -> Nama Stasiun
   const stationMap = useMemo(() => {
@@ -55,19 +60,19 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
 
   const regionOptions = useMemo(() => {
     const counts = new Map<string, number>();
-    devices.forEach((d) => {
+    liveDevices.forEach((d) => {
       const reg = regionOfDevice(d);
       if (reg) counts.set(reg, (counts.get(reg) || 0) + 1);
     });
     return Array.from(counts.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [devices, stationList, provinceShapes]);
+  }, [liveDevices, stationList, provinceShapes]);
 
   // List opsi dropdown { id, name }
   const uptOptions = useMemo<{ id: string; name: string }[]>(() => {
     const stationIds = new Set<string>();
-    devices.forEach((d) => {
+    liveDevices.forEach((d) => {
       if (selectedRegion !== 'ALL' && regionOfDevice(d) !== selectedRegion) return;
       if (d.uptStation) {
         const idStr = typeof d.uptStation === 'string' 
@@ -80,9 +85,9 @@ export const DashboardPage: React.FC<ExtendedDashboardProps> = ({ devices, stati
       id: String(id),
       name: stationMap.get(String(id)) || String(id),
     }));
-  }, [devices, stationMap, selectedRegion, stationList, provinceShapes]);
+  }, [liveDevices, stationMap, selectedRegion, stationList, provinceShapes]);
 
-  const filteredDevices = devices.filter((dev) => {
+  const filteredDevices = liveDevices.filter((dev) => {
     const matchesSearch =
       searchQuery === '' ||
       (dev.site || '').toLowerCase().includes(searchQuery.toLowerCase()) ||

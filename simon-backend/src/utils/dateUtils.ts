@@ -65,6 +65,28 @@ export function getTodayDateOnlyWIT(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jayapura' });
 }
 
+/** Bulan berjalan "YYYY-MM" menurut WIT. */
+export function getCurrentMonthWIT(): string {
+  return getTodayDateOnlyWIT().slice(0, 7);
+}
+
+/** Apakah alat dihitung aktif pada bulan `ym` ("YYYY-MM") berdasarkan periode aktifnya. */
+export function isDeviceActiveInMonth(
+  device: { aktifSejak?: string | null; aktifSampai?: string | null },
+  ym: string
+): boolean {
+  if (device.aktifSejak && ym < device.aktifSejak) return false;
+  if (device.aktifSampai && ym > device.aktifSampai) return false;
+  return true;
+}
+
+/** Tanggal "kemarin" (YYYY-MM-DD) menurut WIT. Pengisian hari ini adalah untuk kondisi kemarin. */
+export function getYesterdayDateOnlyWIT(): string {
+  const d = parseDateOnly(getTodayDateOnlyWIT());
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Selisih hari (bulat) antara dua string "YYYY-MM-DD". Positif jika `to` < `from`. */
 export function diffDaysDateOnly(from: string, to: string): number {
   const fromDate = parseDateOnly(from);

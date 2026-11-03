@@ -2,6 +2,8 @@ import React from 'react';
 import { Plus, Edit2, Trash2, Search, Download } from 'lucide-react';
 import { UPTStation, AloptamaDevice, EquipmentCategory } from '../../../shared/types';
 import { isNotCalibrated } from '../../../shared/utils/calibration';
+import { isDeviceActiveForReporting } from '../../../shared/utils/deviceActivity';
+import { getYesterdayIsoWIT } from '../../../shared/utils/dateUtils';
 
 interface MasterAlatTabProps {
   stations: UPTStation[];
@@ -217,6 +219,14 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                         </td>
                         <td className="p-3.5 font-bold text-slate-900">
                           <div>{dev.site}</div>
+                          {!isDeviceActiveForReporting(dev) && (
+                            <span
+                              className="inline-block mt-1 px-1.5 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-bold rounded"
+                              title={dev.aktifSampai ? `Dihitung sampai ${dev.aktifSampai}` : `Mulai dihitung ${dev.aktifSejak}`}
+                            >
+                              {dev.aktifSampai && dev.aktifSampai < getYesterdayIsoWIT().slice(0, 7) ? 'Tidak beroperasi' : 'Belum aktif'}
+                            </span>
+                          )}
                         </td>
                         <td className="p-3.5 whitespace-nowrap">
                           <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold text-[11px] rounded-md border border-slate-200">

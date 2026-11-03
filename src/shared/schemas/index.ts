@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getTodayIsoWIT, getIsoDaysAgoWIT } from '../utils/dateUtils';
+import { getYesterdayIsoWIT, getIsoDaysAgoWIT } from '../utils/dateUtils';
 
 // Batas maksimal mundur untuk pengisian SLA/OLA susulan (harus sinkron
 // dengan MAX_BACKDATE_DAYS di simon-backend/src/controllers/slaOlaController.ts).
@@ -23,12 +23,13 @@ export const slaOlaSchema = z.object({
     });
   }
 
-  const todayIso = getTodayIsoWIT();
+  // Pengisian hari ini adalah untuk kondisi kemarin: hari ini sendiri belum selesai.
+  const maxIso = getYesterdayIsoWIT();
   const minIso = getIsoDaysAgoWIT(SLA_OLA_MAX_BACKDATE_DAYS);
-  if (data.tanggal > todayIso) {
+  if (data.tanggal > maxIso) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Tanggal laporan tidak boleh di masa depan.',
+      message: 'Tanggal laporan maksimal kemarin. Kondisi hari ini diisi besok.',
       path: ['tanggal'],
     });
   } else if (data.tanggal < minIso) {

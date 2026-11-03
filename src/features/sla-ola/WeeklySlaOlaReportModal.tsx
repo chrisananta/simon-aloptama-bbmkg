@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { isDeviceActiveInMonth } from '../../shared/utils/deviceActivity';
 import printlogobmkg from '../../assets/images/BMKGLogo.png';
 import footerTte from '../../assets/images/FooterTTE.png';
 import { 
@@ -386,7 +387,12 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
     ];
 
     return CATEGORIES.map((cat, idx) => {
-      const catDevs = devices.filter(cat.matchFn);
+      // Hanya alat yang aktif pada rentang laporan (bulan awal atau bulan akhir rentang).
+      const catDevs = devices.filter(
+        (d) =>
+          cat.matchFn(d) &&
+          (isDeviceActiveInMonth(d, startDateIso.slice(0, 7)) || isDeviceActiveInMonth(d, endDateIso.slice(0, 7)))
+      );
 
       let jumlahLokasi = catDevs.length;
       let sla = 0;
@@ -431,7 +437,7 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
         tanpaIsian
       };
     });
-  }, [devices, rangeScores]);
+  }, [devices, rangeScores, startDateIso, endDateIso]);
 
   const totalLokasiSum = useMemo(() => rekapData.reduce((acc, curr) => acc + curr.jumlahLokasi, 0), [rekapData]);
   // TOTAL PERSENTASE = rata-rata sederhana persentase tiap jenis alat (jumlah persentase 11 jenis

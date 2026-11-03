@@ -3,11 +3,13 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE, certificateValidUntil } from '../utils/dateUtils.js';
+import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE, certificateValidUntil, getCurrentMonthWIT } from '../utils/dateUtils.js';
 import { syncCalibrationListing } from '../utils/calibrationList.js';
 import { loadLatestReportSnapshot } from '../utils/latestSlaOlaReport.js';
 
 const dateOnlyString = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal wajib "YYYY-MM-DD".');
+
+const monthString = z.string().trim().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Format bulan wajib "YYYY-MM".');
 
 const deviceInput = z.object({
   devicesId: z.string().trim().min(1).max(64).optional(),
@@ -32,6 +34,8 @@ const deviceInput = z.object({
   downtimeDuration: z.string().trim().max(200).nullable().optional(),
   slaScore: z.coerce.number().finite().min(0).max(100).optional(),
   olaScore: z.coerce.number().finite().min(0).max(100).optional(),
+  aktifSejak: monthString.nullable().optional(),
+  aktifSampai: monthString.nullable().optional(),
 });
 
 const deviceUpdate = deviceInput.partial().omit({ devicesId: true, id: true });
@@ -161,6 +165,10 @@ export const deviceController = {
       const station = await findStationByNameOrCode(body.uptStation);
       if (!station) return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan. Buat atau pilih stasiun yang terdaftar.' });
 
+      if (body.aktifSejak && body.aktifSampai && body.aktifSampai < body.aktifSejak) {
+        return res.status(400).json({ success: false, message: 'Bulan dihentikan tidak boleh lebih awal dari bulan mulai aktif.' });
+      }
+
       const today = new Date().toISOString().slice(0, 10);
       const devicesId = body.devicesId || body.id || `ALT-${randomUUID()}`;
       const site = body.site || body.name || '';
@@ -192,6 +200,9 @@ export const deviceController = {
             slaScore: body.slaScore,
             olaScore: body.olaScore,
             stationId: station.id,
+            // Alat baru dihitung mulai bulan ia diinput (tidak menurunkan rekap bulan-bulan sebelumnya).
+            aktifSejak: body.aktifSejak === undefined ? getCurrentMonthWIT() : body.aktifSejak,
+            aktifSampai: body.aktifSampai ?? null,
           }
         });
         await tx.auditLog.create({
@@ -263,6 +274,20 @@ export const deviceController = {
       const station = body.uptStation ? await findStationByNameOrCode(body.uptStation) : null;
       if (body.uptStation && !station) return res.status(400).json({ success: false, message: 'Stasiun UPT tidak ditemukan.' });
 
+      // Periode aktif: validasi urutan bulan terhadap nilai gabungan (baru + yang sudah tersimpan).
+      const touchesPeriod = body.aktifSejak !== undefined || body.aktifSampai !== undefined;
+      let periodAudit = '';
+      if (touchesPeriod) {
+        const current = await prisma.device.findUnique({ where: { devicesId: req.params.id } });
+        if (!current) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+        const nextSejak = body.aktifSejak !== undefined ? body.aktifSejak : current.aktifSejak;
+        const nextSampai = body.aktifSampai !== undefined ? body.aktifSampai : current.aktifSampai;
+        if (nextSejak && nextSampai && nextSampai < nextSejak) {
+          return res.status(400).json({ success: false, message: 'Bulan dihentikan tidak boleh lebih awal dari bulan mulai aktif.' });
+        }
+        periodAudit = ` Periode aktif: ${nextSejak || 'awal'} s/d ${nextSampai || 'sekarang'}.`;
+      }
+
       const site = body.site !== undefined ? body.site : body.name;
       const merk = body.merk !== undefined ? body.merk : body.subCategory;
       let timkalibrasi = body.timkalibrasi !== undefined ? body.timkalibrasi : body.calibrationAgency;
@@ -309,6 +334,8 @@ export const deviceController = {
             slaScore: body.slaScore,
             olaScore: body.olaScore,
             stationId: station?.id,
+            aktifSejak: body.aktifSejak,
+            aktifSampai: body.aktifSampai,
           },
         });
         await tx.auditLog.create({
@@ -318,7 +345,7 @@ export const deviceController = {
             recordId: device.devicesId,
             recordName: `${device.site} (${device.category})`,
             actor: actorName(req),
-            details: `Pembaruan data master aloptama ${device.site}.`
+            details: `Pembaruan data master aloptama ${device.site}.${periodAudit}`
           }
         });
         return device;
