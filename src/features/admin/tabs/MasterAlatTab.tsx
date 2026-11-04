@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Edit2, Trash2, Search, Download } from 'lucide-react';
 import { UPTStation, AloptamaDevice, EquipmentCategory } from '../../../shared/types';
-import { isNotCalibrated } from '../../../shared/utils/calibration';
+import { PIC_REKANAN, isNotCalibrated } from '../../../shared/utils/calibration';
 import { isDeviceActiveForReporting } from '../../../shared/utils/deviceActivity';
 import { getYesterdayIsoWIT } from '../../../shared/utils/dateUtils';
 
@@ -240,6 +240,10 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                           {isNotCalibrated(dev) ? (
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-600 font-extrabold text-[10px] rounded-full border border-slate-300">
                               TIDAK DIKALIBRASI
+                            </span>
+                          ) : (dev.picKalibrasi || '').toLowerCase() === PIC_REKANAN.toLowerCase() ? (
+                            <span className="px-2 py-0.5 bg-violet-50 text-violet-700 font-extrabold text-[10px] rounded-full border border-violet-200">
+                              REKANAN
                             </span>
                           ) : (dev.picKalibrasi === 'Pusat' || dev.picKalibrasi === 'PUSAT') ? (
                             <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] rounded-full border border-emerald-200">

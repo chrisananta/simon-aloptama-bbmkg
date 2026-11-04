@@ -1,7 +1,7 @@
 import React from 'react';
 import { Radio, X } from 'lucide-react';
 import { UPTStation, AloptamaDevice, EquipmentCategory, CalibrationStatus } from '../../../shared/types';
-import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../../shared/utils/calibration';
+import { PIC_TIDAK_DIKALIBRASI, PIC_REKANAN, agencyNameForPic, isNotCalibrated } from '../../../shared/utils/calibration';
 import { getTodayIsoWIT } from '../../../shared/utils/dateUtils';
 
 // Masa berlaku sertifikat = tanggal kalibrasi + 1 tahun - 1 hari (sama dengan form Kalibrasi).
@@ -53,14 +53,14 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
       });
       return;
     }
-    // Kembali ke Balai/Pusat: pulihkan status & tanggal bila sebelumnya kosong.
+    // Kembali ke Balai/Pusat/Rekanan: pulihkan status & tanggal bila sebelumnya kosong.
     const wasNotCalibrated = isNotCalibrated(deviceForm);
     const today = getTodayIsoWIT();
     const nextYear = `${Number(today.slice(0, 4)) + 1}${today.slice(4)}`;
     setDeviceForm({
       ...deviceForm,
       picKalibrasi: selectedPic,
-      timkalibrasi: selectedPic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V',
+      timkalibrasi: agencyNameForPic(selectedPic),
       calibrationStatus: wasNotCalibrated ? 'VALID' : deviceForm.calibrationStatus,
       lastCalibrated: deviceForm.lastCalibrated || today,
       calibrationValidUntil: deviceForm.calibrationValidUntil || nextYear,
@@ -182,6 +182,7 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                   >
                     <option value="Balai">Balai (BBMKG Wilayah V)</option>
                     <option value="Pusat">Pusat (BMKG Pusat)</option>
+                    <option value={PIC_REKANAN}>Rekanan (Pihak Ketiga)</option>
                     <option value={PIC_TIDAK_DIKALIBRASI}>Tidak Dikalibrasi</option>
                   </select>
                 </div>

@@ -297,7 +297,7 @@ export const deviceController = {
       if (!markNotCalibrated && body.calibrationStatus === 'TIDAK_DIKALIBRASI') {
         return res.status(400).json({
           success: false,
-          message: 'Status "Tidak Dikalibrasi" tidak cocok dengan PIC Kalibrasi Balai/Pusat. Pilih status kalibrasi yang sesuai.',
+          message: 'Status "Tidak Dikalibrasi" tidak cocok dengan PIC Kalibrasi Balai/Pusat/Rekanan. Pilih status kalibrasi yang sesuai.',
         });
       }
       if (markNotCalibrated) {

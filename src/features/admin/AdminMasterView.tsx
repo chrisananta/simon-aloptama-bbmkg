@@ -38,7 +38,7 @@ import { UserFormModal } from './modals/UserFormModal';
 import { DeleteUserModal } from './modals/DeleteUserModal';
 import { PetugasFormModal } from './modals/PetugasFormModal';
 import { DeletePetugasModal } from './modals/DeletePetugasModal';
-import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../shared/utils/calibration';
+import { PIC_TIDAK_DIKALIBRASI, agencyNameForPic, picFromAgency, isNotCalibrated } from '../../shared/utils/calibration';
 import { getTodayIsoWIT } from '../../shared/utils/dateUtils';
 
 
@@ -621,7 +621,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     const existingPic = isNotCalibrated(dev)
       ? PIC_TIDAK_DIKALIBRASI
       : dev.picKalibrasi
-        || (dev.timkalibrasi?.toLowerCase().includes('pusat') ? 'Pusat' : 'Balai');
+        || picFromAgency(dev.timkalibrasi);
 
     setDeviceForm({
       ...dev,
@@ -672,7 +672,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     const notCalibrated = pic === PIC_TIDAK_DIKALIBRASI;
     const defaultAgency = notCalibrated
       ? PIC_TIDAK_DIKALIBRASI
-      : pic === 'Pusat' ? 'BMKG Pusat' : 'Balai Besar MKG Wilayah V';
+      : agencyNameForPic(pic);
     // Status kalibrasi yang dikirim: alat tidak dikalibrasi selalu TIDAK_DIKALIBRASI;
     // sebaliknya, status TIDAK_DIKALIBRASI tidak boleh "bocor" ke alat Balai/Pusat.
     const resolvedCalibrationStatus: CalibrationStatus = notCalibrated

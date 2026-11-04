@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { AloptamaDevice, CalibrationStatus, UPTStation } from '../../shared/types';
 import { apiClient } from '../../shared/api';
-import { PIC_TIDAK_DIKALIBRASI, isNotCalibrated } from '../../shared/utils/calibration';
+import { PIC_TIDAK_DIKALIBRASI, PIC_REKANAN, picFromAgency, isNotCalibrated } from '../../shared/utils/calibration';
 import { CalibrationRecord } from './CalibrationTypes';
 import { useAuth } from '../auth/AuthContext';
 import { UserRole } from '../auth/authTypes';
@@ -130,7 +130,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       calibrationAgency: dev.timkalibrasi,
       picKalibrasi: isNotCalibrated(dev)
         ? PIC_TIDAK_DIKALIBRASI
-        : dev.picKalibrasi || ((dev.timkalibrasi || '').toLowerCase().includes('pusat') ? 'Pusat' : 'Balai'),
+        : dev.picKalibrasi || picFromAgency(dev.timkalibrasi),
       notes: isNotCalibrated(dev)
         ? 'Alat tidak dikalibrasi'
         : dev.calibrationStatus === 'VALID' ? 'Kalibrasi Berkala Operasional' : 'Perlu Re-Kalibrasi INSKAL',
@@ -140,7 +140,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     })),
     ...calibrationLogs.map((log) => ({
       ...log,
-      picKalibrasi: (log.calibrationAgency || '').toLowerCase().includes('pusat') ? 'Pusat' : 'Balai',
+      picKalibrasi: picFromAgency(log.calibrationAgency),
       isRepository: true,
     })),
   ];
@@ -351,6 +351,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     <option value="ALL">Semua PIC Kalibrasi</option>
                     <option value="Balai">🏢 Balai (BBMKG Wilayah V)</option>
                     <option value="Pusat">🏛️ Pusat (BMKG Pusat)</option>
+                    <option value={PIC_REKANAN}>🤝 Rekanan (Pihak Ketiga)</option>
                     <option value={PIC_TIDAK_DIKALIBRASI}>⚪ Tidak Dikalibrasi</option>
                   </select>
 
