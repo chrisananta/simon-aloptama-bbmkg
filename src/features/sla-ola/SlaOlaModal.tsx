@@ -101,6 +101,9 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [lastBatchCount, setLastBatchCount] = useState<number>(0);
+  // Centang "kendala masih sama seperti laporan sebelumnya": tiap alat yang
+  // dipilih memakai keterangan kendala terakhirnya sendiri (tanpa mengetik ulang).
+  const [sameAsPrev, setSameAsPrev] = useState<boolean>(false);
 
   const [stationsList, setStationsList] = useState<any[]>(() =>
     apiClient.stations.getAll()
@@ -156,6 +159,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       setValue("tanggal", getYesterdayIsoWIT());
       setFilledDeviceIds(new Set());
       setSelectedDeviceIds(new Set());
+      setSameAsPrev(false);
     }
   }, [isOpen, setValue]);
 
@@ -259,6 +263,42 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       setValue("deviceId", "");
     }
   }, [matchingDevices, setValue]);
+
+  // Kendala terakhir sebuah alat. Hanya dianggap ada bila alat masih
+  // GANGGUAN/MATI dan keterangannya tidak kosong.
+  const getPrevKendala = (d: AloptamaDevice): string =>
+    d.conditionStatus !== "NORMAL" ? (d.issueDescription || "").trim() : "";
+
+  const selectedDevices = useMemo(
+    () => matchingDevices.filter((d) => selectedDeviceIds.has(d.devicesId)),
+    [matchingDevices, selectedDeviceIds]
+  );
+  const devicesWithoutPrev = selectedDevices.filter((d) => !getPrevKendala(d));
+  const canUseSamePrev =
+    selectedDevices.length > 0 && devicesWithoutPrev.length === 0;
+
+  // Jika pilihan alat berubah dan salah satunya tidak punya kendala sebelumnya,
+  // centang otomatis dilepas supaya tidak menyimpan kendala kosong.
+  useEffect(() => {
+    if (sameAsPrev && !canUseSamePrev) {
+      setSameAsPrev(false);
+      setValue("kendala", "");
+    }
+  }, [sameAsPrev, canUseSamePrev, setValue]);
+
+  // Saat dicentang, isi kolom kendala dengan ringkasan (agar lolos validasi
+  // "wajib isi"). Pengosongan saat dilepas dilakukan di handler checkbox,
+  // supaya teks yang diketik petugas tidak terhapus tanpa sengaja.
+  useEffect(() => {
+    if (sameAsPrev && canUseSamePrev) {
+      setValue(
+        "kendala",
+        selectedDevices.map((d) => getPrevKendala(d)).join(" | "),
+        { shouldValidate: true }
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sameAsPrev, canUseSamePrev, selectedDevices, setValue]);
 
   useEffect(() => {
     if (!watchKondisiSla) {
@@ -400,13 +440,18 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
     try {
       for (const deviceId of targetIds) {
+        // Bila "sama seperti sebelumnya" dicentang, pakai kendala terakhir
+        // milik alat ini sendiri; selain itu pakai teks yang diketik.
+        const dev = matchingDevices.find((d) => d.devicesId === deviceId);
+        const kendalaFinal =
+          sameAsPrev && dev ? getPrevKendala(dev) : (data.kendala || "").trim();
         await onSaveSlaOla({
           uptStation: data.uptStation,
           category: data.category.startsWith("AWOS") ? "AWOS" : data.category,
           deviceId,
           kondisiSla: data.kondisiSla,
           kondisiOla: data.kondisiOla,
-          kendala: (data.kendala || "").trim(),
+          kendala: kendalaFinal,
           tanggal: data.tanggal,
         });
       }
@@ -424,6 +469,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         // Reset kalkulator ke default netral untuk batch berikutnya
         setValue("kondisiSla", true);
         setValue("kondisiOla", 100);
+        setSameAsPrev(false);
         setValue("kendala", "");
       }, 1200);
     } catch (err: any) {
@@ -1467,18 +1513,54 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-800">
-                KENDALA OPERASIONAL / CATATAN{" "}
-                {!watchKondisiSla || watchKondisiOla < 100 ? (
-                  <span className="text-rose-600 font-bold">(Wajib Isi)</span>
-                ) : (
-                  <span className="text-slate-400 font-normal">(Opsional)</span>
+              <div className="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
+                <label className="block text-xs font-bold text-slate-800">
+                  KENDALA OPERASIONAL / CATATAN{" "}
+                  {!watchKondisiSla || watchKondisiOla < 100 ? (
+                    <span className="text-rose-600 font-bold">(Wajib Isi)</span>
+                  ) : (
+                    <span className="text-slate-400 font-normal">(Opsional)</span>
+                  )}
+                  :
+                </label>
+                {selectedDevices.length > 0 && (
+                  <label
+                    className={`flex items-center gap-1.5 text-xs ${
+                      canUseSamePrev
+                        ? "text-slate-700 cursor-pointer"
+                        : "text-slate-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={sameAsPrev}
+                      disabled={isSubmitting || !canUseSamePrev}
+                      onChange={(e) => {
+                        setSameAsPrev(e.target.checked);
+                        if (!e.target.checked) setValue("kendala", "");
+                      }}
+                    />
+                    Kendala masih sama
+                  </label>
                 )}
-                :
-              </label>
+              </div>
+              {selectedDevices.length > 0 && !canUseSamePrev && (
+                <p className="text-[10px] text-slate-400">
+                  "Kondisi sama" tidak tersedia: {devicesWithoutPrev.map((d) => d.site).join(", ")} belum punya kendala tercatat.
+                </p>
+              )}
+              {sameAsPrev && canUseSamePrev && (
+                <ul className="text-[10px] text-slate-600 space-y-0.5 pl-1">
+                  {selectedDevices.map((d) => (
+                    <li key={d.devicesId}>
+                      <strong>{d.site}</strong>: {getPrevKendala(d)}
+                    </li>
+                  ))}
+                </ul>
+              )}
               <textarea
                 {...register("kendala")}
-                disabled={isSubmitting}
+                disabled={isSubmitting || sameAsPrev}
                 rows={2}
                 placeholder={
                   !watchKondisiSla || watchKondisiOla < 100
