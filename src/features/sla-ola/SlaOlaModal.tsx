@@ -101,9 +101,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [lastBatchCount, setLastBatchCount] = useState<number>(0);
-  // Centang "kendala masih sama seperti laporan sebelumnya": tiap alat yang
-  // dipilih memakai keterangan kendala terakhirnya sendiri (tanpa mengetik ulang).
-  const [sameAsPrev, setSameAsPrev] = useState<boolean>(false);
+  // Kendala per alat (tampil di samping tiap alat yang dicentang). Isi di satu
+  // alat otomatis disalin ke alat lain yang dicentang & belum diubah manual.
+  const [kendalaByDevice, setKendalaByDevice] = useState<Record<string, string>>({});
+  // Alat yang dicentang "sama dengan sebelumnya" (pakai kendala terakhirnya sendiri).
+  const [samePrevByDevice, setSamePrevByDevice] = useState<Record<string, boolean>>({});
 
   const [stationsList, setStationsList] = useState<any[]>(() =>
     apiClient.stations.getAll()
@@ -159,7 +161,8 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       setValue("tanggal", getYesterdayIsoWIT());
       setFilledDeviceIds(new Set());
       setSelectedDeviceIds(new Set());
-      setSameAsPrev(false);
+      setKendalaByDevice({});
+      setSamePrevByDevice({});
     }
   }, [isOpen, setValue]);
 
@@ -273,32 +276,32 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     () => matchingDevices.filter((d) => selectedDeviceIds.has(d.devicesId)),
     [matchingDevices, selectedDeviceIds]
   );
-  const devicesWithoutPrev = selectedDevices.filter((d) => !getPrevKendala(d));
-  const canUseSamePrev =
-    selectedDevices.length > 0 && devicesWithoutPrev.length === 0;
 
-  // Jika pilihan alat berubah dan salah satunya tidak punya kendala sebelumnya,
-  // centang otomatis dilepas supaya tidak menyimpan kendala kosong.
-  useEffect(() => {
-    if (sameAsPrev && !canUseSamePrev) {
-      setSameAsPrev(false);
-      setValue("kendala", "");
-    }
-  }, [sameAsPrev, canUseSamePrev, setValue]);
+  const needKendala = !watchKondisiSla || watchKondisiOla < 100;
 
-  // Saat dicentang, isi kolom kendala dengan ringkasan (agar lolos validasi
-  // "wajib isi"). Pengosongan saat dilepas dilakukan di handler checkbox,
-  // supaya teks yang diketik petugas tidak terhapus tanpa sengaja.
+  // Ubah kendala sebuah alat (tiap alat punya kendala sendiri).
+  const handleKendalaChange = (deviceId: string, value: string) => {
+    setKendalaByDevice((prev) => ({ ...prev, [deviceId]: value }));
+  };
+
+  // Centang "sama dengan sebelumnya" untuk satu alat.
+  const toggleSamePrev = (d: AloptamaDevice, checked: boolean) => {
+    setSamePrevByDevice((prev) => ({ ...prev, [d.devicesId]: checked }));
+    setKendalaByDevice((prev) => ({
+      ...prev,
+      [d.devicesId]: checked ? getPrevKendala(d) : "",
+    }));
+  };
+
+  // Sinkronkan ke field form "kendala" agar validasi zod (wajib isi saat OFF /
+  // OLA<100) tetap bekerja: terisi hanya jika SEMUA alat terpilih sudah diisi.
   useEffect(() => {
-    if (sameAsPrev && canUseSamePrev) {
-      setValue(
-        "kendala",
-        selectedDevices.map((d) => getPrevKendala(d)).join(" | "),
-        { shouldValidate: true }
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sameAsPrev, canUseSamePrev, selectedDevices, setValue]);
+    const vals = selectedDevices.map((d) => (kendalaByDevice[d.devicesId] ?? "").trim());
+    const allFilled = vals.length > 0 && vals.every(Boolean);
+    setValue("kendala", needKendala && allFilled ? vals.join(" | ") : "", {
+      shouldValidate: false,
+    });
+  }, [kendalaByDevice, selectedDevices, needKendala, setValue]);
 
   useEffect(() => {
     if (!watchKondisiSla) {
@@ -436,15 +439,19 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       return;
     }
 
+    const missing = needKendala
+      ? targetIds.filter((id) => !(kendalaByDevice[id] ?? "").trim())
+      : [];
+    if (missing.length > 0) {
+      setErrorMessage("Kendala wajib diisi untuk setiap alat yang OFF / OLA < 100%.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       for (const deviceId of targetIds) {
-        // Bila "sama seperti sebelumnya" dicentang, pakai kendala terakhir
-        // milik alat ini sendiri; selain itu pakai teks yang diketik.
-        const dev = matchingDevices.find((d) => d.devicesId === deviceId);
-        const kendalaFinal =
-          sameAsPrev && dev ? getPrevKendala(dev) : (data.kendala || "").trim();
+        const kendalaFinal = needKendala ? (kendalaByDevice[deviceId] ?? "").trim() : "";
         await onSaveSlaOla({
           uptStation: data.uptStation,
           category: data.category.startsWith("AWOS") ? "AWOS" : data.category,
@@ -461,6 +468,12 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       targetIds.forEach((id) => updatedFilled.add(id));
       setFilledDeviceIds(updatedFilled);
       setSelectedDeviceIds(new Set());
+      setKendalaByDevice((prev) => {
+        const next = { ...prev };
+        targetIds.forEach((id) => delete next[id]);
+        return next;
+      });
+      setSamePrevByDevice({});
       setLastBatchCount(targetIds.length);
 
       setIsSubmitted(true);
@@ -469,7 +482,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         // Reset kalkulator ke default netral untuk batch berikutnya
         setValue("kondisiSla", true);
         setValue("kondisiOla", 100);
-        setSameAsPrev(false);
         setValue("kendala", "");
       }, 1200);
     } catch (err: any) {
@@ -710,15 +722,21 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   )}
                 </div>
                 <p className="text-[10px] text-blue-800/80 -mt-0.5">
-                  Centang semua unit yang nilainya sama. Alat dengan nilai berbeda bisa dicentang & disimpan terpisah.
+                  Alat dengan nilai berbeda bisa dicentang & disimpan terpisah.
                 </p>
-                <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+                <div className="space-y-1 max-h-[55vh] overflow-y-auto pr-0.5">
                   {matchingDevices.map((d) => {
                     const isFilled = filledDeviceIds.has(d.devicesId);
                     const isChecked = selectedDeviceIds.has(d.devicesId);
+                    const kVal = kendalaByDevice[d.devicesId] ?? "";
+                    const showK = isChecked && !isFilled && needKendala;
+                    const kMissing = showK && needKendala && !kVal.trim();
                     return (
-                      <button
+                      <div
                         key={d.devicesId}
+                        className="flex flex-col sm:flex-row sm:items-stretch gap-1"
+                      >
+                      <button
                         type="button"
                         disabled={isSubmitting || isFilled}
                         onClick={() => {
@@ -729,7 +747,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                             return next;
                           });
                         }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed ${
+                        className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed ${
                           isFilled
                             ? "bg-emerald-50 border-emerald-300 text-emerald-800 opacity-70"
                             : isChecked
@@ -749,12 +767,45 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                           <span className="text-[9px] font-bold text-emerald-700 shrink-0">SUDAH DIISI</span>
                         )}
                       </button>
+                      {showK && (
+                        <div className="sm:w-[46%] shrink-0 flex flex-col gap-1">
+                          <input
+                            type="text"
+                            value={kVal}
+                            disabled={isSubmitting || !!samePrevByDevice[d.devicesId]}
+                            onChange={(e) => handleKendalaChange(d.devicesId, e.target.value)}
+                            placeholder="Kendala (wajib disi)"
+                            className={`w-full min-h-[36px] bg-white border rounded-lg px-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] disabled:bg-slate-100 disabled:text-slate-600 ${
+                              kMissing ? "border-rose-400 bg-rose-50/40" : "border-blue-200"
+                            }`}
+                          />
+                          <label
+                            className={`flex items-center gap-1.5 text-[10px] ${
+                              getPrevKendala(d)
+                                ? "text-slate-700 cursor-pointer"
+                                : "text-slate-400 cursor-not-allowed"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!samePrevByDevice[d.devicesId]}
+                              disabled={isSubmitting || !getPrevKendala(d)}
+                              onChange={(e) => toggleSamePrev(d, e.target.checked)}
+                            />
+                            {getPrevKendala(d)
+                              ? "Kendala masih sama dengan sebelumnya"
+                              : "Belum ada riwayat"}
+                          </label>
+                        </div>
+                      )}
+                      </div>
                     );
                   })}
                 </div>
                 {selectedDeviceIds.size > 0 && (
-                  <span className="text-[10px] text-blue-700 font-bold block mt-0.5">
-                    {selectedDeviceIds.size} alat dipilih - nilai di bawah akan diterapkan ke semuanya.
+                  <span className="text-[10px] text-blue-700 font-normal block mt-0.5">
+                    {selectedDeviceIds.size} alat dipilih - nilai OLA akan diterapkan ke semuanya.
+                    
                   </span>
                 )}
                 {matchingDevices.length > 0 && matchingDevices.every((d) => filledDeviceIds.has(d.devicesId)) && (
@@ -806,7 +857,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-2 gap-1.5 sm:gap-0">
                   <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <Info size={14} className="text-[#0052CC] shrink-0" />
-                    Pilih Kondisi Kelayakan Aspek Peralatan ({watchCategory}):
+                    Pilih Kondisi Kelayakan Peralatan ({watchCategory}):
                   </h4>
                   <span className="text-[11px] font-bold text-[#0052CC] bg-blue-100 px-2.5 py-0.5 rounded-lg border border-blue-200 shrink-0">
                     Kalkulasi OLA: {watchKondisiOla}%
@@ -1512,73 +1563,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
-                <label className="block text-xs font-bold text-slate-800">
-                  KENDALA OPERASIONAL / CATATAN{" "}
-                  {!watchKondisiSla || watchKondisiOla < 100 ? (
-                    <span className="text-rose-600 font-bold">(Wajib Isi)</span>
-                  ) : (
-                    <span className="text-slate-400 font-normal">(Opsional)</span>
-                  )}
-                  :
-                </label>
-                {selectedDevices.length > 0 && (
-                  <label
-                    className={`flex items-center gap-1.5 text-xs ${
-                      canUseSamePrev
-                        ? "text-slate-700 cursor-pointer"
-                        : "text-slate-400 cursor-not-allowed"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={sameAsPrev}
-                      disabled={isSubmitting || !canUseSamePrev}
-                      onChange={(e) => {
-                        setSameAsPrev(e.target.checked);
-                        if (!e.target.checked) setValue("kendala", "");
-                      }}
-                    />
-                    Kendala masih sama
-                  </label>
-                )}
-              </div>
-              {selectedDevices.length > 0 && !canUseSamePrev && (
-                <p className="text-[10px] text-slate-400">
-                  "Kondisi sama" tidak tersedia: {devicesWithoutPrev.map((d) => d.site).join(", ")} belum punya kendala tercatat.
-                </p>
-              )}
-              {sameAsPrev && canUseSamePrev && (
-                <ul className="text-[10px] text-slate-600 space-y-0.5 pl-1">
-                  {selectedDevices.map((d) => (
-                    <li key={d.devicesId}>
-                      <strong>{d.site}</strong>: {getPrevKendala(d)}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <textarea
-                {...register("kendala")}
-                disabled={isSubmitting || sameAsPrev}
-                rows={2}
-                placeholder={
-                  !watchKondisiSla || watchKondisiOla < 100
-                    ? "Wajib diisi: jelaskan penyebab alat OFF atau OLA < 100%..."
-                    : "Tuliskan jika ada kendala sensor, jaringan, atau suplai daya..."
-                }
-                className={`w-full bg-slate-50 border rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white disabled:opacity-50 ${
-                  errors.kendala
-                    ? "border-rose-400 bg-rose-50/30"
-                    : "border-slate-300"
-                }`}
-              />
-              {errors.kendala && (
-                <span className="text-[10px] text-rose-600 font-bold block mt-0.5">
-                  {String(errors.kendala.message)}
-                </span>
-              )}
-            </div>
+            {selectedDeviceIds.size === 0 && needKendala && (
+              <p className="text-[10px] text-rose-600 font-bold">
+                Kendala wajib diisi (kolom muncul di samping alat setelah dicentang) karena alat OFF atau OLA &lt; 100%.
+              </p>
+            )}
 
             <div className="pt-2 sm:pt-3 flex items-center justify-end gap-2 border-t border-slate-200 shrink-0">
               <button
