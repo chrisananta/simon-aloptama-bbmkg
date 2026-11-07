@@ -88,9 +88,9 @@ export const GensetView: React.FC = () => {
             <thead>
               <tr className="bg-slate-50 text-slate-600 font-bold uppercase border-b border-slate-200">
                 <th className="p-4">Tanggal &amp; Jam</th>
-                <th className="p-4">Gedung</th>
-                <th className="p-4">Nama Petugas</th>
-                <th className="p-4">Kesimpulan Kondisi</th>
+                <th className="p-4 text-center">Gedung</th>
+                <th className="p-4 text-center">Nama Petugas</th>
+                <th className="p-4 text-center">Kesimpulan Kondisi</th>
                 <th className="p-4 text-center w-24">Aksi</th>
               </tr>
             </thead>
@@ -106,7 +106,7 @@ export const GensetView: React.FC = () => {
                     </td>
                     <td className="p-4 text-slate-700 font-semibold">{r.gedung || 'Operasional'}</td>
                     <td className="p-4 text-slate-700">{r.petugas}</td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       <span className={`px-3 py-1 rounded-full font-bold text-[10px] ${r.kesimpulan === 'BAIK' ? 'bg-emerald-100 text-emerald-800' : r.kesimpulan.includes('RUSAK') ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>
                         {r.kesimpulan}
                       </span>
