@@ -125,10 +125,7 @@ export const authService = {
     // otomatis menyertakan credentials, dan endpoint /logout backend sendiri
     // yang mencatat audit log dari identitas di dalam cookie (kalau valid).
     authFetch('/api/logout', { method: 'POST' }).catch(() => {
-      // Kalaupun request logout gagal (mis. offline), sesi lokal di frontend
-      // sudah dianggap berakhir lewat clearStoredSession() di atas. Cookie
-      // di browser mungkin masih ada sampai kedaluwarsa alami (maks 24 jam),
-      // tapi frontend sudah tidak menganggap user login.
+
     });
   },
 
@@ -190,15 +187,14 @@ export const authService = {
           canManageMasterData: true,
           canViewAuditLogs: false,
           canClearAuditLogs: false,
-          canInputSlaOla: true,
+          canInputSlaOla: false,
           isScopedToOwnUpt: false,
           canViewUnreportedList: true,
           canViewWeeklyReport: true,
           canViewUptReport: true,
           canManageGenset: true,
           canManagePerbaikan: true,
-          // Database Master dipersempit: hanya monitoring SLA OLA harian,
-          // tanpa akses tab master data lain (alat, stasiun, akun, dst).
+          // Database Master dipersempit: hanya monitoring SLA OLA harian
           masterDataScope: 'SLA_OLA_HARIAN_ONLY',
         };
 
@@ -225,8 +221,7 @@ export const authService = {
         return {
           allowedMenus: ['dashboard', 'sla-ola', 'kalibrasi', 'sertifikat', 'panduan', 'admin-master'],
           canAddCalibration: false,
-          // Teknisi boleh membuka Database Master, tapi HANYA tab master_alat
-          // milik UPT-nya sendiri dan HANYA aksi edit (lihat masterDataScope).
+          // Teknisi boleh membuka Database Master, tapi HANYA tab master_alat, milik UPT-nya sendiri dan HANYA aksi edit (lihat masterDataScope).
           canManageMasterData: true,
           canViewAuditLogs: false,
           canClearAuditLogs: false,

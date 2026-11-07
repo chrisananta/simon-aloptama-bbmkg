@@ -56,6 +56,14 @@ export const slaOlaController = {
         return res.status(401).json({ success: false, message: 'Sesi tidak valid.' });
       }
 
+      // Pengisian SLA/OLA hanya untuk Teknisi UPT dan Super Admin.
+      if (req.user.role !== 'TEKNISI_UPT' && req.user.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({
+          success: false,
+          message: 'Akses ditolak. Pengisian SLA/OLA hanya untuk Teknisi UPT atau Super Admin.',
+        });
+      }
+
       // Validasi & resolusi tanggal laporan (mendukung pengisian susulan/backdate).
       // Pengisian hari ini adalah untuk kondisi KEMARIN: tanggal laporan default & maksimal = kemarin (WIT).
       const todayStr = getTodayDateOnlyWIT();
@@ -80,13 +88,9 @@ export const slaOlaController = {
       const ola = kondisiOla;
 
       // Pemeriksaan Hak Akses (Otorisasi)
-      // KaUPT/KaBBMKG tidak berwenang mengisi SLA/OLA sama sekali (read-only).
-      if (req.user.role === 'KAUPT_KABBMKG') {
-        return res.status(403).json({ success: false, message: 'Peran KaUPT/KaBBMKG tidak memiliki akses untuk mengisi SLA/OLA.' });
-      }
-      // Teknisi UPT hanya boleh mengisi untuk UPT sendiri. Admin Inskal &
-      // Super Admin boleh mengisi untuk UPT mana pun.
-      const isFullAccessRole = req.user.role === 'ADMIN_INSKAL' || req.user.role === 'SUPER_ADMIN';
+      // Hanya Teknisi UPT & Super Admin yang lolos sampai sini (lihat cek role di atas).
+      // Teknisi UPT hanya boleh mengisi untuk UPT sendiri; Super Admin boleh UPT mana pun.
+      const isFullAccessRole = req.user.role === 'SUPER_ADMIN';
       if (!isFullAccessRole && !(await isSameUptStation(req.user.uptStation, uptStation))) {
         return res.status(403).json({ success: false, message: 'Anda hanya dapat mengisi SLA/OLA untuk UPT sendiri.' });
       }

@@ -484,7 +484,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             SLA &amp; OLA ALOPTAMA
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Service Level Agreement &amp; Operational Level Agreement Performa ALOPTAMA
+            Service Level Agreement &amp; Operational Level Agreement ALOPTAMA
           </p>
         </div>
 
@@ -551,7 +551,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               title="Buat Laporan Mingguan SLA & OLA resmi BMKG V (Khusus Admin)"
             >
               <FileText size={15} />
-              <span>Buat Laporan Mingguan</span>
+              <span>Laporan Mingguan</span>
             </button>
           )}
 
@@ -877,7 +877,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     <tr key={dev.id} className="hover:bg-amber-50/40 transition-colors">
                       <td className="px-3 py-3 font-semibold text-slate-900 break-words align-top">
                         {dev.name}
-                        <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {periodLabel}</span>
                       </td>
                       <td className="px-3 py-3 text-slate-600 font-medium break-words align-top">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
@@ -886,11 +885,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                         {dev.kendala ? (
                           <>
                             <span className="block whitespace-pre-line">{dev.kendala}</span>
-                            {dev.kendalaDay && (
-                              <span className="block text-[10px] text-slate-400 font-normal">
-                                Dilaporkan {dev.kendalaDay} {selectedMonth} {selectedYear}
-                              </span>
-                            )}
                           </>
                         ) : (
                           <span className="text-slate-400">-</span>
@@ -954,7 +948,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                     <tr key={dev.id} className="hover:bg-rose-50/40 transition-colors">
                       <td className="px-3 py-3 font-semibold text-slate-900 break-words align-top">
                         {dev.name}
-                        <span className="block text-[10px] text-slate-500 font-normal">{dev.category} • {periodLabel}</span>
                       </td>
                       <td className="px-3 py-3 text-slate-600 font-medium break-words align-top">
                         {stationMap.get(dev.uptStation) || dev.uptStation}
@@ -963,11 +956,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                         {dev.kendala ? (
                           <>
                             <span className="block whitespace-pre-line">{dev.kendala}</span>
-                            {dev.kendalaDay && (
-                              <span className="block text-[10px] text-slate-400 font-normal">
-                                Dilaporkan {dev.kendalaDay} {selectedMonth} {selectedYear}
-                              </span>
-                            )}
                           </>
                         ) : (
                           <span className="text-slate-400">-</span>
@@ -1022,18 +1010,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] focus:bg-white"
               />
             </div>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="NORMAL">🟢 Normal</option>
-              <option value="GANGGUAN">🟡 Gangguan</option>
-              <option value="MATI">🔴 Mati</option>
-            </select>
-
+            
             <button
               onClick={() => setIsWaModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
@@ -1107,7 +1084,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                           {dev.lastReportedDate ? formatDateIndo(dev.lastReportedDate) : 'Belum pernah lapor'}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400">Belum lapor kondisi {formatDateIndo(expectedReportDate)}</span>
                     </td>
                   </tr>
                 ))
