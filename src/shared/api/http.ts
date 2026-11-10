@@ -13,8 +13,21 @@
 // hanya metadata biasa yang aman dibaca ulang oleh frontend.
 export const SESSION_INFO_KEY = 'simon_session_info';
 
+// Dikirim saat fetch gagal TOTAL (jaringan putus / server tak terjangkau) atau server membalas 5xx
+// (mis. 500 karena database putus). Didengarkan useConnectionStatus untuk langsung memeriksa
+// koneksi & menampilkan banner tanpa menunggu siklus cek berkala.
+export const NETWORK_ERROR_EVENT = 'simon_network_error';
+
 export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
-  const response = await fetch(input, { ...init, credentials: 'include' });
+  let response: Response;
+  try {
+    response = await fetch(input, { ...init, credentials: 'include' });
+  } catch (err) {
+    if (err instanceof TypeError) window.dispatchEvent(new Event(NETWORK_ERROR_EVENT));
+    throw err;
+  }
+
+  if (response.status >= 500) window.dispatchEvent(new Event(NETWORK_ERROR_EVENT));
 
   // Kalau backend bilang token invalid/kedaluwarsa, paksa user login ulang
   if (response.status === 401) {

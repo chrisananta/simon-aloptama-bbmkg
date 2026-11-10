@@ -4,6 +4,8 @@ import { AloptamaDevice, UPTStation, ChangeLog } from '../shared/types';
 import { Sidebar } from '../layouts/Sidebar';
 import { Navbar } from '../layouts/Navbar';
 import { ServerStatusModal } from '../shared/components/modals/ServerStatusModal';
+import { ConnectionBanner } from '../shared/components/ConnectionBanner';
+import { useConnectionStatus } from '../shared/hooks/useConnectionStatus';
 import { useEverTrue } from '../shared/hooks/useEverTrue';
 import { CalibrationRecord } from '../features/calibration/CalibrationTypes';
 import { ErrorBoundary } from '../shared/components/ErrorBoundary';
@@ -235,6 +237,9 @@ function AppContent() {
     }
   }, [isAuthenticated]);
 
+  // Pantau koneksi (internet + server). Saat pulih, data otomatis disinkronkan ulang.
+  const connection = useConnectionStatus({ enabled: isAuthenticated, onReconnect: handleSyncServer });
+
   return (
     <ProtectedRoute activeMenu={activeMenu} onRedirectToDashboard={() => navigateMenu('dashboard')}>
       <div className="min-h-screen bg-white font-['Inter',sans-serif] text-slate-800 flex flex-col">
@@ -268,6 +273,15 @@ function AppContent() {
           onOpenSlaOlaModal={permissions.canInputSlaOla ? () => setIsSlaOlaModalOpen(true) : undefined}
           syncSource={syncResult.source}
           isSyncing={isSyncing}
+        />
+
+        {/* Popup status koneksi (melayang di bawah header, tidak menggeser konten) */}
+        <ConnectionBanner
+          status={connection.status}
+          isChecking={connection.isChecking}
+          justRecovered={connection.justRecovered}
+          onRetry={connection.recheck}
+          lastUpdate={lastUpdate}
         />
 
         {/* Main Content Workspace */}
