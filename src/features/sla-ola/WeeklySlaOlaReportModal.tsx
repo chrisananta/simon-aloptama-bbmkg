@@ -1143,7 +1143,6 @@ export const WeeklySlaOlaReportModal: React.FC<WeeklySlaOlaReportModalProps> = (
                         <div>Mengetahui,</div>
                         <div>{jabatanLine}</div>
                         <div className="wr-sign-space">
-                          <span className="wr-sign-hint wr-noprint">( Tanda Tangan Digital )</span>
                         </div>
                         <div className="wr-sign-name">{namaMengetahui}</div>
                       </div>

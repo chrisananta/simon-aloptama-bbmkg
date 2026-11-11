@@ -55,7 +55,7 @@ export const UptSlaOlaReportModal: React.FC<UptSlaOlaReportModalProps> = ({
   totalGangguan,
   totalMati,
 }) => {
-  const [jabatanMengetahui, setJabatanMengetahui] = useState<string>('Kepala');
+  const [jabatanMengetahui, setJabatanMengetahui] = useState<string>('Kepala UPT');
   const [namaMengetahui, setNamaMengetahui] = useState<string>('');
   const [namaPembuat, setNamaPembuat] = useState<string>('');
 
