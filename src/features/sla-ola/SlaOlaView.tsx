@@ -79,7 +79,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
   });
 
   // Nilai SLA/OLA bulanan per alat untuk tahun terpilih, dari tabel sla_ola_logs
-  // (input admin jika ada, kalau tidak rata-rata log UPT) via /api/sla-ola/summary.
+  // (rata-rata isian harian per bulan) via /api/sla-ola/summary.
   const [yearlyScores, setYearlyScores] = useState<YearlyScoreMap>({});
   const [isScoresLoading, setIsScoresLoading] = useState(true);
   const [scoresLoadFailed, setScoresLoadFailed] = useState(false);
@@ -784,7 +784,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 <YAxis domain={[0, 100]} stroke="#64748B" fontSize={12} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0F2D52', borderRadius: '10px', color: '#FFF', fontSize: '12px' }}
-                  formatter={(value: any) => [`${value}%`, 'SLA Availability']}
+                  itemStyle={{ color: '#FFF' }}
+                  labelStyle={{ color: '#FFF', fontWeight: 700 }}
+                  formatter={(value: any) => [`${value}%`, 'SLA ']}
                 />
                 <Line
                   type="monotone"
@@ -820,7 +822,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 <YAxis domain={[0, 100]} stroke="#64748B" fontSize={12} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0F2D52', borderRadius: '10px', color: '#FFF', fontSize: '12px' }}
-                  formatter={(value: any) => [`${value}%`, 'OLA Score']}
+                  itemStyle={{ color: '#FFF' }}
+                  labelStyle={{ color: '#FFF', fontWeight: 700 }}
+                  formatter={(value: any) => [`${value}%`, 'OLA']}
                 />
                 <Line
                   type="monotone"

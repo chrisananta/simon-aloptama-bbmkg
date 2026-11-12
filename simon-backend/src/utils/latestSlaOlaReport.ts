@@ -1,5 +1,4 @@
 import { prisma } from '../db/prisma.js';
-import { loadAdminActorSet } from './adminActors.js';
 import {
   pickLatestConditions,
   pickLatestReportDates,
@@ -20,16 +19,13 @@ export interface LatestReportSnapshot {
 }
 
 export async function loadLatestReportSnapshot(): Promise<LatestReportSnapshot> {
-  // Query 1 (agregat kecil): tanggal laporan terbaru per (alat, operator).
-  const [rows, adminActors] = await Promise.all([
-    prisma.slaOlaLog.groupBy({
-      by: ['deviceId', 'actor'],
-      where: { deviceId: { not: null } },
-      _max: { reportDate: true },
-    }),
-    loadAdminActorSet(),
-  ]);
-  const reportDates = pickLatestReportDates(rows, adminActors);
+  // Query 1 (agregat kecil): tanggal laporan terbaru per alat.
+  const rows = await prisma.slaOlaLog.groupBy({
+    by: ['deviceId'],
+    where: { deviceId: { not: null } },
+    _max: { reportDate: true },
+  });
+  const reportDates = pickLatestReportDates(rows);
   if (reportDates.size === 0) return { reportDates, conditions: new Map() };
 
   // Query 2: hanya log pada tanggal-tanggal terakhir tadi (biasanya satu/dua tanggal x ~190 alat).
@@ -43,10 +39,9 @@ export async function loadLatestReportSnapshot(): Promise<LatestReportSnapshot> 
       deviceId: true,
       kondisiSla: true,
       kondisiOla: true,
-      actor: true,
       reportDate: true,
       timestamp: true,
     },
   });
-  return { reportDates, conditions: pickLatestConditions(logs, adminActors) };
+  return { reportDates, conditions: pickLatestConditions(logs) };
 }

@@ -131,11 +131,10 @@ export interface PerbaikanRecord {
   fotoLampiran?: string[]; // Array Base64 Foto
 }
 
-/** Nilai SLA/OLA bulanan satu alat (hasil resolusi di backend: input admin, atau rata-rata log UPT). */
+/** Nilai SLA/OLA bulanan satu alat (hasil resolusi di backend: rata-rata isian harian pada bulan itu). */
 export interface MonthlyDeviceScore {
   sla: number;
   ola: number;
-  source: 'ADMIN' | 'UPT';
   jumlahLog: number;
 }
 

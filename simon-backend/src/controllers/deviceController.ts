@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE, certificateValidUntil, getCurrentMonthWIT } from '../utils/dateUtils.js';
+import { parseDateOnly, formatDateOnly, serializeDeviceDates, NOT_CALIBRATED_DATE, certificateValidUntil, getCurrentMonthWIT, computeCalibrationStatus } from '../utils/dateUtils.js';
 import { syncCalibrationListing } from '../utils/calibrationList.js';
 import { loadLatestReportSnapshot } from '../utils/latestSlaOlaReport.js';
 
@@ -191,7 +191,9 @@ export const deviceController = {
             latitude: body.latitude,
             longitude: body.longitude,
             conditionStatus: body.conditionStatus || 'NORMAL',
-            calibrationStatus: notCalibrated ? 'TIDAK_DIKALIBRASI' : body.calibrationStatus || 'VALID',
+            calibrationStatus: notCalibrated
+              ? 'TIDAK_DIKALIBRASI'
+              : computeCalibrationStatus(body.calibrationValidUntil || today) ?? 'VALID',
             lastCalibrated: notCalibrated ? parseDateOnly(NOT_CALIBRATED_DATE) : parseDateOnly(body.lastCalibrated || today),
             calibrationValidUntil: notCalibrated ? parseDateOnly(NOT_CALIBRATED_DATE) : parseDateOnly(body.calibrationValidUntil || today),
             timkalibrasi,
@@ -311,6 +313,24 @@ export const deviceController = {
         timkalibrasi = PIC_TIDAK_DIKALIBRASI;
       }
 
+      // Status kalibrasi dihitung otomatis dari masa berlaku (30 hari sebelum kedaluwarsa), bukan
+      // dari input manual. Masa berlaku diambil dari request, atau dari data tersimpan bila tidak diubah.
+      let resolvedCalibrationStatus: 'VALID' | 'SEGERA_DIKALIBRASI' | 'KADALUWARSA' | 'TIDAK_DIKALIBRASI' | undefined =
+        markNotCalibrated ? 'TIDAK_DIKALIBRASI' : undefined;
+      if (!markNotCalibrated) {
+        const stored = await prisma.device.findUnique({
+          where: { devicesId: req.params.id },
+          select: { calibrationValidUntil: true, calibrationStatus: true },
+        });
+        if (!stored) return res.status(404).json({ success: false, message: 'Perangkat tidak ditemukan.' });
+        const effectiveValidUntil =
+          body.calibrationValidUntil !== undefined ? body.calibrationValidUntil : stored.calibrationValidUntil;
+        resolvedCalibrationStatus =
+          computeCalibrationStatus(effectiveValidUntil) ??
+          // Alat yang dulu "Tidak Dikalibrasi" lalu dikembalikan ke Balai/Pusat/Rekanan tanpa tanggal.
+          (stored.calibrationStatus === 'TIDAK_DIKALIBRASI' ? 'VALID' : undefined);
+      }
+
       const updated = await prisma.$transaction(async (tx) => {
         const device = await tx.device.update({
           where: { devicesId: req.params.id },
@@ -324,7 +344,7 @@ export const deviceController = {
             latitude: body.latitude,
             longitude: body.longitude,
             conditionStatus: body.conditionStatus,
-            calibrationStatus: body.calibrationStatus,
+            calibrationStatus: resolvedCalibrationStatus,
             // null = alat tidak dikalibrasi (disimpan sebagai tanggal penanda NOT_CALIBRATED_DATE); undefined = tidak diubah
             lastCalibrated: body.lastCalibrated === null ? parseDateOnly(NOT_CALIBRATED_DATE) : body.lastCalibrated ? parseDateOnly(body.lastCalibrated) : undefined,
             calibrationValidUntil: body.calibrationValidUntil === null ? parseDateOnly(NOT_CALIBRATED_DATE) : body.calibrationValidUntil ? parseDateOnly(body.calibrationValidUntil) : undefined,

@@ -38,7 +38,7 @@ import { UserFormModal } from './modals/UserFormModal';
 import { DeleteUserModal } from './modals/DeleteUserModal';
 import { PetugasFormModal } from './modals/PetugasFormModal';
 import { DeletePetugasModal } from './modals/DeletePetugasModal';
-import { PIC_TIDAK_DIKALIBRASI, agencyNameForPic, picFromAgency, isNotCalibrated } from '../../shared/utils/calibration';
+import { PIC_TIDAK_DIKALIBRASI, agencyNameForPic, picFromAgency, isNotCalibrated, computeCalibrationStatus } from '../../shared/utils/calibration';
 import { getTodayIsoWIT } from '../../shared/utils/dateUtils';
 
 
@@ -673,13 +673,14 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     const defaultAgency = notCalibrated
       ? PIC_TIDAK_DIKALIBRASI
       : agencyNameForPic(pic);
-    // Status kalibrasi yang dikirim: alat tidak dikalibrasi selalu TIDAK_DIKALIBRASI;
-    // sebaliknya, status TIDAK_DIKALIBRASI tidak boleh "bocor" ke alat Balai/Pusat.
+    // Status kalibrasi dikirim otomatis: alat tidak dikalibrasi selalu TIDAK_DIKALIBRASI;
+    // selain itu dihitung dari masa berlaku (Segera Dikalibrasi = 30 hari sebelum kedaluwarsa).
+    const resolvedValidUntil = isTeknisiAlatMode && editingDevice
+      ? (deviceForm.calibrationValidUntil || editingDevice.calibrationValidUntil)
+      : (deviceForm.calibrationValidUntil || '2027-07-07');
     const resolvedCalibrationStatus: CalibrationStatus = notCalibrated
       ? 'TIDAK_DIKALIBRASI'
-      : deviceForm.calibrationStatus && deviceForm.calibrationStatus !== 'TIDAK_DIKALIBRASI'
-        ? (deviceForm.calibrationStatus as CalibrationStatus)
-        : 'VALID';
+      : computeCalibrationStatus(resolvedValidUntil) ?? 'VALID';
 
     if (editingDevice) {
       const updated: AloptamaDevice = {

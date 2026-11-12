@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Activity } from 'lucide-react';
 import { AloptamaDevice, UPTStation, ChangeLog } from '../shared/types';
 import { Sidebar } from '../layouts/Sidebar';
@@ -18,6 +18,8 @@ import { DashboardFooter } from '../features/dashboard/DashboardFooter';
 import { TimeBar } from '../layouts/TimeBar';
 import { useMenuRoute } from './useMenuRoute';
 import { isDeviceActiveForReporting } from '../shared/utils/deviceActivity';
+import { withAutoCalibrationStatus } from '../shared/utils/calibration';
+import { getTodayIsoWIT } from '../shared/utils/dateUtils';
 
 // Code splitting: tiap halaman/modal besar jadi file JS terpisah yang baru diunduh saat
 // pertama kali dibuka (bukan ikut bundle awal). Modul-modul ini memakai named export,
@@ -70,7 +72,17 @@ function AppContent() {
   const calibrationModalLoaded = useEverTrue(isCalibrationModalOpen);
   
   // Initial state loaded via Centralized API Client
-  const [devicesData, setDevicesData] = useState<AloptamaDevice[]>(() => apiClient.devices.getAll());
+  const [rawDevicesData, setDevicesData] = useState<AloptamaDevice[]>(() => apiClient.devices.getAll());
+  // Status kalibrasi dihitung otomatis dari masa berlaku (30 hari sebelum kedaluwarsa), jadi tidak
+  // pernah basi. Hari WIT ikut jadi dependensi supaya status ikut berubah saat tanggal berganti
+  // walaupun aplikasi dibiarkan terbuka.
+  const [todayWit, setTodayWit] = useState(() => getTodayIsoWIT());
+  useEffect(() => {
+    const timer = setInterval(() => setTodayWit(getTodayIsoWIT()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const devicesData = useMemo(() => rawDevicesData.map(withAutoCalibrationStatus), [rawDevicesData, todayWit]);
   const [calibrationLogs, setCalibrationLogs] = useState<CalibrationRecord[]>(() => apiClient.calibration.getAll());
   const [stationsData, setStationsData] = useState<UPTStation[]>(() => apiClient.stations.getAll());
   const [changeLogsData, setChangeLogsData] = useState<ChangeLog[]>(() => apiClient.auditLogs.getAll());

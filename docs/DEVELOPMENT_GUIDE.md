@@ -41,7 +41,15 @@ npm run start        # jalankan hasil build (production mode)
 
 ### Auto-seed akun pertama kali
 
-Jika tabel `users` masih kosong, `server.ts` otomatis membuat 3 akun awal (`admin.inskal`, `upt.jayapura`, `pimpinan.balai`) dengan **password acak yang di-generate saat itu juga** dan dicetak **sekali** ke log terminal — segera dicatat, tidak bisa dilihat ulang setelahnya (password disimpan dalam bentuk hash bcrypt, bukan teks polos).
+Jika tabel `users` masih kosong, `server.ts` otomatis membuat 3 akun awal dengan **password acak yang di-generate saat itu juga** dan dicetak **sekali** ke log terminal — segera dicatat, tidak bisa dilihat ulang setelahnya (password disimpan dalam bentuk hash bcrypt, bukan teks polos):
+
+| Username | Role |
+| :--- | :--- |
+| `admin.inskal` | `ADMIN_INSKAL` |
+| `upt.jayapura` | `TEKNISI_UPT` |
+| `pimpinan.balai` | `KAUPT_KABBMKG` |
+
+> ⚠️ **Auto-seed tidak membuat akun `SUPER_ADMIN`.** Padahal kelola akun, master stasiun/alat/petugas, dan audit log hanya bisa dilakukan Super Admin. Di instalasi baru, jadikan satu akun Super Admin lewat Prisma Studio atau SQL (ubah kolom `role` pada tabel `users` menjadi `SUPER_ADMIN`); setelah itu akun lain dikelola lewat menu Kelola Akun.
 
 ### Cek koneksi database via Prisma Studio
 ```bash
@@ -84,7 +92,7 @@ Setiap modul fitur di `src/features/` wajib menggunakan akhiran nama berkas beri
 | :--- | :--- | :--- |
 | `routes/` | Definisi endpoint per entitas (method + path + middleware apa yang dipasang) | `deviceRoutes.ts` |
 | `controllers/` | Logic bisnis tiap entitas, dipanggil dari routes | `deviceController.ts` |
-| `middleware/` | Middleware lintas-entitas | `authMiddleware.ts` (`verifyToken`, `requireAdmin`), `rateLimiter.ts` |
+| `middleware/` | Middleware lintas-entitas | `authMiddleware.ts` (`verifyToken`, `requireAdmin`, `requireSuperAdmin`, `requireSuperAdminOrTeknisi`), `rateLimiter.ts` |
 | `config/` | Validasi & konstanta environment | `env.ts` (validasi `JWT_SECRET`) |
 | `db/` | Koneksi database | `prisma.ts` (Prisma Client singleton) |
 
@@ -94,7 +102,10 @@ Setiap modul fitur di `src/features/` wajib menggunakan akhiran nama berkas beri
 2. Daftarkan route di `routes/namaEntitasRoutes.ts`, pasang middleware sesuai kebutuhan akses:
    - Publik (tanpa login): jarang dipakai, hanya untuk `/login` dan `/health`
    - `verifyToken` saja: user manapun yang sudah login boleh akses
-   - `verifyToken, requireAdmin`: hanya role `ADMIN`
+   - `verifyToken, requireAdmin`: hanya `ADMIN_INSKAL` dan `SUPER_ADMIN`
+   - `verifyToken, requireSuperAdmin`: hanya `SUPER_ADMIN` (kelola akun, master stasiun/alat/petugas, audit log)
+   - `verifyToken, requireSuperAdminOrTeknisi`: `SUPER_ADMIN` dan `TEKNISI_UPT` (khusus edit alat; pembatasan lanjutan Teknisi ada di controller)
+   - Role lain/aturan khusus (mis. pengisian SLA/OLA) diperiksa langsung di controller — lihat tabel RBAC di [ARCHITECTURE.md](./ARCHITECTURE.md#6-rbac-4-role)
 3. Import & mount router baru di `routes/index.ts`.
 4. Kalau endpoint menulis ke `audit_logs`, pastikan field `recordId` **selalu diisi** (wajib di schema Prisma, tidak boleh kosong/undefined).
 
@@ -132,7 +143,7 @@ Saat menambahkan modul fitur baru di `src/features/nama-fitur/`:
 3. Buat `NamaFiturPage.tsx` sebagai tampilan utama.
 4. Jika butuh form, definisikan skema Zod di `src/shared/schemas/index.ts` dan buat `NamaFiturModal.tsx`.
 5. **Ambil data list (mis. stasiun/device) selalu lewat props dari komponen induk** (yang sudah sinkron via `apiClient` + `App.tsx`), jangan baca cache module secara langsung di dalam modal — pola ini pernah menyebabkan dropdown kosong karena race condition saat data belum sempat ter-fetch.
-6. Daftarkan menu baru di `src/layouts/Sidebar.tsx` dan `src/app/App.tsx`, sertakan di `RBACPermissions.allowedMenus` (`AuthContext.tsx`) kalau perlu dibatasi role tertentu.
+6. Daftarkan menu baru di `src/layouts/Sidebar.tsx` dan `src/app/App.tsx`, sertakan di `RBACPermissions.allowedMenus` per role (`getRBACPermissions` di `src/features/auth/authService.ts`) kalau perlu dibatasi role tertentu, lalu pasang middleware yang sesuai di backend (UI saja tidak cukup).
 
 ---
 
@@ -156,6 +167,7 @@ Contoh yang sudah dipakai: `public/geo/provinsi-indonesia.geojson`, diambil di `
 
 - [ ] `JWT_SECRET` production **beda** dari yang dipakai saat development/testing
 - [ ] Auto-seed sudah pernah jalan sekali & password awal sudah dicatat aman (bukan di chat/dokumen yang mudah bocor)
+- [ ] Minimal ada **satu akun `SUPER_ADMIN`** (auto-seed tidak membuatnya)
 - [ ] `.env` **tidak** ikut ter-commit ke Git (`.gitignore` sudah mencakup `.env*`)
 - [ ] `npm run build && npm run start` dicoba dulu secara lokal sebelum deploy ke server
 - [ ] Endpoint terproteksi dicoba tanpa token (`curl http://.../api/devices`) → harus `401`

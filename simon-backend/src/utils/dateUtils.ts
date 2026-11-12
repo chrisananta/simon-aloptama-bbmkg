@@ -96,22 +96,67 @@ export function diffDaysDateOnly(from: string, to: string): number {
 }
 
 /**
+ * Status kalibrasi OTOMATIS dari masa berlaku sertifikat (tanggal "Berlaku Sampai"):
+ *  - sudah lewat hari ini                    -> KADALUWARSA
+ *  - sisa <= CALIBRATION_WARNING_DAYS hari   -> SEGERA_DIKALIBRASI (30 hari sebelum kedaluwarsa)
+ *  - selebihnya                              -> VALID
+ * Hari terakhir masa berlaku masih dianggap berlaku (SEGERA_DIKALIBRASI), baru
+ * esoknya KADALUWARSA. Patokan "hari ini" memakai WIT (Asia/Jayapura).
+ */
+export const CALIBRATION_WARNING_DAYS = 30;
+
+export type AutoCalibrationStatus = 'VALID' | 'SEGERA_DIKALIBRASI' | 'KADALUWARSA';
+
+/** Mengembalikan null kalau tanggal kosong/tidak valid/penanda "tidak dikalibrasi". */
+export function computeCalibrationStatus(
+  validUntil: string | Date | null | undefined,
+  today: string = getTodayDateOnlyWIT()
+): AutoCalibrationStatus | null {
+  const validUntilStr = validUntil instanceof Date ? formatDateOnly(validUntil) : validUntil;
+  if (!validUntilStr || !DATE_ONLY_REGEX.test(validUntilStr) || validUntilStr === NOT_CALIBRATED_DATE) return null;
+  const remainingDays = diffDaysDateOnly(validUntilStr, today); // positif = masih berlaku
+  if (remainingDays < 0) return 'KADALUWARSA';
+  if (remainingDays <= CALIBRATION_WARNING_DAYS) return 'SEGERA_DIKALIBRASI';
+  return 'VALID';
+}
+
+/**
+ * Status kalibrasi yang dipakai di response: "Tidak Dikalibrasi" tetap apa adanya;
+ * selain itu dihitung dari masa berlaku. Kalau masa berlaku tidak ada, nilai tersimpan dipakai.
+ */
+export function resolveCalibrationStatus<S extends string>(
+  stored: S,
+  validUntil: string | Date | null | undefined
+): S | AutoCalibrationStatus {
+  if (stored === 'TIDAK_DIKALIBRASI') return stored;
+  return computeCalibrationStatus(validUntil) ?? stored;
+}
+
+/**
  * Ubah objek Device dari Prisma (lastCalibrated/calibrationValidUntil/lastReportedDate
  * sebagai Date) balik ke bentuk string "YYYY-MM-DD" untuk response API, supaya
  * frontend yang mengonsumsi field ini sebagai string tidak perlu berubah.
+ * calibrationStatus ikut dihitung otomatis dari masa berlaku (lihat computeCalibrationStatus),
+ * jadi selalu mutakhir tanpa perlu diubah manual.
  */
 function formatCalibrationDate(value: Date | null | undefined): string | null {
   const formatted = formatDateOnly(value);
   return formatted === NOT_CALIBRATED_DATE ? null : formatted;
 }
 
-export function serializeDeviceDates<T extends { lastCalibrated: Date | null; calibrationValidUntil: Date | null; lastReportedDate: Date | null }>(
-  device: T
-) {
+export function serializeDeviceDates<
+  T extends {
+    lastCalibrated: Date | null;
+    calibrationValidUntil: Date | null;
+    lastReportedDate: Date | null;
+    calibrationStatus: string;
+  },
+>(device: T) {
   return {
     ...device,
     lastCalibrated: formatCalibrationDate(device.lastCalibrated),
     calibrationValidUntil: formatCalibrationDate(device.calibrationValidUntil),
     lastReportedDate: formatDateOnly(device.lastReportedDate),
+    calibrationStatus: resolveCalibrationStatus(device.calibrationStatus, device.calibrationValidUntil),
   };
 }

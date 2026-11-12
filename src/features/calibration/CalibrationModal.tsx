@@ -13,7 +13,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { CalibrationModalProps } from './CalibrationTypes';
-import { isNotCalibrated } from '../../shared/utils/calibration';
+import { isNotCalibrated, computeCalibrationStatus, CALIBRATION_WARNING_DAYS } from '../../shared/utils/calibration';
 import { isSameUpt } from '../../shared/utils/uptMatch';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 import type { UPTStation } from '../../shared/types';
@@ -61,12 +61,13 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
   const [station, setStation] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastCalibrated, setLastCalibrated] = useState('');
-  const [status, setStatus] = useState<'VALID' | 'SEGERA_DIKALIBRASI'>('VALID');
   const [personel, setPersonel] = useState<string[]>(Array(MIN_PERSONEL_SLOTS).fill(''));
   const [notes, setNotes] = useState(DEFAULT_NOTES);
   const [masterPetugas, setMasterPetugas] = useState<PetugasItem[]>(() => petugasService.getAll());
 
   const validUntil = lastCalibrated ? addOneYear(lastCalibrated) : '';
+  // Status hasil kalibrasi otomatis dari masa berlaku (bukan pilihan manual).
+  const status = computeCalibrationStatus(validUntil) ?? 'VALID';
 
   // Alat milik stasiun terpilih
   const stationDevices = useMemo(
@@ -88,7 +89,6 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
     setStation(stationOptions[0] || '');
     setSelectedIds(new Set());
     setLastCalibrated('');
-    setStatus('VALID');
     setPersonel(Array(MIN_PERSONEL_SLOTS).fill(''));
     setNotes(DEFAULT_NOTES);
     petugasService.fetch().then((data) => setMasterPetugas(data));
@@ -314,34 +314,34 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
 
               <div className="space-y-1">
                 <label className="block text-[10px] sm:text-[11px] font-bold text-slate-700">
-                  Status Hasil Kalibrasi:
+                  Status Kalibrasi (otomatis):
                 </label>
-                <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setStatus('VALID')}
-                    className={`py-1.5 px-1 sm:px-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all border flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 cursor-pointer ${
-                      status === 'VALID'
-                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                        : 'bg-white text-slate-700 border-slate-300'
-                    }`}
-                  >
-                    <CheckCircle2 size={12} className="sm:w-[13px] sm:h-[13px]" />
-                    <span className="whitespace-nowrap">🟢 Valid</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatus('SEGERA_DIKALIBRASI')}
-                    className={`py-1.5 px-1 sm:px-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all border flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 cursor-pointer ${
-                      status === 'SEGERA_DIKALIBRASI'
-                        ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
-                        : 'bg-white text-slate-700 border-slate-300'
-                    }`}
-                  >
-                    <AlertTriangle size={12} className="sm:w-[13px] sm:h-[13px]" />
-                    <span className="whitespace-nowrap">🟡 Segera</span>
-                  </button>
+                <div
+                  className={`py-1.5 px-2 rounded-lg text-[10px] sm:text-xs font-bold border flex items-center gap-1.5 ${
+                    status === 'SEGERA_DIKALIBRASI'
+                      ? 'bg-amber-50 text-amber-800 border-amber-300'
+                      : status === 'KADALUWARSA'
+                        ? 'bg-red-50 text-red-800 border-red-300'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  }`}
+                >
+                  {status === 'VALID' ? (
+                    <CheckCircle2 size={13} className="shrink-0" />
+                  ) : (
+                    <AlertTriangle size={13} className="shrink-0" />
+                  )}
+                  <span>
+                    {status === 'SEGERA_DIKALIBRASI'
+                      ? '🟡 Segera Dikalibrasi'
+                      : status === 'KADALUWARSA'
+                        ? '🔴 Kadaluwarsa'
+                        : '🟢 Valid'}
+                  </span>
                 </div>
+                <p className="text-[9px] sm:text-[10px] text-slate-500 leading-snug">
+                  Dihitung otomatis dari masa berlaku: menjadi “Segera Dikalibrasi” {CALIBRATION_WARNING_DAYS} hari
+                  sebelum kedaluwarsa.
+                </p>
               </div>
             </div>
 

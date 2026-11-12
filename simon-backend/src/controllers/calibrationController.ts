@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-import { parseDateOnly, formatDateOnly, serializeDeviceDates } from '../utils/dateUtils.js';
+import { parseDateOnly, formatDateOnly, serializeDeviceDates, computeCalibrationStatus } from '../utils/dateUtils.js';
 import { syncCalibrationListing } from '../utils/calibrationList.js';
 
 const dateOnlyString = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal wajib "YYYY-MM-DD".');
@@ -15,6 +15,8 @@ const calibrationInput = z.object({
   lastCalibrated: dateOnlyString,
   calibrationValidUntil: dateOnlyString,
   calibrationAgency: z.string().trim().min(1).max(200).optional(),
+  // Tidak dipakai lagi: status dihitung otomatis dari calibrationValidUntil (30 hari sebelum kedaluwarsa).
+  // Field tetap diterima supaya client lama tidak error, tapi nilainya diabaikan.
   calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA']).optional(),
   certificateNumber: z.string().trim().max(200).nullable().optional(),
   notes: z.string().trim().max(3000).nullable().optional(),
@@ -45,7 +47,9 @@ export const calibrationController = {
       
       const lastCalibratedDate = parseDateOnly(body.lastCalibrated);
       const calibrationValidUntilDate = parseDateOnly(body.calibrationValidUntil);
-      
+      // Status otomatis dari masa berlaku (bukan input manual).
+      const autoStatus = computeCalibrationStatus(body.calibrationValidUntil) ?? 'VALID';
+
       const record = await prisma.$transaction(async (tx) => {
         const created = await tx.calibrationRecord.create({
           data: {
@@ -56,7 +60,7 @@ export const calibrationController = {
             lastCalibrated: lastCalibratedDate,
             calibrationValidUntil: calibrationValidUntilDate,
             calibrationAgency: body.calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura',
-            calibrationStatus: body.calibrationStatus || 'VALID',
+            calibrationStatus: autoStatus,
             certificateNumber: body.certificateNumber || null,
             notes: body.notes || null,
           },
@@ -68,7 +72,7 @@ export const calibrationController = {
             lastCalibrated: lastCalibratedDate,
             calibrationValidUntil: calibrationValidUntilDate,
             timkalibrasi: body.calibrationAgency || 'INSKAL BBMKG Wilayah V Jayapura',
-            calibrationStatus: body.calibrationStatus || 'VALID',
+            calibrationStatus: autoStatus,
           },
         });
         
@@ -79,7 +83,7 @@ export const calibrationController = {
             recordId: device.devicesId,
             recordName: device.site,
             actor: req.user?.name || 'System',
-            details: `Pembaruan Kalibrasi: Status=${body.calibrationStatus || 'VALID'}, Berlaku s/d ${body.calibrationValidUntil}. Sertifikat: "${body.certificateNumber || '-'}"`,
+            details: `Pembaruan Kalibrasi: Status=${autoStatus} (otomatis), Berlaku s/d ${body.calibrationValidUntil}. Sertifikat: "${body.certificateNumber || '-'}"`,
           },
         });
         

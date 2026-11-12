@@ -13,10 +13,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // ============================================================================
 const TAHUN = 2026;
 
-// Actor KHUSUS untuk baris hasil import script ini — sengaja BUKAN nama
-// admin apa pun (lihat loadAdminActorSet di slaOlaController.ts), supaya
-// baris ini selalu masuk jalur "rata-rata UPT" (resolveMonthlyScores aturan
-// #2), bukan jalur "admin override" (aturan #1).
+// Actor KHUSUS untuk baris hasil import script ini, supaya baris hasil import
+// bisa dikenali & dihapus lagi saat skrip diulang (lihat bagian hapus di bawah).
 const IMPORT_ACTOR = 'Import Historis (CSV)';
 
 const FILES: { filename: string; category: string | 'PER_ROW' }[] = [

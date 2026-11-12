@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Home, 
   BarChart2, 
@@ -59,6 +59,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   devices,
 }) => {
   const { user, isMenuAllowed, logout } = useAuth();
+
+  // Tooltip nama menu saat sidebar hanya menampilkan ikon. Memakai posisi `fixed` (bukan absolute)
+  // karena daftar menu berada di kontainer overflow-y-auto yang akan memotong tooltip.
+  const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
+  const showTooltip = (e: React.SyntheticEvent<HTMLElement>, text: string) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ text, top: rect.top + rect.height / 2, left: rect.right + 10 });
+  };
+  const hideTooltip = () => setTooltip(null);
 
   const warningCount = devices
     ? devices.filter(
@@ -197,7 +206,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             return (
               <button
                 key={item.id}
+                aria-label={item.label}
+                onMouseEnter={(e) => {
+                  if (collapsed) showTooltip(e, item.badge && item.id === 'kalibrasi' ? `${item.label} · ${item.badge}` : item.label);
+                }}
+                onMouseLeave={hideTooltip}
+                onFocus={(e) => {
+                  if (collapsed) showTooltip(e, item.label);
+                }}
+                onBlur={hideTooltip}
                 onClick={() => {
+                  hideTooltip();
                   onSelectMenu(item.id);
                   // Setelah memilih menu, sidebar langsung kembali ke kondisi hanya-logo
                   if (!collapsed) onToggleCollapse();
@@ -289,6 +308,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
       </aside>
+
+      {collapsed && tooltip && (
+        <div
+          role="tooltip"
+          style={{ top: tooltip.top, left: tooltip.left }}
+          className="fixed z-[60] -translate-y-1/2 pointer-events-none whitespace-nowrap rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-lg"
+        >
+          <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+          {tooltip.text}
+        </div>
+      )}
     </>
   );
 };

@@ -12,8 +12,7 @@ import {
   diffDaysDateOnly,
 } from '../utils/dateUtils.js';
 import { isSameUptStation } from '../utils/uptMatch.js';
-import { normalizeActor, resolveMonthlyScores } from '../utils/slaOlaMonthly.js';
-import { loadAdminActorSet } from '../utils/adminActors.js';
+import { resolveMonthlyScores } from '../utils/slaOlaMonthly.js';
 
 // Batas maksimal mundur untuk pengisian SLA/OLA susulan (hari).
 const MAX_BACKDATE_DAYS = 10;
@@ -265,26 +264,22 @@ export const slaOlaController = {
       const start = new Date(Date.UTC(tahun, bulan ? bulan - 1 : 0, 1));
       const end = bulan ? new Date(Date.UTC(tahun, bulan, 1)) : new Date(Date.UTC(tahun + 1, 0, 1));
 
-      const [logs, adminActors] = await Promise.all([
-        prisma.slaOlaLog.findMany({
-          where: {
-            deviceId: { not: null },
-            reportDate: { gte: start, lt: end },
-          },
-          select: {
-            id: true,
-            deviceId: true,
-            kondisiSla: true,
-            kondisiOla: true,
-            actor: true,
-            reportDate: true,
-            timestamp: true,
-          },
-        }),
-        loadAdminActorSet(),
-      ]);
+      const logs = await prisma.slaOlaLog.findMany({
+        where: {
+          deviceId: { not: null },
+          reportDate: { gte: start, lt: end },
+        },
+        select: {
+          id: true,
+          deviceId: true,
+          kondisiSla: true,
+          kondisiOla: true,
+          reportDate: true,
+          timestamp: true,
+        },
+      });
 
-      const data = resolveMonthlyScores(logs, adminActors);
+      const data = resolveMonthlyScores(logs);
       return res.json({ success: true, tahun, data });
     } catch (error) {
       console.error('Error getYearlySummary:', error);
@@ -295,9 +290,8 @@ export const slaOlaController = {
   /**
    * Isian SLA/OLA HARIAN satu bulan, per alat per tanggal — sumber tabel
    * "Tabel Pengisian SLA & OLA Harian" di halaman SLA & OLA (cukup login).
-   * Log rekap bulanan input Admin TIDAK ikut (itu nilai rata-rata bulan, bukan
-   * isian harian). Bila satu alat diisi lebih dari sekali pada tanggal laporan
-   * yang sama, hanya isian terakhir yang dipakai.
+   * Bila satu alat diisi lebih dari sekali pada tanggal laporan yang sama,
+   * hanya isian terakhir yang dipakai.
    */
   getDailyFilling: async (req: AuthRequest, res: Response) => {
     const parsedQuery = z
@@ -314,28 +308,21 @@ export const slaOlaController = {
       const start = new Date(Date.UTC(tahun, bulan - 1, 1));
       const end = new Date(Date.UTC(tahun, bulan, 1));
 
-      const [logs, adminActors] = await Promise.all([
-        prisma.slaOlaLog.findMany({
-          where: { deviceId: { not: null }, reportDate: { gte: start, lt: end } },
-          select: {
-            id: true,
-            deviceId: true,
-            kondisiSla: true,
-            kondisiOla: true,
-            actor: true,
-            reportDate: true,
-            timestamp: true,
-          },
-          orderBy: { timestamp: 'asc' },
-        }),
-        loadAdminActorSet(),
-      ]);
+      const logs = await prisma.slaOlaLog.findMany({
+        where: { deviceId: { not: null }, reportDate: { gte: start, lt: end } },
+        select: {
+          deviceId: true,
+          kondisiSla: true,
+          kondisiOla: true,
+          reportDate: true,
+        },
+        orderBy: { timestamp: 'asc' },
+      });
 
       // deviceId -> tanggal (1-31) -> { sla, ola }. Urut timestamp naik, jadi isian terakhir menimpa.
       const data: Record<string, Record<number, { sla: boolean; ola: number }>> = {};
       for (const log of logs) {
         if (!log.deviceId) continue;
-        if (adminActors.has(normalizeActor(log.actor))) continue;
         const day = log.reportDate.getUTCDate();
         if (!data[log.deviceId]) data[log.deviceId] = {};
         data[log.deviceId][day] = { sla: log.kondisiSla, ola: log.kondisiOla };
@@ -393,12 +380,11 @@ export const slaOlaController = {
 
   /**
    * Rekap SLA/OLA per alat untuk RENTANG TANGGAL (sumber Laporan Mingguan Monitoring).
-   * Dihitung dari isian harian UPT di tabel sla_ola_logs berdasarkan `reportDate`:
+   * Dihitung dari isian harian di tabel sla_ola_logs berdasarkan `reportDate`:
    * satu nilai per alat per tanggal (isian terakhir bila diisi lebih dari sekali),
-   * lalu dirata-rata atas hari yang punya isian. Log rekap bulanan input Admin
-   * TIDAK ikut (itu nilai rata-rata bulan, bukan isian harian). Alat yang tidak
-   * punya isian sama sekali di rentang itu tidak ada di hasil — pemanggil yang
-   * memutuskan cara menghitungnya.
+   * lalu dirata-rata atas hari yang punya isian. Alat yang tidak punya isian
+   * sama sekali di rentang itu tidak ada di hasil — pemanggil yang memutuskan
+   * cara menghitungnya.
    */
   getRangeSummary: async (req: AuthRequest, res: Response) => {
     const parsedQuery = z
@@ -421,26 +407,21 @@ export const slaOlaController = {
         return res.status(400).json({ success: false, message: 'Rentang tanggal maksimal 366 hari.' });
       }
 
-      const [logs, adminActors] = await Promise.all([
-        prisma.slaOlaLog.findMany({
-          where: { deviceId: { not: null }, reportDate: { gte: fromDate, lte: toDate } },
-          select: {
-            deviceId: true,
-            kondisiSla: true,
-            kondisiOla: true,
-            actor: true,
-            reportDate: true,
-          },
-          orderBy: { timestamp: 'asc' },
-        }),
-        loadAdminActorSet(),
-      ]);
+      const logs = await prisma.slaOlaLog.findMany({
+        where: { deviceId: { not: null }, reportDate: { gte: fromDate, lte: toDate } },
+        select: {
+          deviceId: true,
+          kondisiSla: true,
+          kondisiOla: true,
+          reportDate: true,
+        },
+        orderBy: { timestamp: 'asc' },
+      });
 
       // deviceId -> tanggal -> isian terakhir (urut timestamp naik, jadi yang terakhir menimpa).
       const perDevice = new Map<string, Map<string, { sla: boolean; ola: number }>>();
       for (const log of logs) {
         if (!log.deviceId) continue;
-        if (adminActors.has(normalizeActor(log.actor))) continue;
         const day = log.reportDate.toISOString().slice(0, 10);
         let days = perDevice.get(log.deviceId);
         if (!days) {

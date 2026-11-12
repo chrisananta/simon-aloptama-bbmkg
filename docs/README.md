@@ -12,7 +12,7 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
    Arsitektur server gabungan (frontend + backend 1 proses), alur autentikasi JWT lengkap, model keamanan, dan struktur endpoint API.
 
 2. **[Spesifikasi API & Data Contract (API.md)](./API.md)**
-   Dokumentasi lengkap REST API (`simon-backend/src/routes/`), termasuk endpoint mana yang publik, mana yang wajib login, dan mana yang wajib role ADMIN.
+   Dokumentasi lengkap REST API (`simon-backend/src/routes/`), termasuk endpoint mana yang publik, mana yang wajib login, dan mana yang wajib role tertentu (Admin Inskal / Super Admin / Teknisi UPT).
 
 3. **[Panduan Pengembang & Konvensi Penamaan (DEVELOPMENT_GUIDE.md)](./DEVELOPMENT_GUIDE.md)**
    Standar penamaan berkas, aturan validasi Zod & React Hook Form, cara menjalankan aplikasi secara lokal, dan cara menambahkan fitur baru.
@@ -40,7 +40,11 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 
 - Login: `POST /api/login` → backend set cookie `httpOnly` `simon_jwt` (token **tidak** dikirim di body JSON)
 - Semua endpoint lain wajib terautentikasi — cookie httpOnly terkirim otomatis oleh browser (jalur utama), atau header `Authorization: Bearer <token>` (fallback untuk klien non-browser)
-- 2 role: `ADMIN` (Admin INSKAL — akses penuh) dan `UPT_PIMPINAN` (operator UPT — akses terbatas, tanpa hak hapus/kelola akun)
+- 4 role (enum `Role` di `schema.prisma`):
+  - `SUPER_ADMIN` — akses penuh: kelola akun, master stasiun/alat/petugas, audit log, plus semua fitur Admin Inskal
+  - `ADMIN_INSKAL` — kalibrasi, monitoring/koreksi SLA & OLA harian, genset, perbaikan, laporan; **tanpa** kelola akun, master stasiun/alat/petugas, dan audit log; **tidak** mengisi SLA/OLA
+  - `KAUPT_KABBMKG` — pimpinan (KaUPT / KaBBMKG): hanya melihat data UPT-nya sendiri (read-only, tanpa pengisian SLA/OLA)
+  - `TEKNISI_UPT` — mengisi SLA/OLA harian UPT-nya sendiri dan mengedit data alat milik UPT-nya (tanpa tambah/hapus alat)
 - Detail lengkap alur login → validasi token → migrasi password otomatis, lihat [ARCHITECTURE.md](./ARCHITECTURE.md#3-alur-autentikasi-login--token--request-terproteksi)
 
 ---
@@ -61,7 +65,10 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
 │   │   ├── dashboard/               # Dashboard SLA/OLA & Peta Stasiun
 │   │   ├── sla-ola/                 # Pengisian & Monitoring SLA/OLA
 │   │   ├── calibration/             # Repository Kalibrasi INSKAL & Sertifikat
-│   │   ├── admin/                   # Master Data Management (Stasiun, Alat, Petugas, Akun)
+│   │   ├── admin/                   # Master Data Management (Stasiun, Alat, Petugas, Akun) + monitoring SLA/OLA harian
+│   │   ├── panduan/                 # Panduan Pemeliharaan (Perka BMKG No. 7 Tahun 2014)
+│   │   ├── genset/                  # Pencatatan & laporan genset
+│   │   ├── perbaikan/               # Pencatatan & cetak perbaikan alat
 │   │   ├── audit-log/               # Log Aktivitas & Perubahan Sistem
 │   │   ├── monitoring/              # Peta sebaran ALOPTAMA (Leaflet) — MapContainer.tsx
 │   │   │                            # (marker status, popup detail, basemap OSM/Satelit,
@@ -82,7 +89,8 @@ Dokumentasi ini disusun agar developer baru dapat langsung memahami arsitektur, 
     │                                 # CalibrationRecord, AuditLog)
     └── src/
         ├── config/env.ts            # Validasi JWT_SECRET wajib ada (fail-fast jika kosong)
-        ├── middleware/               # authMiddleware.ts (verifyToken, requireAdmin),
+        ├── middleware/               # authMiddleware.ts (verifyToken, requireAdmin, requireSuperAdmin,
+        │                             # requireSuperAdminOrTeknisi),
         │                             # rateLimiter.ts (loginRateLimiter)
         ├── controllers/              # Logic tiap entitas (userController, deviceController, dst)
         ├── routes/                   # Definisi endpoint per entitas + routes/index.ts (gabungan)

@@ -1,7 +1,14 @@
 import React from 'react';
 import { Radio, X } from 'lucide-react';
-import { UPTStation, AloptamaDevice, EquipmentCategory, CalibrationStatus } from '../../../shared/types';
-import { PIC_TIDAK_DIKALIBRASI, PIC_REKANAN, agencyNameForPic, isNotCalibrated } from '../../../shared/utils/calibration';
+import { UPTStation, AloptamaDevice, EquipmentCategory } from '../../../shared/types';
+import {
+  PIC_TIDAK_DIKALIBRASI,
+  PIC_REKANAN,
+  CALIBRATION_WARNING_DAYS,
+  agencyNameForPic,
+  isNotCalibrated,
+  computeCalibrationStatus,
+} from '../../../shared/utils/calibration';
 import { getTodayIsoWIT } from '../../../shared/utils/dateUtils';
 
 // Masa berlaku sertifikat = tanggal kalibrasi + 1 tahun - 1 hari (sama dengan form Kalibrasi).
@@ -39,6 +46,8 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
   const lockId = !!editingDevice;
   const lockedInputCls = 'opacity-70 cursor-not-allowed bg-slate-100';
   const notCalibrated = isNotCalibrated(deviceForm);
+  // Status kalibrasi otomatis dari masa berlaku (tidak bisa dipilih manual).
+  const autoCalibrationStatus = computeCalibrationStatus(deviceForm.calibrationValidUntil) ?? 'VALID';
 
   const handlePicChange = (selectedPic: string) => {
     if (selectedPic === PIC_TIDAK_DIKALIBRASI) {
@@ -189,16 +198,25 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
 
                 {!notCalibrated && (
                 <div>
-                  <label className="block font-bold text-slate-800 mb-1">Status Kalibrasi</label>
-                  <select
-                    value={deviceForm.calibrationStatus || 'VALID'}
-                    onChange={(e) => setDeviceForm({ ...deviceForm, calibrationStatus: e.target.value as CalibrationStatus })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-[#0052CC] focus:bg-white font-bold"
+                  <label className="block font-bold text-slate-800 mb-1">Status Kalibrasi (otomatis)</label>
+                  <div
+                    className={`w-full px-3 py-2 border rounded-xl font-bold ${
+                      autoCalibrationStatus === 'SEGERA_DIKALIBRASI'
+                        ? 'bg-amber-50 border-amber-300 text-amber-800'
+                        : autoCalibrationStatus === 'KADALUWARSA'
+                          ? 'bg-red-50 border-red-300 text-red-800'
+                          : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                    }`}
                   >
-                    <option value="VALID">VALID (Sertifikat Berlaku)</option>
-                    <option value="SEGERA_DIKALIBRASI">SEGERA_DIKALIBRASI</option>
-                    <option value="KADALUWARSA">KADALUWARSA</option>
-                  </select>
+                    {autoCalibrationStatus === 'SEGERA_DIKALIBRASI'
+                      ? 'SEGERA_DIKALIBRASI'
+                      : autoCalibrationStatus === 'KADALUWARSA'
+                        ? 'KADALUWARSA'
+                        : 'VALID (Sertifikat Berlaku)'}
+                  </div>
+                  <p className="mt-1 text-[10px] font-medium text-slate-500 leading-snug">
+                    Dihitung dari masa berlaku; “Segera Dikalibrasi” {CALIBRATION_WARNING_DAYS} hari sebelum kedaluwarsa.
+                  </p>
                 </div>
                 )}
               </div>
