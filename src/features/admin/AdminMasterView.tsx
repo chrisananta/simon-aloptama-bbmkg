@@ -387,6 +387,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   const [editingLog, setEditingLog] = useState<SlaOlaLogRow | null>(null);
   const [editLogSlaVal, setEditLogSlaVal] = useState<number>(0);
   const [editLogOlaVal, setEditLogOlaVal] = useState<number>(0);
+  const [editLogKendala, setEditLogKendala] = useState<string>('');
   const [isEditLogModalOpen, setIsEditLogModalOpen] = useState(false);
   const [deleteConfirmLog, setDeleteConfirmLog] = useState<SlaOlaLogRow | null>(null);
 
@@ -421,6 +422,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     setEditingLog(log);
     setEditLogSlaVal(log.kondisiSla ? 100 : 0);
     setEditLogOlaVal(log.kondisiOla);
+    setEditLogKendala(log.kendala || '');
     setIsEditLogModalOpen(true);
   };
 
@@ -432,7 +434,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     try {
       const { devices: updatedDevices } = await apiClient.slaOlaLogs.update(
         editingLog.id,
-        { kondisiSla: sla >= 100, kondisiOla: ola },
+        { kondisiSla: sla >= 100, kondisiOla: ola, kendala: editLogKendala.trim() },
         adminActor
       );
       if (updatedDevices?.length) {
@@ -1082,6 +1084,8 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
           setEditLogSlaVal={setEditLogSlaVal}
           editLogOlaVal={editLogOlaVal}
           setEditLogOlaVal={setEditLogOlaVal}
+          editLogKendala={editLogKendala}
+          setEditLogKendala={setEditLogKendala}
           setIsEditLogModalOpen={setIsEditLogModalOpen}
           handleSaveEditLog={handleSaveEditLog}
         />

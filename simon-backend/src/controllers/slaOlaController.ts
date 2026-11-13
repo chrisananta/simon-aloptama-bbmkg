@@ -34,6 +34,7 @@ const saveSlaOlaInput = z.object({
 const updateSlaOlaLogInput = z.object({
   kondisiSla: z.union([z.boolean(), z.enum(['true', 'false']), z.literal(1), z.literal(0)]),
   kondisiOla: z.coerce.number().finite().min(0, 'Nilai OLA harus antara 0 sampai 100.').max(100, 'Nilai OLA harus antara 0 sampai 100.'),
+  kendala: z.string().trim().max(2000).optional(),
   actor: z.string().trim().max(200).optional(),
 });
 
@@ -498,6 +499,7 @@ export const slaOlaController = {
         category: log.category,
         kondisiSla: log.kondisiSla,
         kondisiOla: log.kondisiOla,
+        kendala: log.kendala || '',
         status: log.status,
         actor: log.actor,
         reportDate: formatDateOnly(log.reportDate),
@@ -528,9 +530,11 @@ export const slaOlaController = {
         return res.status(404).json({ success: false, message: 'Entri log SLA/OLA tidak ditemukan.' });
       }
 
-      const { kondisiSla, kondisiOla, actor } = parsed.data;
+      const { kondisiSla, kondisiOla, kendala, actor } = parsed.data;
       const slaOn = kondisiSla === true || kondisiSla === 'true' || kondisiSla === 1;
       const ola = kondisiOla;
+      // Jika field kendala tidak dikirim, nilai lama dipertahankan; string kosong = hapus keterangan.
+      const kendalaData = kendala === undefined ? {} : { kendala };
       const actorName = actor || req.user?.name || 'Admin INSKAL';
 
       let newStatus: 'NORMAL' | 'GANGGUAN' | 'MATI' = 'NORMAL';
@@ -545,7 +549,7 @@ export const slaOlaController = {
       await prisma.$transaction(async (tx) => {
         const updatedLog = await tx.slaOlaLog.update({
           where: { id },
-          data: { kondisiSla: slaOn, kondisiOla: ola, status: newStatus },
+          data: { kondisiSla: slaOn, kondisiOla: ola, status: newStatus, ...kendalaData },
         });
 
         // Jika ini entri PALING BARU untuk alat ini, sinkronkan status live Device.
@@ -574,7 +578,7 @@ export const slaOlaController = {
             recordId: updatedLog.deviceId || updatedLog.id,
             recordName: `${updatedLog.category} - ${updatedLog.uptStation}`,
             actor: actorName,
-            details: `Koreksi entri SLA/OLA tanggal ${formatDateOnly(updatedLog.reportDate)}: SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA=${ola}%.`,
+            details: `Koreksi entri SLA/OLA tanggal ${formatDateOnly(updatedLog.reportDate)}: SLA=${slaOn ? 'ON (100%)' : 'OFF (0%)'}, OLA=${ola}%.${kendala !== undefined ? ` Kendala: "${kendala || '-'}"` : ''}`,
           },
         });
       });

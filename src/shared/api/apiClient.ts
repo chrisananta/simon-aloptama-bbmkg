@@ -491,6 +491,7 @@ export const apiClient = {
       category: string;
       kondisiSla: boolean;
       kondisiOla: number;
+      kendala: string;
       status: string;
       actor: string;
       reportDate: string | null;
@@ -512,7 +513,7 @@ export const apiClient = {
 
     update: async (
       id: string,
-      data: { kondisiSla: boolean; kondisiOla: number },
+      data: { kondisiSla: boolean; kondisiOla: number; kendala?: string },
       actor = "Admin INSKAL"
     ): Promise<{ devices: AloptamaDevice[] }> => {
       const res = await authFetch(`/api/sla-ola/logs/${id}`, {

@@ -12,6 +12,7 @@ export interface SlaOlaLogRow {
   category: string;
   kondisiSla: boolean;
   kondisiOla: number;
+  kendala?: string;
   status: string;
   actor: string;
   reportDate: string | null;

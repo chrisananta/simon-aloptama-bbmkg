@@ -208,7 +208,7 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
                         {r.kesimpulan}
                       </span>
                     </td>
-                    <td className="p-2 border border-black leading-tight">
+                    <td className="p-2 border border-black leading-tight text-center align-middle">
                       {r.catatan || '-'}
                     </td>
                   </tr>
@@ -243,7 +243,6 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
 
                   {/* Ruang tanda tangan */}
                   <div className="h-16 flex items-center justify-center italic font-normal text-[10px] text-slate-300">
-                    ( Tanda Tangan Digital )
                   </div>
 
                   {/* Nama */}
