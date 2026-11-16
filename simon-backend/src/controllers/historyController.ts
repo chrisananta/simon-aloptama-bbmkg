@@ -53,6 +53,10 @@ export const historyController = {
             status: rec.calibrationStatus,
             certificateNumber: rec.certificateNumber,
             notes: rec.notes,
+            orderNumber: rec.orderNumber,
+            assignmentLetterNumber: rec.assignmentLetterNumber,
+            startDate: rec.startDate ? formatDateOnly(rec.startDate) : null,
+            endDate: rec.endDate ? formatDateOnly(rec.endDate) : null,
           },
         };
       });

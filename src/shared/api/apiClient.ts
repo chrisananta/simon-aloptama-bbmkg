@@ -635,6 +635,10 @@ export const apiClient = {
             calibrationStatus: record.calibrationStatus,
             certificateNumber: record.certificateNumber,
             notes: record.notes,
+            orderNumber: record.orderNumber,
+            assignmentLetterNumber: record.assignmentLetterNumber,
+            startDate: record.startDate,
+            endDate: record.endDate,
             actor,
           }),
         });

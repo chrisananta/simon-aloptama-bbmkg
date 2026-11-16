@@ -11,12 +11,14 @@ import {
   Plus,
   Archive,
   Filter,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { AloptamaDevice, CalibrationStatus, UPTStation } from '../../shared/types';
 import { apiClient } from '../../shared/api';
 import { PIC_TIDAK_DIKALIBRASI, PIC_REKANAN, picFromAgency, isNotCalibrated } from '../../shared/utils/calibration';
 import { CalibrationRecord } from './CalibrationTypes';
+import { CalibrationRecapReportModal } from './CalibrationRecapReportModal';
 import { useAuth } from '../auth/AuthContext';
 import { UserRole } from '../auth/authTypes';
 
@@ -50,6 +52,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
   // diperbarui dari Master Alat yang tampil di halaman ini.
   const [listedIds, setListedIds] = useState<string[]>([]);
   const [listedStatus, setListedStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [showRecapReport, setShowRecapReport] = useState(false);
   const [activeTab, setActiveTab] = useState<'latest' | 'repository'>('latest');
   // Semua filter diringkas ke 1 tombol yang membuka panel ini.
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -117,6 +120,17 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     }));
   }, [devices, stationMap]);
 
+  // Riwayat pelaksanaan terbaru tiap alat (nomor order, surat tugas, tanggal mulai-selesai).
+  const latestLogByDevice = useMemo(() => {
+    const map = new Map<string, CalibrationRecord>();
+    calibrationLogs.forEach((log) => {
+      const cur = map.get(log.deviceId);
+      const key = (l: CalibrationRecord) => `${l.endDate || l.lastCalibrated}|${l.createdAt}`;
+      if (!cur || key(log) > key(cur)) map.set(log.deviceId, log);
+    });
+    return map;
+  }, [calibrationLogs]);
+
   const allRecords = [
     ...listedDevices.map((dev) => ({
       id: `latest-${dev.devicesId}`,
@@ -127,6 +141,10 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       lastCalibrated: dev.lastCalibrated,
       calibrationValidUntil: dev.calibrationValidUntil,
       calibrationStatus: dev.calibrationStatus,
+      orderNumber: latestLogByDevice.get(dev.devicesId)?.orderNumber ?? null,
+      assignmentLetterNumber: latestLogByDevice.get(dev.devicesId)?.assignmentLetterNumber ?? null,
+      startDate: latestLogByDevice.get(dev.devicesId)?.startDate ?? null,
+      endDate: latestLogByDevice.get(dev.devicesId)?.endDate ?? null,
       calibrationAgency: dev.timkalibrasi,
       picKalibrasi: isNotCalibrated(dev)
         ? PIC_TIDAK_DIKALIBRASI
@@ -155,7 +173,8 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       (rec.uptStation || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (stationMap.get(rec.uptStation) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (rec.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (rec.calibrationAgency || '').toLowerCase().includes(searchQuery.toLowerCase());
+      (rec.calibrationAgency || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (rec.assignmentLetterNumber || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
       selectedStatus === 'ALL' || rec.calibrationStatus === selectedStatus;
@@ -370,6 +389,17 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
           </div>
         {permissions.canAddCalibration && (
           <button
+            type="button"
+            onClick={() => setShowRecapReport(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-xs transition-all cursor-pointer"
+            title="Laporan rekapitulasi pelaksanaan kalibrasi lapang (Khusus Admin)"
+          >
+            <FileText size={15} />
+            <span>Laporan Rekapitulasi</span>
+          </button>
+        )}
+        {permissions.canAddCalibration && (
+          <button
             onClick={onOpenAddCalibrationModal}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-[#003a99] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
             title="Tambah record kalibrasi"
@@ -387,6 +417,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
               <tr>
                 <th className="p-3.5">Peralatan</th>
                 <th className="p-3.5">Stasiun / UPT</th>
+                <th className="p-3.5">No. Surat Tugas</th>
                 <th className="p-3.5">Pelaksanaan Kalibrasi</th>
                 <th className="p-3.5">Masa Berlaku</th>
                 <th className="p-3.5 text-center">Status</th>
@@ -396,7 +427,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-slate-400">
+                  <td colSpan={7} className="text-center py-10 text-slate-400">
                     {activeTab === 'repository' && calibrationLogs.length === 0 ? (
                       <div className="space-y-2">
                         <p className="font-semibold text-slate-600">Belum ada catatan histori tambahan di Repository.</p>
@@ -431,9 +462,18 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     <td className="p-3.5 font-medium text-slate-800">
                       {stationMap.get(rec.uptStation) || rec.uptStation}
                     </td>
+                    <td className="p-3.5 font-medium text-slate-700 break-all min-w-[170px]">
+                      {rec.assignmentLetterNumber || '-'}
+                    </td>
                     <td className="p-3.5 font-medium text-slate-700">
-                      {formatDateIndo(rec.lastCalibrated)}
-                      <span className="block text-[10px] text-slate-400"></span>
+                      {rec.startDate && rec.endDate && rec.startDate !== rec.endDate ? (
+                        <>
+                          {formatDateIndo(rec.startDate)}
+                          <span className="block text-[10px] text-slate-400">s/d {formatDateIndo(rec.endDate)}</span>
+                        </>
+                      ) : (
+                        formatDateIndo(rec.endDate || rec.lastCalibrated)
+                      )}
                     </td>
                     <td className="p-3.5 font-medium text-slate-700">
                       {formatDateIndo(rec.calibrationValidUntil)}
@@ -454,6 +494,12 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
           </table>
         </div>
       </div>
+      <CalibrationRecapReportModal
+        isOpen={showRecapReport}
+        onClose={() => setShowRecapReport(false)}
+        records={calibrationLogs}
+        stations={stations}
+      />
     </div>
   );
 };

@@ -87,6 +87,14 @@ export interface CalibrationRecord {
   certificateNumber?: string;
   calibrationStatus: CalibrationStatus;
   notes?: string;
+  /** Nomor order kalibrasi (mis. "031" atau "033-044"). */
+  orderNumber?: string | null;
+  /** Nomor surat tugas pelaksanaan kalibrasi. */
+  assignmentLetterNumber?: string | null;
+  /** Tanggal mulai pelaksanaan (YYYY-MM-DD). */
+  startDate?: string | null;
+  /** Tanggal selesai pelaksanaan (YYYY-MM-DD) = acuan masa berlaku (sama dengan lastCalibrated). */
+  endDate?: string | null;
   createdAt: string;
 }
 export interface GensetChecklist {

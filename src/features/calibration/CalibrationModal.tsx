@@ -60,6 +60,11 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
 
   const [station, setStation] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Nomor order per alat (key = devicesId).
+  const [orderNumbers, setOrderNumbers] = useState<Record<string, string>>({});
+  const [assignmentLetterNumber, setAssignmentLetterNumber] = useState('');
+  const [startDate, setStartDate] = useState('');
+  // Tanggal selesai = tanggal terakhir pelaksanaan = acuan masa berlaku kalibrasi.
   const [lastCalibrated, setLastCalibrated] = useState('');
   const [personel, setPersonel] = useState<string[]>(Array(MIN_PERSONEL_SLOTS).fill(''));
   const [notes, setNotes] = useState(DEFAULT_NOTES);
@@ -88,6 +93,9 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
     setErrorMessage(null);
     setStation(stationOptions[0] || '');
     setSelectedIds(new Set());
+    setOrderNumbers({});
+    setAssignmentLetterNumber('');
+    setStartDate('');
     setLastCalibrated('');
     setPersonel(Array(MIN_PERSONEL_SLOTS).fill(''));
     setNotes(DEFAULT_NOTES);
@@ -132,7 +140,12 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
 
     if (!station) return setErrorMessage('Pilih stasiun UPT terlebih dahulu.');
     if (chosen.length === 0) return setErrorMessage('Centang minimal 1 peralatan yang dikalibrasi.');
-    if (!lastCalibrated) return setErrorMessage('Tanggal kalibrasi wajib diisi.');
+    const missingOrder = chosen.find((d) => !(orderNumbers[d.devicesId] || '').trim());
+    if (missingOrder) return setErrorMessage(`Nomor order untuk "${missingOrder.site}" wajib diisi.`);
+    if (!assignmentLetterNumber.trim()) return setErrorMessage('Nomor surat tugas wajib diisi.');
+    if (!startDate) return setErrorMessage('Tanggal mulai pelaksanaan wajib diisi.');
+    if (!lastCalibrated) return setErrorMessage('Tanggal selesai pelaksanaan wajib diisi.');
+    if (lastCalibrated < startDate) return setErrorMessage('Tanggal selesai tidak boleh sebelum tanggal mulai.');
     if (team.length === 0) return setErrorMessage('Pilih minimal 1 personel kalibrasi dari data master.');
 
     setIsSubmitting(true);
@@ -146,6 +159,10 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
           uptStation: dev.uptStation,
           lastCalibrated,
           calibrationValidUntil: validUntil,
+          orderNumber: (orderNumbers[dev.devicesId] || '').trim(),
+          assignmentLetterNumber: assignmentLetterNumber.trim(),
+          startDate,
+          endDate: lastCalibrated,
           calibrationStatus: status,
           calibrationAgency: team.join(', '),
           notes: notes.trim(),
@@ -256,23 +273,38 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
                     {stationDevices.map((dev) => {
                       const checked = selectedIds.has(dev.devicesId);
                       return (
-                        <label
+                        <div
                           key={dev.devicesId}
-                          className={`flex items-center gap-2.5 px-3 py-2 text-[11px] sm:text-xs cursor-pointer select-none transition-colors ${
+                          className={`flex flex-wrap items-center gap-x-2.5 gap-y-1.5 px-3 py-2 text-[11px] sm:text-xs transition-colors ${
                             checked ? 'bg-blue-50/70' : 'bg-white hover:bg-slate-50'
                           }`}
                         >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleDevice(dev.devicesId)}
-                            className="w-4 h-4 accent-[#0052CC] cursor-pointer shrink-0"
-                          />
-                          <span className="font-semibold text-slate-800 min-w-0 truncate">{dev.site}</span>
-                          <span className="ml-auto shrink-0 text-[10px] sm:text-[11px] font-medium text-slate-500">
-                            {dev.category}
-                          </span>
-                        </label>
+                          <label className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleDevice(dev.devicesId)}
+                              className="w-4 h-4 accent-[#0052CC] cursor-pointer shrink-0"
+                            />
+                            <span className="font-semibold text-slate-800 min-w-0 truncate">{dev.site}</span>
+                            <span className="ml-auto shrink-0 text-[10px] sm:text-[11px] font-medium text-slate-500">
+                              {dev.category}
+                            </span>
+                          </label>
+                          {checked && (
+                            <input
+                              type="text"
+                              value={orderNumbers[dev.devicesId] || ''}
+                              onChange={(e) =>
+                                setOrderNumbers((prev) => ({ ...prev, [dev.devicesId]: e.target.value }))
+                              }
+                              disabled={isSubmitting}
+                              placeholder="No. Order"
+                              aria-label={`Nomor order ${dev.site}`}
+                              className="w-full sm:w-28 bg-white border border-slate-300 rounded-lg px-2 py-1 text-[11px] sm:text-xs font-medium text-slate-800"
+                            />
+                          )}
+                        </div>
                       );
                     })}
                   </div>
@@ -287,29 +319,59 @@ export const CalibrationModal: React.FC<CalibrationModalProps> = ({
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                <div className="space-y-1">
+                <div className="space-y-1 sm:col-span-2">
                   <label className="block text-[10px] sm:text-[11px] font-bold text-slate-700">
-                    Tanggal Kalibrasi:
+                    No. Surat Tugas:
                   </label>
                   <input
-                    type="date"
-                    value={lastCalibrated}
-                    onChange={(e) => setLastCalibrated(e.target.value)}
+                    type="text"
+                    value={assignmentLetterNumber}
+                    onChange={(e) => setAssignmentLetterNumber(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="mis. e.T/IJ.00.00/021/KBB5/VIII/2026"
                     className="w-full bg-white border border-slate-300 rounded-lg p-1.5 sm:p-2 text-[11px] sm:text-xs font-medium text-slate-800"
                   />
                 </div>
                 <div className="space-y-1">
                   <label className="block text-[10px] sm:text-[11px] font-bold text-slate-700">
-                    Masa Berlaku Sampai :
+                    Tanggal Mulai Pelaksanaan:
                   </label>
                   <input
                     type="date"
-                    value={validUntil}
-                    readOnly
-                    tabIndex={-1}
-                    className="w-full bg-slate-100 border border-slate-300 rounded-lg p-1.5 sm:p-2 text-[11px] sm:text-xs font-medium text-slate-600 cursor-not-allowed"
+                    value={startDate}
+                    max={lastCalibrated || undefined}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-1.5 sm:p-2 text-[11px] sm:text-xs font-medium text-slate-800"
                   />
                 </div>
+                <div className="space-y-1">
+                  <label className="block text-[10px] sm:text-[11px] font-bold text-slate-700">
+                    Tanggal Selesai Pelaksanaan:
+                  </label>
+                  <input
+                    type="date"
+                    value={lastCalibrated}
+                    min={startDate || undefined}
+                    onChange={(e) => setLastCalibrated(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-1.5 sm:p-2 text-[11px] sm:text-xs font-medium text-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] sm:text-[11px] font-bold text-slate-700">
+                  Masa Berlaku Sampai :
+                </label>
+                <input
+                  type="date"
+                  value={validUntil}
+                  readOnly
+                  tabIndex={-1}
+                  className="w-full bg-slate-100 border border-slate-300 rounded-lg p-1.5 sm:p-2 text-[11px] sm:text-xs font-medium text-slate-600 cursor-not-allowed"
+                />
+                <p className="text-[9px] sm:text-[10px] text-slate-500 leading-snug">
+                  Dihitung dari tanggal selesai pelaksanaan + 1 tahun.
+                </p>
               </div>
 
               <div className="space-y-1">

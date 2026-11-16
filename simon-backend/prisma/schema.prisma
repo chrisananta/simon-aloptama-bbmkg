@@ -129,6 +129,11 @@ model CalibrationRecord {
   certificateNumber     String?
   calibrationStatus     CalibrationStatus @default(VALID)
   notes                 String?
+  // Riwayat pelaksanaan kalibrasi lapang. Tanggal selesai = lastCalibrated (acuan masa berlaku).
+  orderNumber           String?
+  assignmentLetterNumber String?
+  startDate             DateTime?         @db.Date
+  endDate               DateTime?         @db.Date
   createdAt             DateTime          @default(now())
   device                Device            @relation(fields: [deviceId], references: [devicesId])
 

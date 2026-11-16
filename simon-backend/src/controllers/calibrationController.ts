@@ -20,13 +20,22 @@ const calibrationInput = z.object({
   calibrationStatus: z.enum(['VALID', 'SEGERA_DIKALIBRASI', 'KADALUWARSA']).optional(),
   certificateNumber: z.string().trim().max(200).nullable().optional(),
   notes: z.string().trim().max(3000).nullable().optional(),
+  // Riwayat pelaksanaan kalibrasi lapang
+  orderNumber: z.string().trim().max(100).nullable().optional(),
+  assignmentLetterNumber: z.string().trim().max(200).nullable().optional(),
+  startDate: dateOnlyString.nullable().optional(),
+  endDate: dateOnlyString.nullable().optional(),
 });
 
-function serializeRecord<T extends { lastCalibrated: Date; calibrationValidUntil: Date }>(record: T) {
+function serializeRecord<
+  T extends { lastCalibrated: Date; calibrationValidUntil: Date; startDate?: Date | null; endDate?: Date | null }
+>(record: T) {
   return {
     ...record,
     lastCalibrated: formatDateOnly(record.lastCalibrated),
     calibrationValidUntil: formatDateOnly(record.calibrationValidUntil),
+    startDate: record.startDate ? formatDateOnly(record.startDate) : null,
+    endDate: record.endDate ? formatDateOnly(record.endDate) : null,
   };
 }
 
@@ -45,6 +54,10 @@ export const calibrationController = {
         });
       }
       
+      if (body.startDate && body.endDate && body.endDate < body.startDate) {
+        return res.status(400).json({ success: false, message: 'Tanggal selesai tidak boleh sebelum tanggal mulai.' });
+      }
+
       const lastCalibratedDate = parseDateOnly(body.lastCalibrated);
       const calibrationValidUntilDate = parseDateOnly(body.calibrationValidUntil);
       // Status otomatis dari masa berlaku (bukan input manual).
@@ -63,6 +76,10 @@ export const calibrationController = {
             calibrationStatus: autoStatus,
             certificateNumber: body.certificateNumber || null,
             notes: body.notes || null,
+            orderNumber: body.orderNumber || null,
+            assignmentLetterNumber: body.assignmentLetterNumber || null,
+            startDate: body.startDate ? parseDateOnly(body.startDate) : null,
+            endDate: body.endDate ? parseDateOnly(body.endDate) : null,
           },
         });
         
@@ -83,7 +100,7 @@ export const calibrationController = {
             recordId: device.devicesId,
             recordName: device.site,
             actor: req.user?.name || 'System',
-            details: `Pembaruan Kalibrasi: Status=${autoStatus} (otomatis), Berlaku s/d ${body.calibrationValidUntil}. Sertifikat: "${body.certificateNumber || '-'}"`,
+            details: `Pembaruan Kalibrasi: Status=${autoStatus} (otomatis), Berlaku s/d ${body.calibrationValidUntil}. Sertifikat: "${body.certificateNumber || '-'}". Order: ${body.orderNumber || '-'}, Surat Tugas: ${body.assignmentLetterNumber || '-'}, Pelaksanaan: ${body.startDate || '-'} s/d ${body.endDate || '-'}`,
           },
         });
         
