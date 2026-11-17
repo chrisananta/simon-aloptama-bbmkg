@@ -89,6 +89,8 @@ export interface FlowPdfOptions {
   cloneCss?: string;
   /** Selector footer di dalam elemen; dipindah & diulang di bawah SETIAP halaman. */
   footerSelector?: string;
+  /** Selector kop di dalam elemen; dirender selebar kertas (full-bleed) di tepi atas HALAMAN PERTAMA saja. */
+  headerSelector?: string;
   /** Selector elemen yang selalu memulai halaman baru (mis. ".page-break"). */
   pageBreakBeforeSelector?: string;
   /** true = elemen sudah terpasang dengan lebar yang benar (mis. di dalam iframe), tidak disalin. */
@@ -142,6 +144,24 @@ export async function downloadFlowAsPdf(opts: FlowPdfOptions): Promise<void> {
       }
     }
 
+    // Kop full-bleed: dirender terpisah selebar kertas, digambar di (0,0) halaman pertama.
+    let headerImg: string | null = null;
+    let headerHmm = 0;
+    if (opts.headerSelector) {
+      const h = root.querySelector<HTMLElement>(opts.headerSelector);
+      if (h) {
+        h.style.margin = '0';
+        h.style.width = `${pageW * MM_TO_PX}px`;
+        const hrect = h.getBoundingClientRect();
+        const hc = await html2canvas(h, { scale, backgroundColor: '#ffffff', useCORS: true });
+        headerImg = hc.toDataURL('image/png');
+        headerHmm = hrect.height / MM_TO_PX;
+        h.remove();
+      }
+    }
+    // Halaman pertama dimulai di bawah kop (jika kop lebih tinggi dari margin atas).
+    const firstTopMm = headerImg ? Math.max(marginMm, headerHmm) : marginMm;
+
     const totalPx = Math.max(1, Math.ceil(root.scrollHeight));
     const rootTop = root.getBoundingClientRect().top;
     const topOf = (el: Element) => el.getBoundingClientRect().top - rootTop;
@@ -159,13 +179,16 @@ export async function downloadFlowAsPdf(opts: FlowPdfOptions): Promise<void> {
 
     const footerReserveMm = footerImg ? footerHmm + 3 : 0;
     const capacityPx = Math.floor((contentH - footerReserveMm) * MM_TO_PX);
-    const minFill = capacityPx * 0.4;
+    const firstCapacityPx = Math.floor((pageH - firstTopMm - marginMm - footerReserveMm) * MM_TO_PX);
 
     // Tentukan titik potong halaman: patuhi page-break, lalu potong di batas baris/paragraf.
     const slices: Array<[number, number]> = [];
     let start = 0;
     while (start < totalPx - 1) {
-      const limit = start + capacityPx;
+      const isFirst = slices.length === 0;
+      const cap = isFirst ? firstCapacityPx : capacityPx;
+      const minFill = cap * 0.4;
+      const limit = start + cap;
       let end: number;
       const forcedBreak = forced.find((t) => t > start + 1 && t <= limit);
       if (forcedBreak !== undefined) {
@@ -206,7 +229,8 @@ export async function downloadFlowAsPdf(opts: FlowPdfOptions): Promise<void> {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, part.width, part.height);
       ctx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
-      pdf.addImage(part.toDataURL('image/jpeg', 0.95), 'JPEG', marginMm, marginMm, contentW, sh / k / MM_TO_PX);
+      if (i === 0 && headerImg) pdf.addImage(headerImg, 'PNG', 0, 0, pageW, headerHmm);
+      pdf.addImage(part.toDataURL('image/jpeg', 0.95), 'JPEG', marginMm, i === 0 ? firstTopMm : marginMm, contentW, sh / k / MM_TO_PX);
       if (footerImg) {
         pdf.addImage(footerImg, 'PNG', marginMm + (contentW - footerWmm) / 2, pageH - marginMm - footerHmm, footerWmm, footerHmm);
       }

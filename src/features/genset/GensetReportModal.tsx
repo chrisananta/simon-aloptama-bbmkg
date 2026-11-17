@@ -3,6 +3,7 @@ import { X, Download, Loader2, Filter } from 'lucide-react';
 import { GensetRecord } from '../../shared/types';
 import { getTodayIsoWIT } from '../../shared/utils/dateUtils';
 import bmkgLogo from '../../assets/images/BMKGLogo.png';
+import footerTte from '../../assets/images/FooterTTE.png';
 import { downloadFlowAsPdf } from '../../shared/print/downloadPagesAsPdf';
 
 export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void; records: GensetRecord[] }> = ({
@@ -62,8 +63,9 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
         filename: 'Laporan Rekapitulasi Genset BMKG.pdf',
         orientation: 'landscape',
         marginMm: 10,
-        cloneCss: 'width:100%;min-width:0;max-width:none;padding:0;margin:0;border:none;box-shadow:none;',
+        cloneCss: 'width:100%;min-width:0;max-width:none;padding:0;margin:0;border:none;box-shadow:none;--gr-pad:0px;',
         footerSelector: '.tte-footer',
+        headerSelector: '.gr-kop-wrap',
       });
     } catch (err) {
       console.error('Gagal membuat PDF:', err);
@@ -77,6 +79,20 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
 
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 animate-fade-in overflow-y-auto">
+      <style>{`
+        .gr-kop-wrap { width: 100%; background: #fff; }
+        .gr-kop { position: relative; width: 100%; height: 35.3mm; box-sizing: border-box; background: #d0d0d0; border-bottom: 0.8mm solid #000; color: #000; font-family: Arial, "Liberation Sans", Helvetica, sans-serif; }
+        .gr-kop-rule { width: 100%; height: 0; margin-top: 0.8mm; border-top: 0.25mm solid #000; }
+        .gr-kop-logo { position: absolute; left: 7.3mm; top: 4.2mm; width: 25.4mm; height: 25.2mm; object-fit: contain; }
+        .gr-kop-text { position: absolute; left: 32.7mm; right: 7mm; top: 5.9mm; text-align: center; font-weight: bold; }
+        .gr-kop-1 { font-size: 16pt; line-height: 7mm; }
+        .gr-kop-2 { font-size: 13pt; line-height: 6mm; }
+        .gr-kop-3 { font-size: 12pt; line-height: 5.6mm; }
+        .gr-link { color: #0563c1; text-decoration: underline; }
+        .gr-inner { padding: 8mm var(--gr-pad, 2rem) 2rem; }
+        .tte-footer { width: 159.2mm; max-width: 100%; height: 8.9mm; margin-left: auto; margin-right: auto; }
+        .tte-footer img { display: block; width: 100%; height: 100%; }
+      `}</style>
       <div className="bg-white rounded-2xl w-full max-w-5xl flex flex-col max-h-[92vh] overflow-hidden shadow-2xl my-auto">
         
         {/* Header Modal */}
@@ -117,40 +133,31 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
             ↔ Geser dokumen ke samping untuk melihat tabel lengkap
           </p>
           <div className="overflow-x-auto rounded-lg">
-          <div id="genset-report-printable" className="bg-white p-4 sm:p-8 border border-slate-300 shadow-sm mx-auto text-black min-w-[680px] sm:min-w-0">
+          <div id="genset-report-printable" className="bg-white border border-slate-300 shadow-sm mx-auto text-black min-w-[680px] sm:min-w-0">
             
-            {/* Kop Surat Resmi BMKG */}
-            <div className="border-b-4 border-slate-900 pb-3 mb-6 relative">
-              <div className="flex items-center gap-4">
-                <img 
-                  src={bmkgLogo} 
-                  alt="Logo BMKG" 
-                  className="w-12 h-16 sm:w-16 sm:h-20 object-contain shrink-0"
-                />
-                <div className="text-center flex-1">
-                  <h1 className="font-extrabold text-xs sm:text-base tracking-wide uppercase text-black">
-                    BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA
-                  </h1>
-                  <h2 className="font-bold text-[11px] sm:text-sm tracking-wide uppercase text-black mt-0.5">
-                    BALAI BESAR METEOROLOGI, KLIMATOLOGI DAN GEOFISIKA WILAYAH V
-                  </h2>
-                  <p className="text-[9px] sm:text-[10px] text-slate-800 font-medium mt-1">
-                    Jl. Raya Abepura Entrop – Jayapura, Telp: (0967) 5165442, Kode Pos 99224
-                  </p>
-                  <p className="text-[9px] sm:text-[10px] text-slate-800 font-medium">
-                    Email: <span className="text-blue-800 underline">bbmkg5@bmkg.go.id</span> Website: <span className="text-blue-800 underline">bbmkg5.bmkg.go.id</span>
-                  </p>
+            {/* Kop Surat Resmi BMKG (sama dengan Laporan Rekapitulasi Kalibrasi) */}
+            <div className="gr-kop-wrap">
+            <header className="gr-kop">
+              <img className="gr-kop-logo" src={bmkgLogo} alt="Logo BMKG" />
+              <div className="gr-kop-text">
+                <div className="gr-kop-1">BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA</div>
+                <div className="gr-kop-2">BALAI BESAR METEOROLOGI, KLIMATOLOGI DAN GEOFISIKA WILAYAH V</div>
+                <div className="gr-kop-3">Jl. Raya Abepura Entrop - Jayapura, Telp : (0967) 5165442, Kode Pos 99224</div>
+                <div className="gr-kop-3">
+                  Email : <span className="gr-link">bbmkg5@bmkg.go.id</span> Website : <span className="gr-link">bbmkg5.bmkg.go.id</span>
                 </div>
               </div>
-              <div className="border-b border-slate-900 mt-2" />
+            </header>
+            <div className="gr-kop-rule" />
             </div>
-            
+
+            <div className="gr-inner">
             <h3 className="text-center font-black text-xs sm:text-sm uppercase mb-4 tracking-wide">
               LAPORAN REKAPITULASI PEMELIHARAAN &amp; MONITORING GENSET
             </h3>
             
             {/* Kotak Informasi dengan Tanda : Rapi & Sejajar */}
-            <div className="mb-4 text-[11px] sm:text-xs font-bold bg-slate-50 p-3 border border-black/20 rounded-md">
+            <div className="mb-4 text-[11px] sm:text-xs font-bold bg-white p-3 border border-black/20 rounded-md">
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <div className="space-y-1 flex-1">
                   <div className="flex items-start">
@@ -182,7 +189,7 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
             {/* Tabel Laporan */}
             <table className="w-full text-[10px] text-left border-collapse border border-black">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-black text-center">
+                <tr className="bg-[#c6e0b4] font-bold border-b border-black text-center">
                   <th className="p-2 border border-black w-24">Tanggal &amp; Jam</th>
                   <th className="p-2 border border-black w-24">Gedung</th>
                   <th className="p-2 border border-black">Petugas Monitoring</th>
@@ -222,49 +229,44 @@ export const GensetReportModal: React.FC<{ isOpen: boolean; onClose: () => void;
                 <div className="w-[260px] text-center text-xs font-bold leading-tight">
 
                   {/* Tanggal */}
-                  <p className="mb-1">
+                  <div className="mb-1">
                     Jayapura, {new Date().toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric'
                     })}
-                  </p>
+                  </div>
 
                   {/* Mengetahui */}
-                  <p className="mb-2">
+                  <div className="mb-2">
                     Mengetahui,
-                  </p>
+                  </div>
 
                   {/* Jabatan */}
-                  <p className="mb-1">
+                  <div className="mb-1">
                     Ketua Tim Kerja Instrumentasi<br />
                     dan Kalibrasi
-                  </p>
+                  </div>
 
                   {/* Ruang tanda tangan */}
                   <div className="h-16 flex items-center justify-center italic font-normal text-[10px] text-slate-300">
                   </div>
 
                   {/* Nama */}
-                  <p className="underline font-black whitespace-nowrap">
+                  <div className="underline font-black whitespace-nowrap">
                     Yessi Veronika Marpaung, S.Tr
-                  </p>
+                  </div>
 
                 </div>
               </div>
             </div>
 
-            {/* Footer TTE */}
-            <div className="tte-footer mt-6 text-center">
-              <div className="border-t-[3px] border-black" />
-              <div className="border-t border-black mt-[3px] mb-3" />
-              <p className="text-[10px] sm:text-[11px] font-bold italic text-black leading-snug">
-                Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang
-                <br className="hidden sm:block" />
-                diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara
-              </p>
+            {/* Footer TTE (gambar sama dengan Laporan Rekapitulasi Kalibrasi) */}
+            <div className="tte-footer mt-6">
+              <img src={footerTte} alt="Dokumen ini telah ditandatangani secara elektronik" />
             </div>
 
+            </div>
           </div> 
         </div>  
       </div> 

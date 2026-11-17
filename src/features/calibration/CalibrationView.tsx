@@ -417,7 +417,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
               <tr>
                 <th className="p-3.5">Peralatan</th>
                 <th className="p-3.5">Stasiun / UPT</th>
-                <th className="p-3.5">No. Surat Tugas</th>
+                <th className="p-3.5 text-center">No. Surat Tugas</th>
                 <th className="p-3.5">Pelaksanaan Kalibrasi</th>
                 <th className="p-3.5">Masa Berlaku</th>
                 <th className="p-3.5 text-center">Status</th>
@@ -462,7 +462,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     <td className="p-3.5 font-medium text-slate-800">
                       {stationMap.get(rec.uptStation) || rec.uptStation}
                     </td>
-                    <td className="p-3.5 font-medium text-slate-700 break-all min-w-[170px]">
+                    <td className="p-3.5 font-medium text-slate-700 break-all min-w-[170px] text-center">
                       {rec.assignmentLetterNumber || '-'}
                     </td>
                     <td className="p-3.5 font-medium text-slate-700">
@@ -475,7 +475,7 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                         formatDateIndo(rec.endDate || rec.lastCalibrated)
                       )}
                     </td>
-                    <td className="p-3.5 font-medium text-slate-700">
+                    <td className="p-3.5 font-medium text-slate-700 whitespace-nowrap">
                       {formatDateIndo(rec.calibrationValidUntil)}
                     </td>
                     <td className="p-3.5 text-center">
