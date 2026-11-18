@@ -57,7 +57,6 @@ export const GensetView: React.FC = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-            <CalIcon size={14} className="text-slate-400" />
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}

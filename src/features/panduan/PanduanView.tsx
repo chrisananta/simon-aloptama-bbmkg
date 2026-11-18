@@ -508,7 +508,6 @@ export const PanduanView: React.FC<PanduanViewProps> = () => {
             {batas ? (
               <div className="rounded-[14px] border border-blue-200 bg-[#EAF1FF] p-4">
                 <div className="flex items-center gap-2 text-[13.5px] font-bold text-[#0F2D52]">
-                  <AlertTriangle size={17} className="text-[#0052CC]" />
                   Batas waktu perbaikan
                 </div>
                 <div className="mb-1 mt-2.5 font-heading text-4xl font-bold leading-none text-[#0F2D52]">

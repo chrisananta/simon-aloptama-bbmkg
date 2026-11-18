@@ -3,17 +3,14 @@ import {
   BarChart2, 
   Clock, 
   CheckCircle2, 
-  Calendar, 
   Search, 
   Wrench, 
   RefreshCw, 
   MessageSquare, 
-  Building2, 
   Info,
   TrendingUp,
   TrendingDown,
   Minus,
-  ShieldCheck,
   FileText
 } from 'lucide-react';
 import { 
@@ -490,7 +487,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 flex-1 sm:flex-none min-w-[140px] max-w-full">
-            <Building2 size={14} className="text-[#0052CC] shrink-0" />
             <span className="shrink-0 hidden xs:inline">UPT:</span>
             <select
               value={selectedUpt}
@@ -507,7 +503,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           </div>
 
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700">
-            <Calendar size={14} className="text-[#0052CC] shrink-0" />
             <span className="hidden xs:inline">Bulan:</span>
             <select
               value={selectedMonth}
@@ -601,7 +596,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             <span className="font-heading text-3xl sm:text-4xl font-black text-[#0052CC]">
               {Math.round(monthlySlaValue)}%
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="text-[10px] sm:text-xs font-bold text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
               Target ≥97%
             </span>
           </div>
@@ -619,7 +614,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             <span className="font-heading text-3xl sm:text-4xl font-black text-[#0052CC]">
               {Math.round(monthlyOlaValue)}%
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="text-[10px] sm:text-xs font-bold text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
               Target ≥97%
             </span>
           </div>
@@ -629,21 +624,21 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
 
         <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
           <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
             KONDISI KALIBRASI (BALAI)
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
-            <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-emerald-600">
+            <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-[#0052CC]">
               {balaiTidakTerlambatCount} / {balaiDevices.length}
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="text-[10px] sm:text-xs font-bold text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
               {balaiKondisiKalibrasiPercent}%
             </span>
           </div>
           <p className="text-[11px] text-slate-600 mt-1.5 sm:mt-2 font-medium">
-            <span className="text-emerald-700 font-bold">🟢 {balaiTidakTerlambatCount} Valid</span> | {' '}
-            <span className="text-rose-600 font-bold">🔴 {balaiTerlambatCount} Kadaluwarsa</span>
+            <span className="text-[#0052CC] font-bold">{balaiTidakTerlambatCount} Valid</span> | {' '}
+            <span className="text-rose-600 font-bold">{balaiTerlambatCount} Kadaluwarsa</span>
           </p>
         </div>
       </div>
@@ -656,8 +651,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             </h3>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-emerald-800 bg-emerald-50/90 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5 shadow-xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 flex items-center gap-1.5 shadow-xs">
               {selectedUptName}
             </span>
           </div>
@@ -848,7 +842,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
               <h3 className="font-heading font-bold text-base text-slate-900">
                 Daftar Alat Gangguan ({displayGangguan.length})
               </h3>
@@ -919,7 +912,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-rose-600"></div>
               <h3 className="font-heading font-bold text-base text-slate-900">
                 Daftar Alat Mati ({displayMati.length})
               </h3>
@@ -996,7 +988,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <h3 className="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
                 Daftar Aloptama yang Belum Melaporkan Kondisi {formatDateIndo(expectedReportDate)}
               </h3>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#0052CC] border border-blue-100">
                 <CheckCircle2 size={13} />
                 {reportedCount} / {totalDevicesCount} Alat Sudah Lapor
               </span>
@@ -1017,7 +1009,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             
             <button
               onClick={() => setIsWaModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0052CC] hover:bg-blue-800 active:bg-blue-900 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               title="Generate Format Laporan WA Group untuk UPT Belum Lapor"
             >
               <MessageSquare size={14} />

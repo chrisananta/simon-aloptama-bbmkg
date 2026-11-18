@@ -555,9 +555,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         {/* Header Modal */}
         <div className="bg-[#0A203C] text-white p-3.5 sm:p-5 flex items-center justify-between shrink-0 gap-2">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 shrink-0">
-              <CalculatorIcon size={18} className="sm:w-5 sm:h-5" />
-            </div>
             <div>
               <h3 className="font-heading text-base sm:text-lg font-bold leading-tight">
                 Form Pengisian SLA &amp; OLA UPT
@@ -701,7 +698,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               <div className="space-y-1.5 bg-blue-50/60 p-3 rounded-xl border border-blue-200 animate-fade-in">
                 <div className="flex items-center justify-between gap-2">
                   <label className="block text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
-                    <WrenchIcon size={13} className="text-[#0052CC]" />
                     CENTANG ALAT DENGAN KONDISI SAMA:
                   </label>
                   {matchingDevices.some((d) => !filledDeviceIds.has(d.devicesId)) && (
@@ -856,10 +852,9 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               <div className="bg-slate-50/80 rounded-2xl p-3 sm:p-4 border border-slate-200 space-y-3">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-2 gap-1.5 sm:gap-0">
                   <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Info size={14} className="text-[#0052CC] shrink-0" />
                     Pilih Kondisi Kelayakan Peralatan ({watchCategory}):
                   </h4>
-                  <span className="text-[11px] font-bold text-[#0052CC] bg-blue-100 px-2.5 py-0.5 rounded-lg border border-blue-200 shrink-0">
+                  <span className="text-[11px] font-bold text-slate-800">
                     Kalkulasi OLA: {watchKondisiOla}%
                   </span>
                 </div>
@@ -1505,7 +1500,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         : "bg-white text-slate-700 border-slate-300"
                     }`}
                   >
-                    🟢 ON
+                    ON
                   </button>
                   <button
                     type="button"
@@ -1519,7 +1514,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                         : "bg-white text-slate-700 border-slate-300"
                     }`}
                   >
-                    🔴 OFF
+                    OFF
                   </button>
                 </div>
               </div>
@@ -1562,12 +1557,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 </span>
               </div>
             </div>
-
-            {selectedDeviceIds.size === 0 && needKendala && (
-              <p className="text-[10px] text-rose-600 font-bold">
-                Kendala wajib diisi (kolom muncul di samping alat setelah dicentang) karena alat OFF atau OLA &lt; 100%.
-              </p>
-            )}
 
             <div className="pt-2 sm:pt-3 flex items-center justify-end gap-2 border-t border-slate-200 shrink-0">
               <button

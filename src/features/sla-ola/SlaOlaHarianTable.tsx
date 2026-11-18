@@ -127,7 +127,6 @@ export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices, m
 
         <div className="flex flex-wrap items-center gap-2">
           <div className={filterBoxClass}>
-            <Activity size={14} className="text-[#0052CC] shrink-0" />
             <select
               value={jenis}
               onChange={(e) => setJenis(e.target.value as 'SLA' | 'OLA')}
@@ -140,7 +139,6 @@ export const SlaOlaHarianTable: React.FC<SlaOlaHarianTableProps> = ({ devices, m
           </div>
 
           <div className={`${filterBoxClass} max-w-full`}>
-            <Layers size={14} className="text-[#0052CC] shrink-0" />
             <select
               value={activeCategory}
               onChange={(e) => setCategory(e.target.value)}

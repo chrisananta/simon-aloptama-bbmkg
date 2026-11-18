@@ -208,21 +208,18 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
       case 'VALID':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            <CheckCircle2 size={15} />
             Valid
           </span>
         );
       case 'SEGERA_DIKALIBRASI':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
-            <AlertTriangle size={15} />
             Segera Dikalibrasi
           </span>
         );
       case 'KADALUWARSA':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
-            <XCircle size={15} />
             Kadaluwarsa
           </span>
         );
@@ -256,15 +253,15 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
 
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-semibold">
           <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-            <span>🟢 Valid:</span>
+            <span>Valid:</span>
             <span className="font-bold">{validCount}</span>
           </div>
           <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
-            <span>🟡 Segera:</span>
+            <span>Segera:</span>
             <span className="font-bold">{warningCount}</span>
           </div>
           <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
-            <span>🔴 Kadaluwarsa:</span>
+            <span>Kadaluwarsa:</span>
             <span className="font-bold">{expiredCount}</span>
           </div>
           {notCalibratedCount > 0 && (
@@ -455,9 +452,6 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                   <tr key={rec.id} className="hover:bg-blue-50/40 transition-colors">
                     <td className="p-3.5">
                       <div className="font-bold text-slate-900 text-xs">{rec.deviceName}</div>
-                      <div className="text-[11px] text-[#0052CC] font-semibold mt-0.5">
-                        {rec.category} • {rec.deviceId}
-                      </div>
                     </td>
                     <td className="p-3.5 font-medium text-slate-800">
                       {stationMap.get(rec.uptStation) || rec.uptStation}
@@ -483,7 +477,6 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     </td>
                     <td className="p-3.5 text-slate-700 font-medium">
                       <div className="flex items-center gap-1.5">
-                        <Users size={13} className="text-purple-700 shrink-0" />
                         <span className="truncate max-w-[220px] font-semibold">{rec.calibrationAgency}</span>
                       </div>
                     </td>
