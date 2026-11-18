@@ -503,7 +503,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
   });
 
   const regions = Array.from(new Set(stations.map((s) => s.regionGroup).filter(Boolean)));
-  const categories: EquipmentCategory[] = ['AWOS Kat.I', 'AWOS Kat.II', 'AWOS Kat.III', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG', 'Sirene'];
+  const categories: EquipmentCategory[] = ['AWOS Kat.I', 'AWOS Kat.II', 'AWOS Kat.III', 'AWS', 'ARG', 'Radar Cuaca', 'Lightning Detector', 'Seismometer', 'Accelerograph', 'WRS NG', 'Sirene', 'KONVENSIONAL'];
 
   const filteredStations = stations.filter((s) => {
     const matchesSearch = 
@@ -601,6 +601,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       // Alat baru dihitung di rekap mulai bulan ia diinput (bulan sebelumnya tidak terpengaruh).
       aktifSejak: getTodayIsoWIT().slice(0, 7),
       aktifSampai: null,
+      calibrationOnly: false,
       category: 'AWS',
       merk: '',
       uptStation: stations[0]?.name || 'Stasiun Meteorologi DEO Sorong',
@@ -711,6 +712,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         // Periode aktif hanya bisa diubah Admin; kosong = tidak dibatasi.
         aktifSejak: isTeknisiAlatMode ? editingDevice.aktifSejak : (deviceForm.aktifSejak || null),
         aktifSampai: isTeknisiAlatMode ? editingDevice.aktifSampai : (deviceForm.aktifSampai || null),
+        calibrationOnly: isTeknisiAlatMode ? !!editingDevice.calibrationOnly : !!deviceForm.calibrationOnly,
       };
 
       const changes: string[] = [];
@@ -725,6 +727,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       if (editingDevice.conditionStatus !== updated.conditionStatus) changes.push(`Status: "${editingDevice.conditionStatus}" -> "${updated.conditionStatus}"`);
       if (editingDevice.slaScore !== updated.slaScore) changes.push(`SLA: ${editingDevice.slaScore ?? 100}% -> ${updated.slaScore}%`);
       if (editingDevice.olaScore !== updated.olaScore) changes.push(`OLA: ${editingDevice.olaScore ?? 100}% -> ${updated.olaScore}%`);
+      if (!!editingDevice.calibrationOnly !== !!updated.calibrationOnly) changes.push(`Hanya untuk kalibrasi: ${editingDevice.calibrationOnly ? 'Ya' : 'Tidak'} -> ${updated.calibrationOnly ? 'Ya' : 'Tidak'}`);
       if ((editingDevice.aktifSejak || null) !== (updated.aktifSejak || null)) changes.push(`Aktif sejak: "${editingDevice.aktifSejak || 'awal'}" -> "${updated.aktifSejak || 'awal'}"`);
       if ((editingDevice.aktifSampai || null) !== (updated.aktifSampai || null)) changes.push(`Dihentikan setelah bulan: "${editingDevice.aktifSampai || '-'}" -> "${updated.aktifSampai || '-'}"`);
       if (editingDevice.latitude !== updated.latitude || editingDevice.longitude !== updated.longitude) {
@@ -758,6 +761,7 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
         olaScore: ola,
         aktifSejak: deviceForm.aktifSejak || null,
         aktifSampai: deviceForm.aktifSampai || null,
+        calibrationOnly: !!deviceForm.calibrationOnly,
       };
 
       const ok = await onAddDevice(newDev, adminActor);

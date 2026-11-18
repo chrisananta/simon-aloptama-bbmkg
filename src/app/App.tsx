@@ -82,7 +82,10 @@ function AppContent() {
     return () => clearInterval(timer);
   }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const devicesData = useMemo(() => rawDevicesData.map(withAutoCalibrationStatus), [rawDevicesData, todayWit]);
+  // Semua alat (termasuk alat "hanya kalibrasi"): dipakai halaman Kalibrasi & Master Alat.
+  const allDevicesData = useMemo(() => rawDevicesData.map(withAutoCalibrationStatus), [rawDevicesData, todayWit]);
+  // Alat yang dipantau harian: dipakai Dashboard, SLA/OLA, peta, dll. Alat "hanya kalibrasi" tidak ikut.
+  const devicesData = useMemo(() => allDevicesData.filter((d) => !d.calibrationOnly), [allDevicesData]);
   const [calibrationLogs, setCalibrationLogs] = useState<CalibrationRecord[]>(() => apiClient.calibration.getAll());
   const [stationsData, setStationsData] = useState<UPTStation[]>(() => apiClient.stations.getAll());
   const [changeLogsData, setChangeLogsData] = useState<ChangeLog[]>(() => apiClient.auditLogs.getAll());
@@ -313,7 +316,7 @@ function AppContent() {
 
             {activeMenu === 'kalibrasi' && (
               <CalibrationView
-                devices={devicesData}
+                devices={allDevicesData}
                 stations={stationsData}
                 calibrationLogs={calibrationLogs}
                 onOpenAddCalibrationModal={() => setIsCalibrationModalOpen(true)}
@@ -327,7 +330,7 @@ function AppContent() {
             {activeMenu === 'admin-master' && permissions.canManageMasterData && (
               <AdminMasterView
                 stations={stationsData}
-                devices={devicesData}
+                devices={allDevicesData}
                 onAddStation={handleAddStation}
                 onUpdateStation={handleUpdateStation}
                 onDeleteStation={handleDeleteStation}
@@ -387,7 +390,7 @@ function AppContent() {
             <CalibrationInputModal
               isOpen={isCalibrationModalOpen}
               onClose={() => setIsCalibrationModalOpen(false)}
-              devices={devicesData}
+              devices={allDevicesData}
               stations={stationsData}
               onAddCalibrationRecord={handleAddCalibrationRecord}
             />

@@ -38,6 +38,8 @@ export interface AloptamaDevice {
   aktifSejak?: string | null;
   /** Bulan terakhir alat dihitung ("YYYY-MM"). null/kosong = masih beroperasi. */
   aktifSampai?: string | null;
+  /** true = alat hanya dikalibrasi (tidak dipantau harian): tidak ikut SLA/OLA, dashboard, peta. */
+  calibrationOnly?: boolean;
 }
 export interface UPTStation {
   id: string;

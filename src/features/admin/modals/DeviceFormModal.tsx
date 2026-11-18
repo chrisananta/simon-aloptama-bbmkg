@@ -214,9 +214,6 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
                         ? 'KADALUWARSA'
                         : 'VALID (Sertifikat Berlaku)'}
                   </div>
-                  <p className="mt-1 text-[10px] font-medium text-slate-500 leading-snug">
-                    Dihitung dari masa berlaku; “Segera Dikalibrasi” {CALIBRATION_WARNING_DAYS} hari sebelum kedaluwarsa.
-                  </p>
                 </div>
                 )}
               </div>
@@ -283,6 +280,23 @@ export const DeviceFormModal: React.FC<DeviceFormModalProps> = ({
               </div>
 
               {!restrictedMode && (
+                <label className="flex items-start gap-3 p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!deviceForm.calibrationOnly}
+                    onChange={(e) => setDeviceForm({ ...deviceForm, calibrationOnly: e.target.checked })}
+                    className="mt-0.5 w-4 h-4 accent-emerald-600 cursor-pointer shrink-0"
+                  />
+                  <span>
+                    <span className="block font-bold text-slate-800">Hanya untuk kalibrasi</span>
+                    <span className="block text-[11px] text-slate-600 mt-0.5">
+                    Alat ini hanya tampil di halaman Kalibrasi dan Master Alat, tidak ikut SLA/OLA, dashboard, maupun peta.
+                    </span>
+                  </span>
+                </label>
+              )}
+
+              {!restrictedMode && !deviceForm.calibrationOnly && (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                   <div>
                     <p className="font-bold text-slate-800">Periode Aktif di Rekap SLA &amp; OLA</p>

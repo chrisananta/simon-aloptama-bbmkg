@@ -15,7 +15,7 @@ import { isSameUptStation } from '../utils/uptMatch.js';
 import { resolveMonthlyScores } from '../utils/slaOlaMonthly.js';
 
 // Batas maksimal mundur untuk pengisian SLA/OLA susulan (hari).
-const MAX_BACKDATE_DAYS = 10;
+const MAX_BACKDATE_DAYS = 20;
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -175,7 +175,7 @@ export const slaOlaController = {
         } else {
           // Alat yang tidak aktif pada bulan laporan (belum dipasang / sudah dihentikan) dilewati.
           const matchingDevices = (await tx.device.findMany({
-            where: { uptStation, category },
+            where: { uptStation, category, calibrationOnly: false },
           })).filter((dev) => isDeviceActiveInMonth(dev, reportDateStr.slice(0, 7)));
 
           for (const dev of matchingDevices) {
@@ -222,7 +222,7 @@ export const slaOlaController = {
       });
 
       // Ambil Daftar Perangkat Terbaru
-      const allDevices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
+      const allDevices = await prisma.device.findMany({ where: { calibrationOnly: false }, orderBy: { site: 'asc' } });
 
       return res.json({
         success: true,
@@ -583,7 +583,7 @@ export const slaOlaController = {
         });
       });
 
-      const allDevices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
+      const allDevices = await prisma.device.findMany({ where: { calibrationOnly: false }, orderBy: { site: 'asc' } });
       return res.json({
         success: true,
         message: 'Entri SLA/OLA berhasil diperbarui.',
@@ -664,7 +664,7 @@ export const slaOlaController = {
         });
       });
 
-      const allDevices = await prisma.device.findMany({ orderBy: { site: 'asc' } });
+      const allDevices = await prisma.device.findMany({ where: { calibrationOnly: false }, orderBy: { site: 'asc' } });
       return res.json({
         success: true,
         message: 'Entri SLA/OLA berhasil dihapus.',

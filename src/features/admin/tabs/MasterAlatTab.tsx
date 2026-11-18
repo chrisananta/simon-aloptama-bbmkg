@@ -219,7 +219,15 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                         </td>
                         <td className="p-3.5 font-bold text-slate-900">
                           <div>{dev.site}</div>
-                          {!isDeviceActiveForReporting(dev) && (
+                          {dev.calibrationOnly && (
+                            <span
+                              className="inline-block mt-1 mr-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded"
+                              title="Tidak dipantau harian: tidak ikut SLA/OLA, dashboard, dan peta"
+                            >
+                              Hanya Kalibrasi
+                            </span>
+                          )}
+                          {!dev.calibrationOnly && !isDeviceActiveForReporting(dev) && (
                             <span
                               className="inline-block mt-1 px-1.5 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-bold rounded"
                               title={dev.aktifSampai ? `Dihitung sampai ${dev.aktifSampai}` : `Mulai dihitung ${dev.aktifSejak}`}

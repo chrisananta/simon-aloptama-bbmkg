@@ -3,7 +3,7 @@ import { getYesterdayIsoWIT, getIsoDaysAgoWIT } from '../utils/dateUtils';
 
 // Batas maksimal mundur untuk pengisian SLA/OLA susulan (harus sinkron
 // dengan MAX_BACKDATE_DAYS di simon-backend/src/controllers/slaOlaController.ts).
-export const SLA_OLA_MAX_BACKDATE_DAYS = 10;
+export const SLA_OLA_MAX_BACKDATE_DAYS = 20;
 
 export const slaOlaSchema = z.object({
   uptStation: z.string().min(1, 'Stasiun UPT wajib dipilih'),

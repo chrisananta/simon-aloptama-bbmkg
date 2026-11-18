@@ -64,6 +64,9 @@ model Device {
   stationId             String?
   aktifSejak            String?             @db.VarChar(7)
   aktifSampai           String?             @db.VarChar(7)
+  // true = alat hanya dikalibrasi (mis. alat konvensional, alat PT Freeport); tidak dipantau harian,
+  // sehingga tidak ikut SLA/OLA, dashboard, dan peta. Tampil di halaman Kalibrasi & Master Alat saja.
+  calibrationOnly       Boolean             @default(false)
   calibrationRecords    CalibrationRecord[]
   station               UptStation?         @relation(fields: [stationId], references: [id])
   slaOlaLogs            SlaOlaLog[]

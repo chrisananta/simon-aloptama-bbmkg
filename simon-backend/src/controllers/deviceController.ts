@@ -34,6 +34,7 @@ const deviceInput = z.object({
   downtimeDuration: z.string().trim().max(200).nullable().optional(),
   slaScore: z.coerce.number().finite().min(0).max(100).optional(),
   olaScore: z.coerce.number().finite().min(0).max(100).optional(),
+  calibrationOnly: z.boolean().optional(),
   aktifSejak: monthString.nullable().optional(),
   aktifSampai: monthString.nullable().optional(),
 });
@@ -205,6 +206,7 @@ export const deviceController = {
             // Alat baru dihitung mulai bulan ia diinput (tidak menurunkan rekap bulan-bulan sebelumnya).
             aktifSejak: body.aktifSejak === undefined ? getCurrentMonthWIT() : body.aktifSejak,
             aktifSampai: body.aktifSampai ?? null,
+            calibrationOnly: body.calibrationOnly ?? false,
           }
         });
         await tx.auditLog.create({
@@ -220,7 +222,8 @@ export const deviceController = {
         return created;
       });
       // Alat baru yang dikalibrasi langsung tampil di halaman Kalibrasi.
-      if (!notCalibrated) await syncCalibrationListing(newDevice.devicesId, true, actorName(req));
+      // Alat "hanya kalibrasi" selalu tampil di halaman Kalibrasi.
+      if (!notCalibrated || newDevice.calibrationOnly) await syncCalibrationListing(newDevice.devicesId, true, actorName(req));
       return res.status(201).json({ success: true, data: serializeDevice(newDevice) });
     } catch (error) {
       console.error('Error createDevice:', error);
@@ -356,6 +359,7 @@ export const deviceController = {
             stationId: station?.id,
             aktifSejak: body.aktifSejak,
             aktifSampai: body.aktifSampai,
+            calibrationOnly: body.calibrationOnly,
           },
         });
         await tx.auditLog.create({
@@ -375,9 +379,9 @@ export const deviceController = {
       const touchesCalibration = [
         body.picKalibrasi, body.calibrationStatus, body.lastCalibrated, body.calibrationValidUntil, timkalibrasi,
       ].some((v) => v !== undefined);
-      if (isNotCalibrated(updated.picKalibrasi, updated.calibrationStatus)) {
+      if (isNotCalibrated(updated.picKalibrasi, updated.calibrationStatus) && !updated.calibrationOnly) {
         await syncCalibrationListing(updated.devicesId, false, actorName(req));
-      } else if (touchesCalibration) {
+      } else if (touchesCalibration || body.calibrationOnly === true) {
         await syncCalibrationListing(updated.devicesId, true, actorName(req));
       }
       return res.json({ success: true, data: serializeDevice(updated) });

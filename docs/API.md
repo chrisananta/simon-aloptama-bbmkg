@@ -133,7 +133,7 @@ Entry harian diisi rutin oleh **Teknisi UPT** (UPT sendiri) atau **Super Admin**
 
 * **Ringkasan bulanan** (`GET /api/sla-ola/summary`, sumber halaman SLA & OLA): nilai per alat per bulan = **rata-rata isian harian** dari tabel `sla_ola_logs`, dikelompokkan berdasarkan `reportDate` (satu nilai per tanggal; bila diisi lebih dari sekali pada tanggal yang sama, isian terakhir yang dipakai). Semua log diperlakukan sama — tidak ada prioritas input admin. Bulan tanpa log tidak muncul di respons. Bentuk: `{ "success": true, "tahun": 2026, "data": { "<deviceId>": { "1": { "sla": 100, "ola": 92.5, "jumlahLog": 24 } } } }` (`jumlahLog` = jumlah hari yang punya isian).
 * **Isian harian** (`/daily`): `{ data: { "<deviceId>": { "<tanggal 1-31>": { "sla": true, "ola": 100 } } } }`. **Rentang tanggal** (`/range`, sumber Laporan Mingguan): rata-rata isian harian per alat pada rentang (maks. 366 hari). **Kendala** (`/kendala`): keterangan kendala terbaru per alat pada satu bulan.
-* **Tanggal laporan**: pengisian hari ini adalah untuk kondisi **kemarin**. `tanggal` (opsional, `YYYY-MM-DD`) boleh mundur maksimal 10 hari untuk pengisian susulan; tanggal lebih baru dari kemarin ditolak.
+* **Tanggal laporan**: pengisian hari ini adalah untuk kondisi **kemarin**. `tanggal` (opsional, `YYYY-MM-DD`) boleh mundur maksimal 20 hari untuk pengisian susulan; tanggal lebih baru dari kemarin ditolak.
 * **Koreksi/hapus entri** (`PUT`/`DELETE /api/sla-ola/logs/:id`): untuk memperbaiki salah input; status live alat disinkronkan ulang bila entri itu yang terbaru.
 
 * **Payload POST** (`/api/sla-ola` atau `/api/sla-ola/save`):
