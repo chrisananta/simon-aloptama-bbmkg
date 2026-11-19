@@ -331,10 +331,10 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
                   >
                     <option value="ALL">Semua Status Kalibrasi</option>
-                    <option value="VALID">🟢 Valid</option>
-                    <option value="SEGERA_DIKALIBRASI">🟡 Segera Dikalibrasi</option>
-                    <option value="KADALUWARSA">🔴 Kadaluwarsa</option>
-                    <option value="TIDAK_DIKALIBRASI">⚪ Tidak Dikalibrasi</option>
+                    <option value="VALID">Valid</option>
+                    <option value="SEGERA_DIKALIBRASI">Segera Dikalibrasi</option>
+                    <option value="KADALUWARSA">Kadaluwarsa</option>
+                    <option value="TIDAK_DIKALIBRASI">Tidak Dikalibrasi</option>
                   </select>
 
                   <select
@@ -365,10 +365,10 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
                     className="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
                   >
                     <option value="ALL">Semua PIC Kalibrasi</option>
-                    <option value="Balai">🏢 Balai (BBMKG Wilayah V)</option>
-                    <option value="Pusat">🏛️ Pusat (BMKG Pusat)</option>
-                    <option value={PIC_REKANAN}>🤝 Rekanan (Pihak Ketiga)</option>
-                    <option value={PIC_TIDAK_DIKALIBRASI}>⚪ Tidak Dikalibrasi</option>
+                    <option value="Balai">Balai (BBMKG Wilayah V)</option>
+                    <option value="Pusat">Pusat (BMKG Pusat)</option>
+                    <option value={PIC_REKANAN}>Rekanan (Pihak Ketiga)</option>
+                    <option value={PIC_TIDAK_DIKALIBRASI}>Tidak Dikalibrasi</option>
                   </select>
 
                   {activeFilterCount > 0 && (

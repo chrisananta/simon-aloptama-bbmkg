@@ -562,7 +562,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           {permissions.canViewUptReport && selectedUpt !== 'ALL' && (
             <button
               onClick={() => setIsUptReportModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
               title={`Buat Laporan Kinerja Aloptama untuk ${selectedUptName}`}
             >
               <FileText size={15} />
@@ -597,15 +597,15 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
           <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
             SLA BULANAN ({selectedMonth} {selectedYear})
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
-            <span className="font-heading text-3xl sm:text-4xl font-black text-[#0052CC]">
+            <span className="font-heading text-3xl sm:text-4xl font-black text-emerald-700">
               {Math.round(monthlySlaValue)}%
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+            <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
               Target ≥97%
             </span>
           </div>
@@ -615,15 +615,15 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
 
         <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
           <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
             OLA BULANAN ({selectedMonth} {selectedYear})
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
-            <span className="font-heading text-3xl sm:text-4xl font-black text-[#0052CC]">
+            <span className="font-heading text-3xl sm:text-4xl font-black text-emerald-700">
               {Math.round(monthlyOlaValue)}%
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+            <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
               Target ≥97%
             </span>
           </div>
@@ -633,20 +633,20 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         </div>
 
         <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
           <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
             KONDISI KALIBRASI (BALAI)
           </span>
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
-            <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-[#0052CC]">
+            <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-emerald-700">
               {balaiTidakTerlambatCount} / {balaiDevices.length}
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+            <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
               {balaiKondisiKalibrasiPercent}%
             </span>
           </div>
           <p className="text-[11px] text-slate-600 mt-1.5 sm:mt-2 font-medium">
-            <span className="text-[#0052CC] font-bold">{balaiTidakTerlambatCount} Valid</span> | {' '}
+            <span className="text-emerald-700 font-bold">{balaiTidakTerlambatCount} Valid</span> | {' '}
             <span className="text-rose-600 font-bold">{balaiTerlambatCount} Kadaluwarsa</span>
           </p>
         </div>
@@ -769,9 +769,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 Grafik Tren SLA Bulanan {selectedYear}
               </h3>
             </div>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
-              {selectedUpt === 'ALL' ? `Tahun ${selectedYear}` : selectedUptName}
-            </span>
           </div>
 
           <div className="h-64 w-full">
@@ -790,9 +787,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                   type="monotone"
                   dataKey="sla"
                   name="SLA (%)"
-                  stroke="#0052CC"
+                  stroke="#047857"
                   strokeWidth={3}
-                  dot={{ r: 5, fill: '#0052CC' }}
+                  dot={{ r: 5, fill: '#047857' }}
                   activeDot={{ r: 8 }}
                 />
               </LineChart>
@@ -807,7 +804,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 Grafik OLA Berdasarkan Jenis Peralatan
               </h3>
             </div>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+            <span className="text-xs font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-300">
               {selectedMonth} {selectedYear}
             </span>
           </div>
@@ -828,9 +825,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                   type="monotone"
                   dataKey="score"
                   name="OLA Score (%)"
-                  stroke="#0052CC"
+                  stroke="#047857"
                   strokeWidth={3}
-                  dot={{ r: 5, fill: '#0052CC' }}
+                  dot={{ r: 5, fill: '#047857' }}
                   activeDot={{ r: 8 }}
                 />
               </LineChart>

@@ -214,3 +214,19 @@
   width: 256.5px !important;
   height: 256.5px !important;
 }
+
+/* Efek bounce naik-turun untuk tombol melayang "Pengisian SLA OLA".
+   Berhenti saat di-hover; nonaktif jika pengguna memilih reduce motion. */
+@keyframes fab-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-fab-bounce {
+  animation: fab-bounce 1.6s ease-in-out infinite;
+}
+.animate-fab-bounce:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fab-bounce { animation: none; }
+}
