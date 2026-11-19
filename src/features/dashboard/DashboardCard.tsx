@@ -17,7 +17,7 @@ export const DashboardCard: React.FC<DashboardSummaryStats> = ({
           <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
             TOTAL ALOPTAMA
           </span>
-          <div className="p-1.5 sm:p-2 rounded-lg bg-blue-50 text-[#0052CC]">
+          <div className="p-1.5 sm:p-2 rounded-lg text-[#0052CC]">
             <Server size={16} className="sm:w-4 sm:h-4" />
           </div>
         </div>
@@ -34,7 +34,7 @@ export const DashboardCard: React.FC<DashboardSummaryStats> = ({
           <span className="text-[10px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wide">
             NORMAL
           </span>
-          <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-50 text-emerald-600">
+          <div className="p-1.5 sm:p-2 rounded-lg text-emerald-600">
             <CheckCircle2 size={16} className="sm:w-4 sm:h-4" />
           </div>
         </div>
@@ -53,7 +53,7 @@ export const DashboardCard: React.FC<DashboardSummaryStats> = ({
           <span className="text-[10px] sm:text-xs font-bold text-amber-700 uppercase tracking-wide">
             GANGGUAN
           </span>
-          <div className="p-1.5 sm:p-2 rounded-lg bg-amber-50 text-amber-600">
+          <div className="p-1.5 sm:p-2 rounded-lg text-amber-600">
             <AlertTriangle size={16} className="sm:w-4 sm:h-4" />
           </div>
         </div>
@@ -70,7 +70,7 @@ export const DashboardCard: React.FC<DashboardSummaryStats> = ({
           <span className="text-[10px] sm:text-xs font-bold text-rose-700 uppercase tracking-wide">
             MATI
           </span>
-          <div className="p-1.5 sm:p-2 rounded-lg bg-rose-50 text-rose-600">
+          <div className="p-1.5 sm:p-2 rounded-lg text-rose-600">
             <XCircle size={16} className="sm:w-4 sm:h-4" />
           </div>
         </div>

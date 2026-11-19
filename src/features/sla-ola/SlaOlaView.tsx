@@ -11,7 +11,9 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  FileText
+  FileText,
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -333,6 +335,13 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
     });
   }, [yearlyScores, prevYearScores, monthIdx, uptFilteredDevices, selectedYear]);
 
+  // Saat difilter per UPT, tabel hanya menampilkan kategori alat yang dimiliki UPT tersebut.
+  // Untuk "Seluruh UPT" semua kategori tetap tampil.
+  const visibleRekapRows = useMemo(
+    () => (selectedUpt === 'ALL' ? rekapTableData : rekapTableData.filter((row) => row.jumlahLokasi > 0)),
+    [rekapTableData, selectedUpt]
+  );
+
   // TOTAL PERSENTASE bulan terpilih = rata-rata sederhana persentase tiap jenis alatn(jumlah persentase 11 jenis alat dibagi 11)
   const monthlySlaValue = useMemo(() => {
     const rows = categoryPercentsForMonth(uptFilteredDevices, yearlyScores, monthIdx + 1, Number(selectedYear));
@@ -650,11 +659,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               Rekapitulasi, Kondisi &amp; Analisa SLA OLA ({selectedMonth} {selectedYear})
             </h3>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 flex items-center gap-1.5 shadow-xs">
-              {selectedUptName}
-            </span>
-          </div>
         </div>
 
         <div className="overflow-x-auto pb-2">
@@ -681,9 +685,9 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {rekapTableData.map((row) => (
+                {visibleRekapRows.map((row, idx) => (
                   <tr key={row.no} className="hover:bg-slate-50/80 transition-colors h-9 text-slate-800 font-medium border-b border-slate-200">
-                    <td className="py-2 px-2 text-center font-bold text-slate-500 border-r border-slate-200">{row.no}</td>
+                    <td className="py-2 px-2 text-center font-bold text-slate-500 border-r border-slate-200">{idx + 1}</td>
                     <td className="py-2 px-3 font-semibold text-slate-900 border-r border-slate-200">{row.name}</td>
                     <td className="py-2 px-2 text-center font-bold text-slate-700 border-r border-slate-200">{row.jumlahLokasi}</td>
                     <td className="py-2 px-2 text-center font-bold border-r border-slate-200 text-slate-800">
@@ -765,7 +769,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 Grafik Tren SLA Bulanan {selectedYear}
               </h3>
             </div>
-            <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
               {selectedUpt === 'ALL' ? `Tahun ${selectedYear}` : selectedUptName}
             </span>
           </div>
@@ -803,7 +807,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 Grafik OLA Berdasarkan Jenis Peralatan
               </h3>
             </div>
-            <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
               {selectedMonth} {selectedYear}
             </span>
           </div>
@@ -842,6 +846,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0" />
               <h3 className="font-heading font-bold text-base text-slate-900">
                 Daftar Alat Gangguan ({displayGangguan.length})
               </h3>
@@ -912,6 +917,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
+              <XCircle size={18} className="text-rose-600 shrink-0" />
               <h3 className="font-heading font-bold text-base text-slate-900">
                 Daftar Alat Mati ({displayMati.length})
               </h3>
@@ -988,7 +994,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
               <h3 className="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
                 Daftar Aloptama yang Belum Melaporkan Kondisi {formatDateIndo(expectedReportDate)}
               </h3>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#0052CC] border border-blue-100">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
                 <CheckCircle2 size={13} />
                 {reportedCount} / {totalDevicesCount} Alat Sudah Lapor
               </span>
@@ -1009,7 +1015,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             
             <button
               onClick={() => setIsWaModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0052CC] hover:bg-blue-800 active:bg-blue-900 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               title="Generate Format Laporan WA Group untuk UPT Belum Lapor"
             >
               <MessageSquare size={14} />
@@ -1067,9 +1073,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                   <tr key={dev.devicesId} className="hover:bg-blue-50/40 transition-colors">
                     <td className="p-3">
                       <div className="font-bold text-slate-900 text-xs">{dev.site}</div>
-                      <div className="text-[11px] text-[#0052CC] font-semibold mt-0.5">
-                        {dev.category} • <span className="font-mono">{dev.devicesId}</span>
-                      </div>
                     </td>
                     <td className="p-3 text-slate-800 font-semibold">
                       {stationMap.get(dev.uptStation) || dev.uptStation}

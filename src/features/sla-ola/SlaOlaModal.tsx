@@ -560,7 +560,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 Form Pengisian SLA &amp; OLA UPT
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5">
-                Kalkulator Indikator Kinerja Operational Level Agreement BBMKG V
+                Kalkulator Indikator Kinerja Operational Level Agreement
               </p>
             </div>
           </div>

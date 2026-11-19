@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, FileText, Download, Printer } from 'lucide-react';
+import { X, FileText, Download } from 'lucide-react';
 import { CalibrationRecord } from './CalibrationTypes';
 import { petugasService, PetugasItem } from '../../shared/services/petugasService';
 import { downloadPagesAsPdf } from '../../shared/print/downloadPagesAsPdf';
@@ -247,13 +247,6 @@ export const CalibrationRecapReportModal: React.FC<Props> = ({ isOpen, onClose, 
               {petugas ? ` untuk ${petugas.name}` : ''}. Satu baris per nomor order.
             </p>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 cursor-pointer"
-              >
-                <Printer size={14} /> Cetak
-              </button>
               <button
                 type="button"
                 onClick={handleDownload}

@@ -814,14 +814,10 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
       <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3.5">
         <div className="flex items-start gap-3 sm:gap-4">
           <div className="p-2 sm:p-3 bg-blue-50 text-[#0052CC] rounded-xl border border-blue-100 flex items-center justify-center shadow-xs shrink-0">
-            <Database size={20} className="sm:w-7 sm:h-7" />
+            <Database size={15} className="sm:w-7 sm:h-7" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] sm:text-[10px] font-extrabold uppercase rounded-full tracking-wider flex items-center gap-1 shrink-0">
-                <ShieldCheck size={11} className="sm:w-3 sm:h-3" />
-                {isTeknisiAlatMode ? 'Akses Teknisi UPT' : 'Akses Hanya Admin'}
-              </span>
               <span className="text-xs text-slate-400 hidden xs:inline">• BBMKG Wilayah V Papua</span>
             </div>
             <h1 className="text-base sm:text-2xl font-black text-slate-900 tracking-tight mt-1 leading-snug">
