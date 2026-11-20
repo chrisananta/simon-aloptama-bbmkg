@@ -113,7 +113,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                   placeholder="Cari ID Alat, Nama Peralatan, Lokasi..."
                   value={alatSearch}
                   onChange={(e) => setAlatSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 placeholder:font-semibold placeholder:text-slate-400 outline-none focus:border-[#0052CC] focus:bg-white"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 placeholder:font-medium placeholder:text-slate-400 outline-none focus:border-[#0052CC] focus:bg-white"
                 />
               </div>
               )}
@@ -123,7 +123,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                 <select
                   value={alatRegionFilter}
                   onChange={(e) => setAlatRegionFilter(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#0052CC] lg:max-w-[180px] truncate"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0052CC] lg:max-w-[180px] truncate"
                 >
                   <option value="ALL">Semua Provinsi</option>
                   {regionOptions.map((reg) => (
@@ -138,7 +138,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                 <select
                   value={alatUptFilter}
                   onChange={(e) => setAlatUptFilter(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#0052CC] lg:max-w-[180px] truncate"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0052CC] lg:max-w-[180px] truncate"
                 >
                   <option value="ALL">Semua Stasiun UPT</option>
                   {stations.map((s) => (
@@ -153,7 +153,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                 <select
                   value={alatCategoryFilter}
                   onChange={(e) => setAlatCategoryFilter(e.target.value)}
-                  className="w-full lg:w-auto bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#0052CC]"
+                  className="w-full lg:w-auto bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-[#0052CC]"
                 >
                   <option value="ALL">Semua Kategori Alat</option>
                   {categories.map((cat) => (
@@ -193,7 +193,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-600 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
+                  <tr className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
                     <th className="p-3.5 pl-4">ID Alat</th>
                     <th className="p-3.5">Nama Peralatan</th>
                     <th className="p-3.5">Kategori</th>
@@ -214,14 +214,14 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                   ) : (
                     filteredDevices.slice(0, 100).map((dev) => (
                       <tr key={dev.devicesId} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5 pl-4 font-mono font-bold text-[#0052CC] whitespace-nowrap">
+                        <td className="p-3.5 pl-4 font-semibold text-[#0052CC] whitespace-nowrap">
                           {dev.devicesId}
                         </td>
-                        <td className="p-3.5 font-bold text-slate-900">
+                        <td className="p-3.5 text-slate-800 font-semibold">
                           <div>{dev.site}</div>
                           {dev.calibrationOnly && (
                             <span
-                              className="inline-block mt-1 mr-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded"
+                              className="inline-block mt-1 mr-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded"
                               title="Tidak dipantau harian: tidak ikut SLA/OLA, dashboard, dan peta"
                             >
                               Hanya Kalibrasi
@@ -229,7 +229,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                           )}
                           {!dev.calibrationOnly && !isDeviceActiveForReporting(dev) && (
                             <span
-                              className="inline-block mt-1 px-1.5 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-bold rounded"
+                              className="inline-block mt-1 px-1.5 py-0.5 bg-slate-200 text-slate-600 text-[11px] font-medium rounded"
                               title={dev.aktifSampai ? `Dihitung sampai ${dev.aktifSampai}` : `Mulai dihitung ${dev.aktifSejak}`}
                             >
                               {dev.aktifSampai && dev.aktifSampai < getYesterdayIsoWIT().slice(0, 7) ? 'Tidak beroperasi' : 'Belum aktif'}
@@ -237,50 +237,50 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                           )}
                         </td>
                         <td className="p-3.5 whitespace-nowrap">
-                          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold text-[11px] rounded-md border border-slate-200">
+                          <span className=" text-slate-700 font-medium">
                             {dev.category}
                           </span>
                         </td>
-                        <td className="p-3.5 text-slate-600 max-w-[200px] truncate" title={dev.uptStation}>
+                        <td className="p-3.5 text-slate-700 font-normal max-w-[200px] truncate" title={dev.uptStation}>
                           {dev.uptStation}
                         </td>
                         <td className="p-3.5 text-center whitespace-nowrap">
                           {isNotCalibrated(dev) ? (
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 font-extrabold text-[10px] rounded-full border border-slate-300">
-                              TIDAK DIKALIBRASI
+                            <span className="text-slate-700 font-medium ">
+                              Tidak Dikalaibrasi
                             </span>
                           ) : (dev.picKalibrasi || '').toLowerCase() === PIC_REKANAN.toLowerCase() ? (
-                            <span className="px-2 py-0.5 bg-violet-50 text-violet-700 font-extrabold text-[10px] rounded-full border border-violet-200">
-                              REKANAN
+                            <span className="text-slate-700 font-medium">
+                              Rekanan
                             </span>
                           ) : (dev.picKalibrasi === 'Pusat' || dev.picKalibrasi === 'PUSAT') ? (
-                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] rounded-full border border-emerald-200">
-                              PUSAT
+                            <span className="text-slate-700 font-medium">
+                              Pusat
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] rounded-full border border-emerald-200">
-                              BALAI
+                            <span className="text-slate-700 font-medium">
+                              Balai
                             </span>
                           )}
                         </td>
                         <td className="p-3.5 text-center whitespace-nowrap">
                           {dev.calibrationStatus === 'VALID' && (
-                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-full border border-blue-200">
+                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-semibold text-[11px] rounded-full border border-emerald-200">
                               VALID
                             </span>
                           )}
                           {dev.calibrationStatus === 'SEGERA_DIKALIBRASI' && (
-                            <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-extrabold text-[10px] rounded-full border border-amber-200">
+                            <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-semibold text-[11px] rounded-full border border-amber-200">
                               SEGERA
                             </span>
                           )}
                           {dev.calibrationStatus === 'TIDAK_DIKALIBRASI' && (
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 font-extrabold text-[10px] rounded-full border border-slate-300">
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 font-semibold text-[11px] rounded-full border border-slate-300">
                               N/A
                             </span>
                           )}
                           {dev.calibrationStatus === 'KADALUWARSA' && (
-                            <span className="px-2 py-0.5 bg-rose-50 text-rose-700 font-extrabold text-[10px] rounded-full border border-rose-200">
+                            <span className="px-2 py-0.5 bg-rose-50 text-rose-700 font-semibold text-[11px] rounded-full border border-rose-200">
                               KADALUWARSA
                             </span>
                           )}

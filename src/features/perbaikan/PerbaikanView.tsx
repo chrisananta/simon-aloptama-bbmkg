@@ -70,19 +70,19 @@ export const PerbaikanView: React.FC = () => {
                 <tr><td colSpan={6} className="p-8 text-center text-slate-400">Belum ada laporan perbaikan/instalasi.</td></tr>
               ) : records.map(r => (
                 <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="p-4 font-bold text-slate-900 whitespace-nowrap">{r.tanggal}</td>
+                  <td className="p-4 font-bold text-slate-800 whitespace-nowrap">{r.tanggal}</td>
                   <td className="p-4">
-                    <span className="px-2.5 py-1 rounded-md bg-blue-50 text-[#0052CC] font-bold text-[10px]">
+                    <span className="text-slate-800 font-semibold">
                       {r.formType === 'FORM_1_1' ? 'Form 1.1 (MKG)' : 'Form 1.2 (Penunjang)'}
                     </span>
                   </td>
                   <td className="p-4">
-                    <div className="font-bold text-slate-900">{r.namaAlat}</div>
+                    <div className="font-semibold text-slate-800">{r.namaAlat}</div>
                     <div className="text-[11px] text-slate-500">{r.merk} - {r.typeSn}</div>
                   </td>
-                  <td className="p-4 text-slate-700">
+                  <td className="p-4 text-slate-800 font-semibold">
                     <div>{r.jenisPeralatan}</div>
-                    <div className="text-[10px] text-slate-400">{r.lokasiAlat}</div>
+                    <div className="text-[11px] text-slate-400">{r.lokasiAlat}</div>
                   </td>
                   <td className="p-4">
                     <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] ${r.kondisiAlat === 'LAYAK_NORMAL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>

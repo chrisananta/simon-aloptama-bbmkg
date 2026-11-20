@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AloptamaDevice, YearlyScoreMap } from '../../shared/types';
 import { apiClient } from '../../shared/api';
@@ -77,6 +77,28 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
   // Carousel: geser dengan swipe/scroll atau tombol panah, seperti bmkg.go.id
   const { trackRef, canPrev, canNext, updateArrows, slide } = useCarousel([cards.length, isLoading]);
 
+  // Auto-slide: geser satu kartu setiap 3 detik, kembali ke awal setelah sampai ujung.
+  // Berhenti sementara saat kursor di atas kartu / jari menyentuh layar.
+  const pausedRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || cards.length === 0) return;
+    const id = window.setInterval(() => {
+      const el = trackRef.current;
+      if (!el || pausedRef.current) return;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 4) return; // semua kartu sudah muat, tidak perlu geser
+      if (el.scrollLeft >= maxScroll - 4) {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+        return;
+      }
+      const first = el.children[0] as HTMLElement | undefined;
+      const second = el.children[1] as HTMLElement | undefined;
+      const step = first && second ? second.offsetLeft - first.offsetLeft : el.clientWidth * 0.8;
+      el.scrollTo({ left: Math.min(el.scrollLeft + step, maxScroll), behavior: 'smooth' });
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [isLoading, cards.length, trackRef]);
+
   const arrowClass =
     'hidden sm:flex absolute top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center rounded-full bg-white border border-slate-200 shadow-md text-slate-700 hover:bg-slate-50 disabled:opacity-0 disabled:pointer-events-none transition';
 
@@ -131,6 +153,10 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
           <div
             ref={trackRef}
             onScroll={updateArrows}
+            onMouseEnter={() => { pausedRef.current = true; }}
+            onMouseLeave={() => { pausedRef.current = false; }}
+            onTouchStart={() => { pausedRef.current = true; }}
+            onTouchEnd={() => { window.setTimeout(() => { pausedRef.current = false; }, 3000); }}
             className="flex gap-3 sm:gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {isLoading
@@ -145,19 +171,19 @@ export const KondisiAloptamaSection: React.FC<KondisiAloptamaSectionProps> = ({ 
                     key={c.key}
                     className="snap-start shrink-0 w-[70%] sm:w-[calc((100%-5rem)/5)] rounded-2xl border border-slate-200 bg-gradient-to-b from-indigo-50/70 via-white to-white shadow-sm px-4 py-5 sm:py-6 flex flex-col items-center text-center"
                   >
-                    <h3 className="font-heading text-sm sm:text-base font-bold text-slate-900 leading-snug min-h-[2.5rem] flex items-center">
+                    <h3 className="font-heading text-sm sm:text-base font-bold text-black leading-snug min-h-[2.5rem] flex items-center">
                       {c.name}
                     </h3>
 
                     <div className="mt-4 w-full grid grid-cols-2 gap-2">
                       <div>
-                        <div className="font-heading text-xl sm:text-2xl font-semibold text-[#0A2FC4]">
+                        <div className="font-heading text-xl sm:text-2xl font-semibold text-black">
                           {fmt(c.sla)}
                         </div>
                         <div className="mt-1 text-[10px] sm:text-xs font-bold text-slate-500 tracking-wide">SLA</div>
                       </div>
                       <div className="border-l border-slate-200">
-                        <div className="font-heading text-xl sm:text-2xl font-semibold text-[#0A2FC4]">
+                        <div className="font-heading text-xl sm:text-2xl font-semibold text-black">
                           {fmt(c.ola)}
                         </div>
                         <div className="mt-1 text-[10px] sm:text-xs font-bold text-slate-500 tracking-wide">OLA</div>

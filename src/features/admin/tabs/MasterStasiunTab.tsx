@@ -70,14 +70,14 @@ export const MasterStasiunTab: React.FC<MasterStasiunTabProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-600 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
+                  <tr className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
                     <th className="p-3.5 pl-4">Kode UPT</th>
                     <th className="p-3.5">Nama Stasiun UPT</th>
-                    <th className="p-3.5">Kelompok Wilayah</th>
+                    <th className="p-3.5">Wilayah</th>
                     <th className="p-3.5">Kabupaten / Kota</th>
-                    <th className="p-3.5">Koordinat (Lat, Lng)</th>
+                    <th className="p-3.5">Koordinat</th>
                     <th className="p-3.5 text-center">Jumlah Alat</th>
-                    <th className="p-3.5 pr-4 text-center">Aksi Master</th>
+                    <th className="p-3.5 pr-4 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -100,23 +100,23 @@ export const MasterStasiunTab: React.FC<MasterStasiunTabProps> = ({
 
                       return (
                         <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="p-3.5 pl-4 font-bold text-[#0052CC] whitespace-nowrap">
+                          <td className="p-3.5 pl-4 font-semibold text-[#0052CC] whitespace-nowrap">
                             {st.stationid}
                           </td>
-                          <td className="p-3.5 font-bold text-slate-900">
+                          <td className="p-3.5 text-slate-800 font-semibold">
                             {st.name}
                           </td>
                           <td className="p-3.5">
-                            <span className="inline-block px-2.5 py-0.5 bg-blue-50 text-blue-700 font-semibold text-[11px] rounded-md border border-blue-100">
+                            <span className="text-slate-800 font-medium ">
                               {st.regionGroup}
                             </span>
                           </td>
-                          <td className="p-3.5 text-slate-600">{st.location}</td>
-                          <td className="p-3.5 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                          <td className="p-3.5 text-slate-800 font-medium">{st.location}</td>
+                          <td className="p-3.5 font-mono text-[11px] text-slate-700 whitespace-nowrap">
                             {typeof st.latitude === 'number' ? st.latitude.toFixed(3) : (st.latitude || 0)}, {typeof st.longitude === 'number' ? st.longitude.toFixed(3) : (st.longitude || 0)}
                           </td>
-                          <td className="p-3.5 text-center font-bold">
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded-full text-[11px]">
+                          <td className="p-3.5 text-center">
+                            <span className="px-2 py-0.5 text-slate-800 font-semibold text-[11px]">
                               {deviceCount} Alat
                             </span>
                           </td>

@@ -1012,8 +1012,8 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             
             <button
               onClick={() => setIsWaModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
-              title="Generate Format Laporan WA Group untuk UPT Belum Lapor"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0052CC] hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+              title="Laporan WA Group untuk UPT Belum Lapor"
             >
               <MessageSquare size={14} />
               <span>Laporan WA</span>

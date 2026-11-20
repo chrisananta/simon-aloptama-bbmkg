@@ -86,7 +86,6 @@ export const MasterPetugasTab: React.FC<MasterPetugasTabProps> = ({
                             </div>
                             <div>
                               <span>{p.name}</span>
-                              <div className="text-[10px] text-slate-400 font-mono font-normal">{p.id}</div>
                             </div>
                           </div>
                         </td>
@@ -94,7 +93,7 @@ export const MasterPetugasTab: React.FC<MasterPetugasTabProps> = ({
                           {p.nip ? p.nip : <span className="text-slate-300 italic">-</span>}
                         </td>
                         <td className="p-3.5">
-                          <span className="px-2.5 py-1 bg-blue-50 text-[#0052CC] border border-blue-100 rounded-lg font-semibold text-[11px]">
+                          <span className="px-2.5 py-1 text-slate-800 font-medium">
                             {p.jabatan || 'Staf Operasional'}
                           </span>
                         </td>

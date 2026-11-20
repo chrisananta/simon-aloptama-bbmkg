@@ -5,22 +5,22 @@ import { UPTStation } from '../../../shared/types';
 
 const ROLE_BADGE: Record<UserRole, React.ReactNode> = {
   TEKNISI_UPT: (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
       <User size={12} /> Teknisi UPT
     </span>
   ),
   KAUPT_KABBMKG: (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-cyan-50 text-cyan-700 border border-cyan-200">
       <UserCog size={12} /> KaUPT / KaBBMKG
     </span>
   ),
   ADMIN_INSKAL: (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-purple-100 text-purple-800 border border-purple-200">
       <ShieldCheck size={12} /> Admin Inskal
     </span>
   ),
   SUPER_ADMIN: (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-100 text-rose-800 border border-rose-200">
       <ShieldCheck size={12} /> Super Admin
     </span>
   ),
@@ -115,14 +115,13 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-600 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
+                  <tr className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
                     <th className="p-3.5 pl-4">Pengguna</th>
-                    <th className="p-3.5">Username (ID Login)</th>
-                    <th className="p-3.5 text-center">Peran Access Level</th>
-                    <th className="p-3.5">Jabatan &amp; NIP</th>
+                    <th className="p-3.5">Username</th>
+                    <th className="p-3.5 text-center">Peran</th>
+                    <th className="p-3.5">Jabatan</th>
                     <th className="p-3.5">Stasiun UPT</th>
-                    <th className="p-3.5">Email Kontak</th>
-                    <th className="p-3.5 pr-4 text-center">Aksi (Admin)</th>
+                    <th className="p-3.5 pr-4 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -145,13 +144,12 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
                               </div>
                             )}
                             <div>
-                              <div className="font-bold text-slate-900">{u.name}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">{u.id}</div>
+                              <div className="text-slate-800 font-semibold">{u.name}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="p-3.5 whitespace-nowrap font-mono">
-                          <span className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-xs border border-slate-200">
+                        <td className="p-3.5 whitespace-nowrap">
+                          <span className=" text-slate-700 font-semibold text-xs">
                             @{u.username}
                           </span>
                         </td>
@@ -159,29 +157,26 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
                           {ROLE_BADGE[u.role]}
                         </td>
                         <td className="p-3.5">
-                          <div className="font-semibold text-slate-800">{u.title}</div>
-                          {u.nip && <div className="text-[10px] text-slate-400 font-mono">NIP: {u.nip}</div>}
+                          <div className="text-slate-700 font-normal">{u.title}</div>
+                          {u.nip && <div className="text-[11px] text-slate-500 font-normal">NIP: {u.nip}</div>}
                         </td>
-                        <td className="p-3.5 font-medium text-slate-700">
+                        <td className="p-3.5 text-slate-700 font-normal">
                           {resolveStationLabel(u.uptStation)}
-                        </td>
-                        <td className="p-3.5 text-slate-600">
-                          {u.email || '-'}
                         </td>
                         <td className="p-3.5 pr-4 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => handleOpenEditUser(u)}
                               title="Ubah Nama & Username"
-                              className="p-1.5 rounded-lg border transition-all bg-blue-50 text-[#0052CC] border-blue-200 hover:bg-blue-100 cursor-pointer"
+                              className="text-slate-600 cursor-pointer"
                             >
                               <Edit2 size={14} />
                             </button>
                             <button
                               onClick={() => setDeleteConfirmUser(u)}
                               title="Hapus Akun Pengguna"
-                              className="p-1.5 rounded-lg border transition-all bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 cursor-pointer"
-                            >
+                              className=" text-slate-600 cursor-pointer"
+                              >
                               <Trash2 size={14} />
                             </button>
                           </div>
