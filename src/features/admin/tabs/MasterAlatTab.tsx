@@ -247,7 +247,7 @@ export const MasterAlatTab: React.FC<MasterAlatTabProps> = ({
                         <td className="p-3.5 text-center whitespace-nowrap">
                           {isNotCalibrated(dev) ? (
                             <span className="text-slate-700 font-medium ">
-                              Tidak Dikalaibrasi
+                              Tidak Dikalibrasi
                             </span>
                           ) : (dev.picKalibrasi || '').toLowerCase() === PIC_REKANAN.toLowerCase() ? (
                             <span className="text-slate-700 font-medium">

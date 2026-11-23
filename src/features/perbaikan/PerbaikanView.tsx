@@ -91,10 +91,10 @@ export const PerbaikanView: React.FC = () => {
                   </td>
                   <td className="p-4 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <button onClick={() => setSelectedRecordForPrint(r)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Cetak PDF">
+                      <button onClick={() => setSelectedRecordForPrint(r)} className="p-1.5 text-slate-400 hover:text-blue-600  hover:bg-blue-100 rounded-lg transition-colors cursor-pointer" title="Cetak PDF">
                         <FileText size={16} />
                       </button>
-                      <button onClick={() => setDeleteTarget(r)} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Hapus">
+                      <button onClick={() => setDeleteTarget(r)} className="p-1.5 text-slate-400 hover:text-rose-600  hover:bg-rose-200 rounded-lg transition-colors cursor-pointer" title="Hapus">
                         <Trash2 size={16} />
                       </button>
                     </div>

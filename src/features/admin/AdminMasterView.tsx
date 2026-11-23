@@ -834,23 +834,6 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
             )}
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-slate-200">
-            <ShieldCheck size={16} className="text-emerald-600 shrink-0 sm:w-4.5 sm:h-4.5" />
-            <div className="text-left">
-              <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase block">Status Pengubah:</span>
-              <input 
-                type="text" 
-                value={adminActor} 
-                onChange={(e) => setAdminActor(e.target.value)}
-                readOnly={isTeknisiAlatMode}
-                className="text-xs font-bold text-slate-800 bg-transparent outline-none border-b border-dashed border-slate-300 focus:border-[#0052CC] w-32 sm:w-40"
-                title="Nama Pengguna/Admin yang tercatat pada Audit Log"
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* 2. NAVIGATION TABS */}

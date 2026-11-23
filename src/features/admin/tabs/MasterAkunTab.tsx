@@ -168,14 +168,14 @@ export const MasterAkunTab: React.FC<MasterAkunTabProps> = ({
                             <button
                               onClick={() => handleOpenEditUser(u)}
                               title="Ubah Nama & Username"
-                              className="text-slate-600 cursor-pointer"
+                              className="p-1.5 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                             >
                               <Edit2 size={14} />
                             </button>
                             <button
                               onClick={() => setDeleteConfirmUser(u)}
                               title="Hapus Akun Pengguna"
-                              className=" text-slate-600 cursor-pointer"
+                              className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                               >
                               <Trash2 size={14} />
                             </button>

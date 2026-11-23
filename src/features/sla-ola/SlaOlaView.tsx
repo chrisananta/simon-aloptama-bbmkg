@@ -605,9 +605,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             <span className="font-heading text-3xl sm:text-4xl font-black text-emerald-700">
               {Math.round(monthlySlaValue)}%
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-              Target ≥97%
-            </span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1.5 sm:mt-2 font-medium">
             Rata-rata ketersediaan peralatan dalam keadaan <strong>ON</strong> dalam sebulan.
@@ -622,9 +619,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
           <div className="mt-1.5 sm:mt-2 flex items-baseline gap-2">
             <span className="font-heading text-3xl sm:text-4xl font-black text-emerald-700">
               {Math.round(monthlyOlaValue)}%
-            </span>
-            <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-              Target ≥97%
             </span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1.5 sm:mt-2 font-medium">
@@ -843,7 +837,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={18} className="text-amber-600 shrink-0" />
               <h3 className="font-heading font-bold text-base text-slate-900">
                 Daftar Alat Gangguan ({displayGangguan.length})
               </h3>
@@ -914,7 +907,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <XCircle size={18} className="text-rose-600 shrink-0" />
               <h3 className="font-heading font-bold text-base text-slate-900">
                 Daftar Alat Mati ({displayMati.length})
               </h3>

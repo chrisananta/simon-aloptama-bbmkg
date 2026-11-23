@@ -207,25 +207,25 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
     switch (status) {
       case 'VALID':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
             Valid
           </span>
         );
       case 'SEGERA_DIKALIBRASI':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
             Segera Dikalibrasi
           </span>
         );
       case 'KADALUWARSA':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
             Kadaluwarsa
           </span>
         );
       case 'TIDAK_DIKALIBRASI':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-300">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
             <MinusCircle size={15} />
             Tidak Dikalibrasi
           </span>
@@ -252,15 +252,15 @@ export const CalibrationView: React.FC<CalibrationViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-semibold">
-          <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+          <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-emerald-700 border border-emerald-700 flex items-center gap-1">
             <span>Valid:</span>
             <span className="font-bold">{validCount}</span>
           </div>
-          <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+          <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-amber-700 border border-amber-700 flex items-center gap-1">
             <span>Segera:</span>
             <span className="font-bold">{warningCount}</span>
           </div>
-          <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+          <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-rose-700 border border-rose-700 flex items-center gap-1">
             <span>Kadaluwarsa:</span>
             <span className="font-bold">{expiredCount}</span>
           </div>

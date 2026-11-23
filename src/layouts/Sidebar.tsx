@@ -108,7 +108,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'sertifikat' as ActiveNavMenu,
       label: 'Sertifikat Kalibrasi Lapang',
       icon: ExternalLink,
-      badge: 'External',
     },
     {
       id: 'panduan' as ActiveNavMenu,
@@ -119,7 +118,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'admin-master' as ActiveNavMenu,
       label: user?.role === 'TEKNISI_UPT' ? 'Master Alat' : 'Database Master',
       icon: Database,
-      badge: user?.role === 'TEKNISI_UPT' ? null : 'Admin',
     },
     {
       id: 'audit-log' as ActiveNavMenu,
@@ -151,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : 'w-64 md:w-72 shadow-md'
         } ${mobileHidden ? '-translate-x-full sm:translate-x-0' : 'translate-x-0'}`}
       >
-        {/* Header sidebar: putih & tinggi sama dengan Navbar (65px = h-16 + border)*/}
+        {/* Header sidebar: putih & tinggi sama dengan Navbar*/}
         <div
           className={`flex items-center border-b border-slate-200 bg-white h-[65px] shrink-0 transition-all duration-300 ${
             collapsed ? 'justify-center px-2' : 'justify-between px-3 md:px-4'
@@ -195,7 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <div className={`flex-1 py-3 md:py-4 px-2 md:px-3 overflow-y-auto space-y-1.5 ${logoOnly ? 'hidden' : ''}`}>
           <div className={`px-2 pb-2 ${collapsed ? 'hidden' : 'block'}`}>
-            <p className="text-[10px] md:text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+            <p className="text-[10px] md:text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
               NAVIGASI OPERASIONAL
             </p>
           </div>
@@ -275,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
               <button
                 onClick={logout}
-                className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 rounded-xl text-xs font-bold border border-rose-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2 hover:bg-rose-50 text-rose-700 hover:text-rose-800 rounded-xl text-xs font-bold border border-rose-400 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <LogOut size={14} />
                 <span>Keluar</span>
@@ -284,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="text-[10px] font-medium text-slate-400 text-center mt-0.5"
                 title={`Build: ${__BUILD_DATE__} (${__GIT_COMMIT__})`}
               >
-                ©{new Date().getFullYear()} BBMKG V | chrs | v{__APP_VERSION__}
+                ©{new Date().getFullYear()} BBMKG V | chr$ | v{__APP_VERSION__}
               </p>
             </>
           ) : (
