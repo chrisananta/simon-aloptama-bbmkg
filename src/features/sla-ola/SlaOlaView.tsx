@@ -635,9 +635,6 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
             <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-emerald-700">
               {balaiTidakTerlambatCount} / {balaiDevices.length}
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-              {balaiKondisiKalibrasiPercent}%
-            </span>
           </div>
           <p className="text-[11px] text-slate-600 mt-1.5 sm:mt-2 font-medium">
             <span className="text-emerald-700 font-bold">{balaiTidakTerlambatCount} Valid</span> | {' '}

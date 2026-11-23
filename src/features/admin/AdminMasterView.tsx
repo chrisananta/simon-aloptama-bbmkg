@@ -410,13 +410,20 @@ export const AdminMasterView: React.FC<AdminMasterViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, monitoringMonth, monitoringYear]);
 
-  const filteredMonitoringLogs = monitoringLogs.filter((log) => {
-    const q = monitoringSearch.toLowerCase();
-    return (
-      log.kodeAlat.toLowerCase().includes(q) ||
-      log.namaAlat.toLowerCase().includes(q)
-    );
-  });
+  // Urut dari yang paling baru diisi (waktu submit), lalu tanggal laporan terbaru.
+  const filteredMonitoringLogs = monitoringLogs
+    .filter((log) => {
+      const q = monitoringSearch.toLowerCase();
+      return (
+        log.kodeAlat.toLowerCase().includes(q) ||
+        log.namaAlat.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const byTime = new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      if (byTime !== 0 && !Number.isNaN(byTime)) return byTime;
+      return (b.reportDate ?? '').localeCompare(a.reportDate ?? '');
+    });
 
   const handleOpenEditLog = (log: SlaOlaLogRow) => {
     setEditingLog(log);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "../../shared/api";
@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import { slaOlaSchema, SLA_OLA_MAX_BACKDATE_DAYS } from "../../shared/schemas";
 import { getYesterdayIsoWIT, getIsoDaysAgoWIT, formatDateIndo } from "../../shared/utils/dateUtils";
 import { SlaOlaModalProps } from "./SlaOlaTypes";
+import { OlaCalculator } from "./OlaCalculator";
 import { isSameUpt } from "../../shared/utils/uptMatch";
 import { isInCategory } from "../../shared/utils/slaOlaCategory";
 import type { AloptamaDevice } from "../../shared/types";
@@ -15,6 +16,8 @@ import {
   Building2 as BuildingIcon,
   Wrench as WrenchIcon,
   Calculator as CalculatorIcon,
+  ChevronUp,
+  ChevronDown,
   Check,
   Info,
   CheckSquare,
@@ -75,6 +78,110 @@ const deviceMatchesCategory = (d: AloptamaDevice, category: string): boolean => 
   return devCat.includes(selCat) || selCat.includes(devCat);
 };
 
+// OLA selalu kelipatan 0,5 dan dibatasi 0-100.
+const snapOla = (v: number): number =>
+  Math.min(100, Math.max(0, Math.round((Number.isFinite(v) ? v : 0) * 2) / 2));
+
+// Input OLA: tampil 1 desimal (mis. 95.0); saat diketik bebas, lalu dibulatkan
+// ke kelipatan 0,5 setelah selesai (blur / Enter).
+const OlaNumberInput: React.FC<{
+  value: number;
+  disabled?: boolean;
+  onCommit: (v: number) => void;
+}> = ({ value, disabled, onCommit }) => {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={draft ?? value.toFixed(1)}
+      disabled={disabled}
+      onFocus={(e) => {
+        setDraft(String(value));
+        e.target.select();
+      }}
+      onChange={(e) => setDraft(e.target.value.replace(",", "."))}
+      onBlur={() => {
+        const n = parseFloat(draft ?? "");
+        if (!Number.isNaN(n)) onCommit(snapOla(n));
+        setDraft(null);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      className="w-11 text-center text-[11px] font-bold text-slate-800 bg-transparent focus:outline-none disabled:text-slate-500"
+    />
+  );
+};
+
+// Kotak OLA: angka + panah atas/bawah. Scroll mouse saat kursor di atas kotak
+// juga menaikkan / menurunkan nilai (kelipatan 0,5).
+const OlaStepper: React.FC<{
+  value: number;
+  dotClass: string;
+  sla: boolean;
+  disabled?: boolean;
+  onChange: (v: number) => void;
+}> = ({ value, dotClass, sla, disabled, onChange }) => {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const latest = useRef({ value, sla, disabled, onChange });
+  latest.current = { value, sla, disabled, onChange };
+
+  // Listener native (non-passive) agar scroll halaman bisa dicegah saat kursor di kotak ini.
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      const cur = latest.current;
+      if (cur.disabled || !cur.sla) return;
+      e.preventDefault();
+      cur.onChange(snapOla(cur.value + (e.deltaY < 0 ? 0.5 : -0.5)));
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
+
+  const off = disabled || !sla;
+  return (
+    <div
+      ref={boxRef}
+      className={`flex items-stretch rounded-lg border border-slate-300 overflow-hidden ${
+        sla ? "bg-white" : "bg-slate-100"
+      }`}
+    >
+      <div className="flex items-center justify-center gap-1 px-2 min-w-[96px] whitespace-nowrap">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
+        <span className="text-[11px] font-bold text-slate-700">OLA</span>
+        <OlaNumberInput value={value} disabled={off} onCommit={onChange} />
+        <span className="text-[11px] font-bold text-slate-700">%</span>
+      </div>
+      <div className="flex flex-col w-6">
+        <button
+          type="button"
+          title="Naikkan OLA"
+          disabled={off || value >= 100}
+          onClick={() => onChange(snapOla(value + 0.5))}
+          className="flex-1 flex items-center justify-center text-slate-600 cursor-pointer disabled:text-slate-300 disabled:cursor-not-allowed"
+        >
+          <ChevronUp size={12} />
+        </button>
+        <button
+          type="button"
+          title="Turunkan OLA"
+          disabled={off || value <= 0}
+          onClick={() => onChange(snapOla(value - 0.5))}
+          className="flex-1 flex items-center justify-center text-slate-600 cursor-pointer disabled:text-slate-300 disabled:cursor-not-allowed"
+        >
+          <ChevronDown size={12} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
   isOpen,
   onClose,
@@ -90,13 +197,23 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<Set<string>>(new Set());
 
-  const [awosCategory, setAwosCategory] = useState<
-    "AWOS_I" | "AWOS_II" | "AWOS_III"
-  >("AWOS_III");
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [modeInput, setModeInput] = useState<"KALKULATOR" | "MANUAL">(
-    "KALKULATOR"
-  );
+  // SLA (ON/OFF) + OLA (%) + pengaturan panel dimiliki tiap alat sendiri-sendiri.
+  type DeviceRow = {
+    sla: boolean;
+    ola: number;
+    mode: "KALKULATOR" | "MANUAL";
+    open: boolean;
+    opened: boolean; // sudah pernah dibuka -> kalkulator tetap ter-mount agar pilihannya tidak hilang
+  };
+  const DEFAULT_ROW: DeviceRow = { sla: true, ola: 100, mode: "KALKULATOR", open: false, opened: false };
+  const [rowByDevice, setRowByDevice] = useState<Record<string, DeviceRow>>({});
+  const getRow = (id: string): DeviceRow => rowByDevice[id] ?? DEFAULT_ROW;
+  const patchRow = (id: string, patch: Partial<DeviceRow>) =>
+    setRowByDevice((prev) => ({ ...(prev), [id]: { ...(prev[id] ?? DEFAULT_ROW), ...patch } }));
+  // Nilai OLA efektif: SLA OFF otomatis 0%.
+  const effOla = (id: string) => (getRow(id).sla ? getRow(id).ola : 0);
+  const needKendalaFor = (id: string) => effOla(id) < 100;
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -143,8 +260,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
   const watchUptStation = watch("uptStation");
   const watchCategory = watch("category");
-  const watchKondisiOla = watch("kondisiOla");
-  const watchKondisiSla = watch("kondisiSla");
   const watchTanggal = watch("tanggal");
 
   // Tanggal default & maksimal = KEMARIN (pengisian hari ini untuk kondisi kemarin).
@@ -163,6 +278,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       setSelectedDeviceIds(new Set());
       setKendalaByDevice({});
       setSamePrevByDevice({});
+      setRowByDevice({});
     }
   }, [isOpen, setValue]);
 
@@ -174,42 +290,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       setValue("uptStation", devices[0].uptStation);
     }
   }, [isOpen, isScopedToOwnUpt, devices, setValue]);
-
-  const [calcLogger, setCalcLogger] = useState<number>(100);
-  const [calcPower, setCalcPower] = useState<number>(100);
-  const [calcComm, setCalcComm] = useState<number>(100);
-  const [calcDisplay, setCalcDisplay] = useState<number>(100);
-  const [calcLatency, setCalcLatency] = useState<number>(100);
-  const [calcComponent, setCalcComponent] = useState<number>(100);
-  const [calcSync, setCalcSync] = useState<number>(100);
-  const [calcRadarData, setCalcRadarData] = useState<number>(100);
-  const [calcArgSensor, setCalcArgSensor] = useState<number>(100);
-  const [calcLdSensor, setCalcLdSensor] = useState<number>(100);
-  const [calcSound, setCalcSound] = useState<number>(100);
-
-  const [activeSensors, setActiveSensors] = useState<Record<string, boolean>>({
-    tekanan: true,
-    arahAngin: true,
-    kecAngin: true,
-    suhu: true,
-    kelembapan: true,
-    radiasiMatahari: true,
-    curahHujan: true,
-    waterLevel: true,
-    celo: true,
-    visibility: true,
-    ld: true,
-  });
-
-  useEffect(() => {
-    if (watchCategory === "AWOS Kat. I") {
-      setAwosCategory("AWOS_I");
-    } else if (watchCategory === "AWOS Kat. II") {
-      setAwosCategory("AWOS_II");
-    } else if (watchCategory.startsWith("AWOS")) {
-      setAwosCategory("AWOS_III");
-    }
-  }, [watchCategory]);
 
   // Lookup objek stasiun terpilih untuk mencocokkan Nama Stasiun vs ID Stasiun
   const selectedStationObj = useMemo(() => {
@@ -257,6 +337,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     setErrorMessage(null);
 
     setSelectedDeviceIds(new Set());
+    setRowByDevice({});
     if (matchingDevices.length > 0) {
       setValue("deviceId", matchingDevices[0].devicesId);
       setValue("kondisiSla", true);
@@ -277,8 +358,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     [matchingDevices, selectedDeviceIds]
   );
 
-  const needKendala = !watchKondisiSla || watchKondisiOla < 100;
-
   // Ubah kendala sebuah alat (tiap alat punya kendala sendiri).
   const handleKendalaChange = (deviceId: string, value: string) => {
     setKendalaByDevice((prev) => ({ ...prev, [deviceId]: value }));
@@ -293,137 +372,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     }));
   };
 
-  // Sinkronkan ke field form "kendala" agar validasi zod (wajib isi saat OFF /
-  // OLA<100) tetap bekerja: terisi hanya jika SEMUA alat terpilih sudah diisi.
-  useEffect(() => {
-    const vals = selectedDevices.map((d) => (kendalaByDevice[d.devicesId] ?? "").trim());
-    const allFilled = vals.length > 0 && vals.every(Boolean);
-    setValue("kendala", needKendala && allFilled ? vals.join(" | ") : "", {
-      shouldValidate: false,
-    });
-  }, [kendalaByDevice, selectedDevices, needKendala, setValue]);
-
-  useEffect(() => {
-    if (!watchKondisiSla) {
-      setValue("kondisiOla", 0);
-      return;
-    }
-
-    if (modeInput !== "KALKULATOR") return;
-
-    let computedOla = 100;
-
-    if (watchCategory === "AWS") {
-      const loggerContrib = 0.35 * calcLogger;
-      const powerContrib = 0.15 * calcPower;
-      const commContrib = 0.2 * calcComm;
-      const sensorKeys = [
-        "tekanan",
-        "arahAngin",
-        "kecAngin",
-        "suhu",
-        "kelembapan",
-        "radiasiMatahari",
-        "curahHujan",
-        "waterLevel",
-      ];
-      let sensorContrib = 0;
-      sensorKeys.forEach((key) => {
-        if (activeSensors[key]) sensorContrib += 3.75;
-      });
-      computedOla = loggerContrib + powerContrib + commContrib + sensorContrib;
-    } else if (watchCategory.startsWith("AWOS")) {
-      const loggerContrib = 0.35 * calcLogger;
-      const powerContrib = 0.15 * calcPower;
-      const commContrib = 0.2 * calcComm;
-      let sensorContrib = 0;
-
-      if (awosCategory === "AWOS_III") {
-        if (activeSensors.tekanan) sensorContrib += 5.0;
-        if (activeSensors.arahAngin) sensorContrib += 5.0;
-        if (activeSensors.kecAngin) sensorContrib += 5.0;
-        if (activeSensors.suhu) sensorContrib += 2.14;
-        if (activeSensors.kelembapan) sensorContrib += 2.14;
-        if (activeSensors.radiasiMatahari) sensorContrib += 2.14;
-        if (activeSensors.curahHujan) sensorContrib += 2.14;
-        if (activeSensors.celo) sensorContrib += 2.14;
-        if (activeSensors.visibility) sensorContrib += 2.14;
-        if (activeSensors.ld) sensorContrib += 2.14;
-      } else if (awosCategory === "AWOS_II") {
-        if (activeSensors.tekanan) sensorContrib += 5.0;
-        if (activeSensors.arahAngin) sensorContrib += 5.0;
-        if (activeSensors.kecAngin) sensorContrib += 5.0;
-        if (activeSensors.suhu) sensorContrib += 3.0;
-        if (activeSensors.kelembapan) sensorContrib += 3.0;
-        if (activeSensors.curahHujan) sensorContrib += 3.0;
-        if (activeSensors.celo) sensorContrib += 3.0;
-        if (activeSensors.visibility) sensorContrib += 3.0;
-      } else {
-        if (activeSensors.tekanan) sensorContrib += 5.0;
-        if (activeSensors.arahAngin) sensorContrib += 5.0;
-        if (activeSensors.kecAngin) sensorContrib += 5.0;
-        if (activeSensors.suhu) sensorContrib += 3.75;
-        if (activeSensors.kelembapan) sensorContrib += 3.75;
-        if (activeSensors.curahHujan) sensorContrib += 3.75;
-        if (activeSensors.radiasiMatahari) sensorContrib += 3.75;
-      }
-
-      computedOla = loggerContrib + powerContrib + commContrib + sensorContrib;
-    } else if (watchCategory === "WRS NG" || watchCategory === "WRS") {
-      computedOla = 0.25 * calcDisplay + 0.35 * calcComm + 0.4 * calcPower;
-    } else if (
-      watchCategory === "Sirine Tsunami" ||
-      watchCategory === "Sirine"
-    ) {
-      computedOla = 0.25 * calcSound + 0.25 * calcComm + 0.5 * calcPower;
-    } else if (
-      watchCategory === "Accelerograph" ||
-      watchCategory === "Seismometer"
-    ) {
-      computedOla = 0.4 * calcLatency + 0.35 * calcComponent + 0.25 * calcSync;
-    } else if (watchCategory === "Lightning Detector") {
-      computedOla = 0.4 * calcLogger + 0.3 * calcPower + 0.3 * calcLdSensor;
-    } else if (
-      watchCategory === "Radar Cuaca" ||
-      watchCategory === "Radar Weather"
-    ) {
-      computedOla = 0.4 * calcRadarData + 0.3 * calcComm + 0.3 * calcPower;
-    } else if (watchCategory === "ARG") {
-      computedOla =
-        0.35 * calcArgSensor +
-        0.2 * calcLogger +
-        0.25 * calcComm +
-        0.2 * calcPower;
-    }
-
-    const rounded = Math.min(
-      100,
-      Math.max(0, Math.round(computedOla * 10) / 10)
-    );
-    setValue("kondisiOla", rounded);
-  }, [
-    modeInput,
-    watchKondisiSla,
-    watchCategory,
-    awosCategory,
-    calcLogger,
-    calcPower,
-    calcComm,
-    calcDisplay,
-    calcLatency,
-    calcComponent,
-    calcSync,
-    calcRadarData,
-    calcArgSensor,
-    calcLdSensor,
-    calcSound,
-    activeSensors,
-    setValue,
-  ]);
-
-  const toggleSensor = (key: string) => {
-    setActiveSensors((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
 
   if (!isOpen) return null;
 
@@ -439,11 +387,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
       return;
     }
 
-    const missing = needKendala
-      ? targetIds.filter((id) => !(kendalaByDevice[id] ?? "").trim())
-      : [];
+    const missing = targetIds.filter(
+      (id) => needKendalaFor(id) && !(kendalaByDevice[id] ?? "").trim()
+    );
     if (missing.length > 0) {
-      setErrorMessage("Kendala wajib diisi untuk setiap alat yang OFF / OLA < 100%.");
+      setErrorMessage("Kendala wajib diisi untuk setiap alat yang SLA-nya OFF / OLA < 100%.");
       return;
     }
 
@@ -451,13 +399,14 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
 
     try {
       for (const deviceId of targetIds) {
-        const kendalaFinal = needKendala ? (kendalaByDevice[deviceId] ?? "").trim() : "";
+        const row = getRow(deviceId);
+        const kendalaFinal = needKendalaFor(deviceId) ? (kendalaByDevice[deviceId] ?? "").trim() : "";
         await onSaveSlaOla({
           uptStation: data.uptStation,
           category: data.category.startsWith("AWOS") ? "AWOS" : data.category,
           deviceId,
-          kondisiSla: data.kondisiSla,
-          kondisiOla: data.kondisiOla,
+          kondisiSla: row.sla,
+          kondisiOla: row.sla ? row.ola : 0,
           kendala: kendalaFinal,
           tanggal: data.tanggal,
         });
@@ -474,6 +423,11 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
         return next;
       });
       setSamePrevByDevice({});
+      setRowByDevice((prev) => {
+        const next = { ...prev };
+        targetIds.forEach((id) => delete next[id]);
+        return next;
+      });
       setLastBatchCount(targetIds.length);
 
       setIsSubmitted(true);
@@ -494,64 +448,10 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
     }
   };
 
-  const getSensorList = () => {
-    if (watchCategory === "AWS") {
-      return [
-        { key: "tekanan", label: "Sensor Tekanan", weight: "3.75%" },
-        { key: "arahAngin", label: "Sensor Arah Angin", weight: "3.75%" },
-        { key: "kecAngin", label: "Sensor Kecepatan Angin", weight: "3.75%" },
-        { key: "suhu", label: "Sensor Suhu Udara", weight: "3.75%" },
-        { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "3.75%" },
-        { key: "radiasiMatahari", label: "Sensor Radiasi Matahari", weight: "3.75%" },
-        { key: "curahHujan", label: "Sensor Curah Hujan", weight: "3.75%" },
-        { key: "waterLevel", label: "Sensor Water Level / Suhu Tanah", weight: "3.75%" },
-      ];
-    }
-    if (watchCategory === "AWOS Kat. III") {
-      return [
-        { key: "tekanan", label: "Sensor Tekanan", weight: "5.00%" },
-        { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },
-        { key: "kecAngin", label: "Sensor Kecepatan Angin", weight: "5.00%" },
-        { key: "suhu", label: "Sensor Suhu Udara", weight: "2.14%" },
-        { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "2.14%" },
-        { key: "radiasiMatahari", label: "Sensor Radiasi Matahari", weight: "2.14%" },
-        { key: "curahHujan", label: "Sensor Curah Hujan", weight: "2.14%" },
-        { key: "celo", label: "Sensor Ceilometer (Celo)", weight: "2.14%" },
-        { key: "visibility", label: "Sensor Visibility (RVR)", weight: "2.14%" },
-        { key: "ld", label: "Sensor Lightning Detector (LD)", weight: "2.14%" },
-      ];
-    }
-    if (watchCategory === "AWOS Kat. II") {
-      return [
-        { key: "tekanan", label: "Sensor Tekanan", weight: "5.00%" },
-        { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },
-        { key: "kecAngin", label: "Sensor Kecepatan Angin", weight: "5.00%" },
-        { key: "suhu", label: "Sensor Suhu Udara", weight: "3.00%" },
-        { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "3.00%" },
-        { key: "curahHujan", label: "Sensor Curah Hujan", weight: "3.00%" },
-        { key: "celo", label: "Sensor Ceilometer (Celo)", weight: "3.00%" },
-        { key: "visibility", label: "Sensor Visibility", weight: "3.00%" },
-      ];
-    }
-    if (watchCategory === "AWOS Kat. I") {
-      return [
-        { key: "tekanan", label: "Sensor Tekanan", weight: "5.00%" },
-        { key: "arahAngin", label: "Sensor Arah Angin", weight: "5.00%" },
-        { key: "kecAngin", label: "Sensor Kecepatan Angin", weight: "5.00%" },
-        { key: "suhu", label: "Sensor Suhu Udara", weight: "3.75%" },
-        { key: "kelembapan", label: "Sensor Kelembapan Udara", weight: "3.75%" },
-        { key: "curahHujan", label: "Sensor Curah Hujan", weight: "3.75%" },
-        { key: "radiasiMatahari", label: "Sensor Solar Radiasi", weight: "3.75%" },
-      ];
-    }
-    return [];
-  };
-
-  const sensorList = getSensorList();
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh]">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden my-auto flex flex-col max-h-[95vh] sm:max-h-[92vh]">
         {/* Header Modal */}
         <div className="bg-[#0A203C] text-white p-3.5 sm:p-5 flex items-center justify-between shrink-0 gap-2">
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -587,8 +487,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
             <p className="text-xs text-emerald-700">
               Kondisi operasional UPT {watchUptStation} ({watchCategory}) untuk{" "}
               tanggal <strong>{formatDateIndo(watchTanggal)}</strong> telah
-              diperbarui dengan Skor OLA <strong>{watchKondisiOla}%</strong>
-              {lastBatchCount > 1 ? ` untuk ${lastBatchCount} unit alat.` : "."}
+              diperbarui{lastBatchCount > 1 ? ` untuk ${lastBatchCount} unit alat.` : "."}
             </p>
             {isLateEntry && (
               <p className="inline-flex items-center gap-1.5 justify-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-100 text-orange-800 border border-orange-300">
@@ -698,7 +597,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
               <div className="space-y-1.5 bg-blue-50/60 p-3 rounded-xl border border-blue-200 animate-fade-in">
                 <div className="flex items-center justify-between gap-2">
                   <label className="block text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
-                    CENTANG ALAT DENGAN KONDISI SAMA:
+                    CENTANG ALAT YANG AKAN DIISI:
                   </label>
                   {matchingDevices.some((d) => !filledDeviceIds.has(d.devicesId)) && (
                     <button
@@ -717,90 +616,163 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                     </button>
                   )}
                 </div>
-                <p className="text-[10px] text-blue-800/80 -mt-0.5">
-                  Alat dengan nilai berbeda bisa dicentang & disimpan terpisah.
-                </p>
-                <div className="space-y-1 max-h-[55vh] overflow-y-auto pr-0.5">
+                <div className="space-y-1 max-h-[55vh] overflow-y-auto px-1 py-1 -mx-1">
                   {matchingDevices.map((d) => {
                     const isFilled = filledDeviceIds.has(d.devicesId);
                     const isChecked = selectedDeviceIds.has(d.devicesId);
+                    const showCtl = isChecked && !isFilled;
+                    const row = getRow(d.devicesId);
+                    const ola = effOla(d.devicesId);
                     const kVal = kendalaByDevice[d.devicesId] ?? "";
-                    const showK = isChecked && !isFilled && needKendala;
-                    const kMissing = showK && needKendala && !kVal.trim();
+                    const showK = showCtl && needKendalaFor(d.devicesId);
+                    const kMissing = showK && !kVal.trim();
+                    const olaDot =
+                      ola >= 100 ? "bg-emerald-500" : ola >= 50 ? "bg-amber-500" : "bg-rose-500";
                     return (
-                      <div
-                        key={d.devicesId}
-                        className="flex flex-col sm:flex-row sm:items-stretch gap-1"
-                      >
-                      <button
-                        type="button"
-                        disabled={isSubmitting || isFilled}
-                        onClick={() => {
-                          setSelectedDeviceIds((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(d.devicesId)) next.delete(d.devicesId);
-                            else next.add(d.devicesId);
-                            return next;
-                          });
-                        }}
-                        className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed ${
-                          isFilled
-                            ? "bg-emerald-50 border-emerald-300 text-emerald-800 opacity-70"
-                            : isChecked
-                            ? "bg-[#0052CC] border-[#0052CC] text-white shadow-sm"
-                            : "bg-white border-blue-200 text-slate-700 hover:bg-blue-50"
-                        }`}
-                      >
-                        {isFilled ? (
-                          <CheckSquare size={16} className="text-emerald-600" />
-                        ) : isChecked ? (
-                          <CheckSquare size={16} className="text-white" />
-                        ) : (
-                          <Square size={16} className="text-slate-400" />
-                        )}
-                        <span className="flex-1 truncate">{d.site} ({d.devicesId})</span>
-                        {isFilled && (
-                          <span className="text-[9px] font-bold text-emerald-700 shrink-0">SUDAH DIISI</span>
-                        )}
-                      </button>
-                      {showK && (
-                        <div className="sm:w-[46%] shrink-0 flex flex-col gap-1">
-                          <input
-                            type="text"
-                            value={kVal}
-                            disabled={isSubmitting || !!samePrevByDevice[d.devicesId]}
-                            onChange={(e) => handleKendalaChange(d.devicesId, e.target.value)}
-                            placeholder="Kendala (wajib disi)"
-                            className={`w-full min-h-[36px] bg-white border rounded-lg px-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] disabled:bg-slate-100 disabled:text-slate-600 ${
-                              kMissing ? "border-rose-400 bg-rose-50/40" : "border-blue-200"
-                            }`}
-                          />
-                          <label
-                            className={`flex items-center gap-1.5 text-[10px] ${
-                              getPrevKendala(d)
-                                ? "text-slate-700 cursor-pointer"
-                                : "text-slate-400 cursor-not-allowed"
+                      <div key={d.devicesId} className="space-y-1">
+                        <div className="flex flex-col lg:flex-row lg:items-stretch gap-1">
+                          <button
+                            type="button"
+                            disabled={isSubmitting || isFilled}
+                            onClick={() => {
+                              setSelectedDeviceIds((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(d.devicesId)) next.delete(d.devicesId);
+                                else next.add(d.devicesId);
+                                return next;
+                              });
+                            }}
+                            className={`flex-1 min-w-0 lg:min-w-[190px] flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-xs font-semibold transition-all cursor-pointer disabled:cursor-not-allowed ${
+                              isFilled
+                                ? "bg-emerald-50 border-emerald-300 text-emerald-800 opacity-70"
+                                : isChecked
+                                ? "bg-blue-50 border-[#0052CC] text-slate-900"
+                                : "bg-white border-blue-200 text-slate-700 hover:bg-blue-50"
                             }`}
                           >
-                            <input
-                              type="checkbox"
-                              checked={!!samePrevByDevice[d.devicesId]}
-                              disabled={isSubmitting || !getPrevKendala(d)}
-                              onChange={(e) => toggleSamePrev(d, e.target.checked)}
-                            />
-                            {getPrevKendala(d)
-                              ? "Kendala masih sama dengan sebelumnya"
-                              : "Belum ada riwayat"}
-                          </label>
+                            {isFilled ? (
+                              <CheckSquare size={16} className="text-emerald-600 shrink-0" />
+                            ) : isChecked ? (
+                              <CheckSquare size={16} className="text-[#0052CC] shrink-0" />
+                            ) : (
+                              <Square size={16} className="text-slate-400 shrink-0" />
+                            )}
+                            <span className="flex-1 min-w-0 break-words leading-snug">{d.site} ({d.devicesId})</span>
+                            {isFilled && (
+                              <span className="text-[9px] font-bold text-emerald-700 shrink-0">SUDAH DIISI</span>
+                            )}
+                          </button>
+
+                          {showCtl && (
+                            <div className="flex items-stretch gap-1 shrink-0">
+                              {/* Kotak 1: SLA ON / OFF */}
+                              <button
+                                type="button"
+                                disabled={isSubmitting}
+                                title="Klik untuk ganti SLA ON / OFF"
+                                onClick={() => {
+                                  patchRow(d.devicesId, { sla: !row.sla, open: row.sla ? false : row.open });
+                                }}
+                                className={`w-[84px] min-h-[36px] whitespace-nowrap rounded-lg border text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 ${
+                                  row.sla
+                                    ? "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
+                                    : "bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200"
+                                }`}
+                              >
+                                <span
+                                  className={`w-2 h-2 rounded-full ${row.sla ? "bg-emerald-500" : "bg-rose-500"}`}
+                                />
+                                SLA {row.sla ? "ON" : "OFF"}
+                              </button>
+
+                              {/* Kotak 2: OLA (angka, panah atas/bawah, scroll mouse) */}
+                              <OlaStepper
+                                value={ola}
+                                dotClass={olaDot}
+                                sla={row.sla}
+                                disabled={isSubmitting}
+                                onChange={(v) => patchRow(d.devicesId, { ola: v })}
+                              />
+
+                              {/* Tombol pakai kalkulator */}
+                              <button
+                                type="button"
+                                disabled={isSubmitting || !row.sla}
+                                title="Hitung OLA dengan kalkulator"
+                                onClick={() => patchRow(d.devicesId, { open: !row.open, opened: true })}
+                                className={`px-2.5 min-h-[36px] rounded-lg border text-[11px] font-bold flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                                  row.open
+                                    ? "bg-blue-50 border-[#0052CC] text-[#0052CC]"
+                                    : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
+                                }`}
+                              >
+                                <CalculatorIcon size={14} />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Kotak 3: Kendala (muncul bila SLA OFF atau OLA < 100) */}
+                          {showK && (
+                            <div className="lg:w-[34%] shrink-0 flex flex-col gap-1">
+                              <input
+                                type="text"
+                                value={kVal}
+                                disabled={isSubmitting || !!samePrevByDevice[d.devicesId]}
+                                onChange={(e) => handleKendalaChange(d.devicesId, e.target.value)}
+                                placeholder="Kendala (wajib diisi)"
+                                className={`w-full min-h-[36px] bg-white border rounded-lg px-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC] disabled:bg-slate-100 disabled:text-slate-600 ${
+                                  kMissing ? "border-rose-400" : "border-slate-300"
+                                }`}
+                              />
+                              <label
+                                className={`flex items-center gap-1.5 text-[10px] ${
+                                  getPrevKendala(d)
+                                    ? "text-slate-700 cursor-pointer"
+                                    : "text-slate-400 cursor-not-allowed"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!samePrevByDevice[d.devicesId]}
+                                  disabled={isSubmitting || !getPrevKendala(d)}
+                                  onChange={(e) => toggleSamePrev(d, e.target.checked)}
+                                />
+                                {getPrevKendala(d)
+                                  ? "Kendala masih sama dengan sebelumnya"
+                                  : "Belum ada riwayat"}
+                              </label>
+                            </div>
+                          )}
                         </div>
-                      )}
+
+                        {/* Panel kalkulator OLA untuk alat ini */}
+                        {showCtl && row.sla && row.opened && (
+                          <div
+                            className={`${row.open ? "" : "hidden"} bg-white rounded-xl border border-slate-200 p-3 space-y-3`}
+                          >
+                            <OlaCalculator
+                              category={watchCategory}
+                              active={row.open}
+                              onChange={(v) => patchRow(d.devicesId, { ola: snapOla(v) })}
+                            />
+                            <div className="flex items-center justify-end pt-1">
+                              <button
+                                type="button"
+                                onClick={() => patchRow(d.devicesId, { open: false })}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0052CC] text-white hover:bg-blue-700 cursor-pointer"
+                              >
+                                Selesai
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
                 {selectedDeviceIds.size > 0 && (
                   <span className="text-[10px] text-blue-700 font-normal block mt-0.5">
-                    {selectedDeviceIds.size} alat dipilih - nilai OLA akan diterapkan ke semuanya.
+                    {selectedDeviceIds.size} alat dipilih - masing-masing disimpan dengan nilai SLA &amp; OLA-nya sendiri.
                     
                   </span>
                 )}
@@ -819,744 +791,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 </span>
               </div>
             )}
-
-            {/* Toggle Switch Mode */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-slate-100 p-1 sm:p-1.5 rounded-xl border border-slate-200 gap-1 sm:gap-0">
-              <button
-                type="button"
-                onClick={() => setModeInput("KALKULATOR")}
-                className={`flex-1 py-1.5 sm:py-2 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  modeInput === "KALKULATOR"
-                    ? "bg-[#0052CC] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <CalculatorIcon size={14} />
-                Kalkulator Persentase OLA
-              </button>
-              <button
-                type="button"
-                onClick={() => setModeInput("MANUAL")}
-                className={`flex-1 py-1.5 sm:py-2 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  modeInput === "MANUAL"
-                    ? "bg-[#0052CC] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <PercentIcon size={14} />
-                Slider Manual Persentase OLA
-              </button>
-            </div>
-
-            {modeInput === "KALKULATOR" && (
-              <div className="bg-slate-50/80 rounded-2xl p-3 sm:p-4 border border-slate-200 space-y-3">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-2 gap-1.5 sm:gap-0">
-                  <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    Pilih Kondisi Kelayakan Peralatan ({watchCategory}):
-                  </h4>
-                  <span className="text-[11px] font-bold text-slate-800">
-                    Kalkulasi OLA: {watchKondisiOla}%
-                  </span>
-                </div>
-
-                {(watchCategory === "AWS" ||
-                  watchCategory.startsWith("AWOS")) && (
-                  <div className="space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        1. Logger &amp; Data
-                      </label>
-                      <select
-                        value={calcLogger}
-                        onChange={(e) =>
-                          setCalcLogger(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Logger ON penuh, data masuk normal &amp; sesuai (100%)
-                        </option>
-                        <option value={80}>
-                          ON, ada sedikit delay/data gap kecil (80%)
-                        </option>
-                        <option value={60}>
-                          ON, data sering hilang sebagian / anomali &gt;30% (60%)
-                        </option>
-                        <option value={50}>
-                          ON, data sering error/tidak stabil (50%)
-                        </option>
-                        <option value={0}>
-                          Logger OFF, tidak ada data sama sekali (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        2. Kelistrikan &amp; Power
-                      </label>
-                      <select
-                        value={calcPower}
-                        onChange={(e) =>
-                          setCalcPower(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Baterai penuh, tegangan stabil (100%)
-                        </option>
-                        <option value={80}>
-                          Tegangan drop ringan, masih aman (80%)
-                        </option>
-                        <option value={70}>Baterai mulai lemah (70%)</option>
-                        <option value={50}>
-                          Baterai drop, logger restart otomatis (50%)
-                        </option>
-                        <option value={0}>
-                          Tidak ada suplai daya, alat mati total (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        3. Komunikasi Network
-                      </label>
-                      <select
-                        value={calcComm}
-                        onChange={(e) =>
-                          setCalcComm(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Data terkirim real-time, tidak ada delay (100%)
-                        </option>
-                        <option value={80}>
-                          Delay dibawah 1 jam / kecil (80%)
-                        </option>
-                        <option value={60}>
-                          Delay 1–3 jam, data masih lengkap (60%)
-                        </option>
-                        <option value={50}>Data hilang sebagian (50%)</option>
-                        <option value={0}>Tidak ada data terkirim (0%)</option>
-                      </select>
-                    </div>
-
-                    {sensorList.length > 0 && (
-                      <div className="space-y-2 pt-2 border-t border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-slate-800">
-                            4. Checklist Komponen Sensor
-                          </label>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-white p-2 sm:p-2.5 rounded-xl border border-slate-200 text-xs">
-                          {sensorList.map((s) => {
-                            const isChecked = Boolean(activeSensors[s.key]);
-                            return (
-                              <button
-                                key={s.key}
-                                type="button"
-                                onClick={() => toggleSensor(s.key)}
-                                className={`flex items-center justify-between p-2 rounded-lg border text-left transition-all cursor-pointer ${
-                                  isChecked
-                                    ? "bg-blue-50/80 border-blue-300 text-blue-900 font-semibold"
-                                    : "bg-slate-50 border-slate-200 text-slate-500"
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  {isChecked ? (
-                                    <CheckSquare
-                                      size={15}
-                                      className="text-blue-600 shrink-0"
-                                    />
-                                  ) : (
-                                    <Square
-                                      size={15}
-                                      className="text-slate-400 shrink-0"
-                                    />
-                                  )}
-                                  <span className="text-xs">{s.label}</span>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {(watchCategory === "WRS NG" || watchCategory === "WRS") && (
-                  <div className="space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        1. Tampilan Display
-                      </label>
-                      <select
-                        value={calcDisplay}
-                        onChange={(e) =>
-                          setCalcDisplay(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Layar aktif Tampilan Update (100%)
-                        </option>
-                        <option value={0}>
-                          Layar mati total / Blue Screen (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        2. Komunikasi Jaringan
-                      </label>
-                      <select
-                        value={calcComm}
-                        onChange={(e) =>
-                          setCalcComm(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Komunikasi Internet Stabil dan lancar 24 jam On (100%)
-                        </option>
-                        <option value={0}>
-                          Tidak ada internet / komunikasi terputus (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        3. Kelistrikan &amp; Power
-                      </label>
-                      <select
-                        value={calcPower}
-                        onChange={(e) =>
-                          setCalcPower(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Tegangan &amp; UPS stabil (100%)
-                        </option>
-                        <option value={0}>
-                          UPS tidak berfungsi, alat mati total (0%)
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {(watchCategory === "Sirine Tsunami" ||
-                  watchCategory === "Sirine") && (
-                  <div className="space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        1. Sistem Sound &amp; Audio
-                      </label>
-                      <select
-                        value={calcSound}
-                        onChange={(e) =>
-                          setCalcSound(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Sirine berbunyi normal sesuai trigger (100%)
-                        </option>
-                        <option value={0}>
-                          Sirine mati total / tidak berbunyi (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        2. Komunikasi &amp; Receiver
-                      </label>
-                      <select
-                        value={calcComm}
-                        onChange={(e) =>
-                          setCalcComm(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Sinyal/trigger masuk normal (100%)
-                        </option>
-                        <option value={0}>
-                          Tidak ada komunikasi / sinyal gagal (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        3. Kelistrikan &amp; Power
-                      </label>
-                      <select
-                        value={calcPower}
-                        onChange={(e) =>
-                          setCalcPower(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Tegangan stabil, UPS/genset baik (100%)
-                        </option>
-                        <option value={0}>
-                          Tidak ada suplai daya (0%)
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {(watchCategory === "Accelerograph" ||
-                  watchCategory === "Seismometer") && (
-                  <div className="space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        1. Data Availability &amp; Latency
-                      </label>
-                      <select
-                        value={calcLatency}
-                        onChange={(e) =>
-                          setCalcLatency(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>Latency &lt; 1 menit (100%)</option>
-                        <option value={70}>Latency 1–3 menit (70%)</option>
-                        <option value={40}>Latency &gt; 3 menit (40%)</option>
-                        <option value={0}>Data tidak terkirim (0%)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        2. Komponen Terkirim
-                      </label>
-                      <select
-                        value={calcComponent}
-                        onChange={(e) =>
-                          setCalcComponent(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          3 Komponen (Z, N, E) terkirim utuh (100%)
-                        </option>
-                        <option value={50}>
-                          Data komponen hilang sebagian (50%)
-                        </option>
-                        <option value={0}>
-                          Tidak ada data (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        3. Waktu Data Tersinkron
-                      </label>
-                      <select
-                        value={calcSync}
-                        onChange={(e) =>
-                          setCalcSync(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Sinkron penuh dengan UTC / GNSS (100%)
-                        </option>
-                        <option value={0}>
-                          Tidak sinkron (0%)
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {watchCategory === "Lightning Detector" && (
-                  <div className="space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        1. Logger &amp; Server Data
-                      </label>
-                      <select
-                        value={calcLogger}
-                        onChange={(e) =>
-                          setCalcLogger(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Logger ON penuh, PC Server normal (100%)
-                        </option>
-                        <option value={80}>
-                          ON, ada sedikit delay (80%)
-                        </option>
-                        <option value={60}>
-                          ON, data sering hilang (60%)
-                        </option>
-                        <option value={50}>
-                          ON, data tidak stabil (50%)
-                        </option>
-                        <option value={0}>
-                          Logger OFF (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        2. Kelistrikan &amp; Power
-                      </label>
-                      <select
-                        value={calcPower}
-                        onChange={(e) =>
-                          setCalcPower(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Tegangan listrik stabil, UPS Normal (100%)
-                        </option>
-                        <option value={70}>
-                          Listrik Sering Mati, UPS Lemah (70%)
-                        </option>
-                        <option value={50}>
-                          Listrik Sering Mati (50%)
-                        </option>
-                        <option value={0}>
-                          Alat mati total (0%)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        3. Sensor &amp; Antena
-                      </label>
-                      <select
-                        value={calcLdSensor}
-                        onChange={(e) =>
-                          setCalcLdSensor(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Sensor &amp; Antena Normal (100%)
-                        </option>
-                        <option value={80}>
-                          Sensor &amp; Antena Penurunan Ringan (80%)
-                        </option>
-                        <option value={60}>
-                          Sensor Error Sebagian (60%)
-                        </option>
-                        <option value={50}>
-                          Sinyal Lemah (50%)
-                        </option>
-                        <option value={0}>
-                          Mati Total (0%)
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {(watchCategory === "Radar Cuaca" ||
-                  watchCategory === "Radar Weather") && (
-                  <div className="space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        1. Radar ON &amp; Data
-                      </label>
-                      <select
-                        value={calcRadarData}
-                        onChange={(e) =>
-                          setCalcRadarData(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Radar aktif penuh, tanpa anomali (100%)
-                        </option>
-                        <option value={80}>
-                          Radar ON, data &gt;70% (80%)
-                        </option>
-                        <option value={60}>
-                          Radar ON, data 50–70% (60%)
-                        </option>
-                        <option value={50}>
-                          Radar ON/OFF, data &lt;50% (50%)
-                        </option>
-                        <option value={0}>Radar OFF (0%)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        2. Komunikasi Jaringan
-                      </label>
-                      <select
-                        value={calcComm}
-                        onChange={(e) =>
-                          setCalcComm(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Data masuk ke client &amp; pusat (100%)
-                        </option>
-                        <option value={70}>
-                          Data ke pusat terkendala (70%)
-                        </option>
-                        <option value={50}>
-                          Komunikasi terganggu (50%)
-                        </option>
-                        <option value={0}>Komunikasi OFF (0%)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        3. Kelistrikan &amp; Power
-                      </label>
-                      <select
-                        value={calcPower}
-                        onChange={(e) =>
-                          setCalcPower(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Tegangan stabil, UPS/genset baik (100%)
-                        </option>
-                        <option value={80}>
-                          Sesekali tegangan drop (80%)
-                        </option>
-                        <option value={60}>
-                          Baterai UPS melemah (60%)
-                        </option>
-                        <option value={50}>
-                          Sering mati listrik (50%)
-                        </option>
-                        <option value={0}>
-                          Radar mati total (0%)
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {watchCategory === "ARG" && (
-                  <div className="space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        1. Sensor Hujan / Tipping Bucket
-                      </label>
-                      <select
-                        value={calcArgSensor}
-                        onChange={(e) =>
-                          setCalcArgSensor(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>Data konsisten (100%)</option>
-                        <option value={80}>Tip kadang delay (80%)</option>
-                        <option value={60}>Banyak anomali (60%)</option>
-                        <option value={50}>Sering tidak tercatat (50%)</option>
-                        <option value={0}>Macet total (0%)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        2. Data Logger
-                      </label>
-                      <select
-                        value={calcLogger}
-                        onChange={(e) =>
-                          setCalcLogger(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>Rutin kirim data (100%)</option>
-                        <option value={80}>
-                          Timestamp terlambat sesekali (80%)
-                        </option>
-                        <option value={60}>Gap data 1–2 jam/hari (60%)</option>
-                        <option value={50}>Data harian tidak utuh (50%)</option>
-                        <option value={0}>Logger mati total (0%)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        3. Komunikasi
-                      </label>
-                      <select
-                        value={calcComm}
-                        onChange={(e) =>
-                          setCalcComm(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>
-                          Terkirim sesuai interval (100%)
-                        </option>
-                        <option value={80}>Delay &lt;1 jam (80%)</option>
-                        <option value={70}>Delay &gt;1 jam (70%)</option>
-                        <option value={50}>Data hilang sebagian (50%)</option>
-                        <option value={0}>Tidak ada data (0%)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">
-                        4. Kelistrikan &amp; Power
-                      </label>
-                      <select
-                        value={calcPower}
-                        onChange={(e) =>
-                          setCalcPower(parseFloat(e.target.value))
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-800"
-                      >
-                        <option value={100}>Tegangan stabil (100%)</option>
-                        <option value={80}>Tegangan turun sesekali (80%)</option>
-                        <option value={60}>Baterai drop malam hari (60%)</option>
-                        <option value={50}>Solar panel lemah (50%)</option>
-                        <option value={0}>Alat mati total (0%)</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {modeInput === "MANUAL" && (
-              <div className="space-y-1.5 bg-slate-50 p-3 sm:p-3.5 rounded-xl border border-slate-200">
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <PercentIcon size={14} className="text-[#0052CC]" />
-                    KONDISI OLA (Operational Level Agreement):
-                  </label>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="0.5"
-                    value={watchKondisiOla}
-                    onChange={(e) =>
-                      setValue("kondisiOla", parseFloat(e.target.value))
-                    }
-                    className="w-full accent-[#0052CC] cursor-pointer"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={watchKondisiOla}
-                    onChange={(e) =>
-                      setValue(
-                        "kondisiOla",
-                        Math.min(
-                          100,
-                          Math.max(0, parseFloat(e.target.value) || 0)
-                        )
-                      )
-                    }
-                    className="w-16 sm:w-20 px-1.5 py-1 text-xs font-mono font-bold text-slate-800 border border-slate-300 rounded-lg text-center"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-1.5 bg-slate-50 p-3 sm:p-3.5 rounded-xl border border-slate-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="block text-xs font-bold text-slate-800">
-                    KONDISI SLA (Service Level Agreement):
-                  </label>
-                </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setValue("kondisiSla", true)}
-                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                      watchKondisiSla
-                        ? "bg-emerald-600 text-white border-emerald-700 shadow-xs"
-                        : "bg-white text-slate-700 border-slate-300"
-                    }`}
-                  >
-                    ON
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setValue("kondisiSla", false);
-                      setValue("kondisiOla", 0);
-                    }}
-                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                      !watchKondisiSla
-                        ? "bg-rose-600 text-white border-rose-700 shadow-xs"
-                        : "bg-white text-slate-700 border-slate-300"
-                    }`}
-                  >
-                    OFF
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-slate-200/80 text-slate-800 flex items-center justify-between shadow-xs">
-              <div className="flex items-center gap-2">
-                <div
-                  className={`p-1.5 sm:p-2 rounded-lg ${
-                    !watchKondisiSla || watchKondisiOla === 0
-                      ? "bg-rose-50 text-rose-600"
-                      : watchKondisiOla >= 80
-                        ? "bg-emerald-50 text-emerald-600"
-                        : watchKondisiOla >= 50
-                          ? "bg-amber-50 text-amber-600"
-                          : "bg-rose-50 text-rose-600"
-                  }`}
-                >
-                  <PercentIcon size={16} className="sm:w-4 sm:h-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Total Persentase OLA
-                  </p>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <span
-                  className={`text-base sm:text-lg font-black font-mono px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-xl border ${
-                    !watchKondisiSla || watchKondisiOla === 0
-                      ? "bg-rose-50 text-rose-700 border-rose-200"
-                      : watchKondisiOla >= 80
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : watchKondisiOla >= 50
-                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                          : "bg-rose-50 text-rose-700 border-rose-200"
-                  }`}
-                >
-                  {!watchKondisiSla ? 0 : watchKondisiOla}%
-                </span>
-              </div>
-            </div>
 
             <div className="pt-2 sm:pt-3 flex items-center justify-end gap-2 border-t border-slate-200 shrink-0">
               <button
