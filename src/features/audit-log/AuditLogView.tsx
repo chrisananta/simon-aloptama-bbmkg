@@ -4,7 +4,6 @@ import {
   Search, 
   Filter, 
   Download, 
-  Trash2, 
   RefreshCw, 
   ShieldCheck, 
   UserCheck, 
@@ -27,20 +26,17 @@ import { apiClient } from '../../shared/api';
 interface AuditLogViewProps {
   changeLogs?: ChangeLog[];
   onRefreshLogs?: () => void;
-  onClearLogs?: () => void;
 }
 
 export const AuditLogView: React.FC<AuditLogViewProps> = ({
   changeLogs,
   onRefreshLogs,
-  onClearLogs,
 }) => {
   const logs = changeLogs || apiClient.auditLogs.getAll();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAction, setSelectedAction] = useState<string>('ALL');
   const [selectedTable, setSelectedTable] = useState<string>('ALL');
   const [selectedLog, setSelectedLog] = useState<ChangeLog | null>(null);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Filtering
   const filteredLogs = logs.filter((log) => {
@@ -72,16 +68,6 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
 
   const handleExportJson = () => {
     apiClient.auditLogs.exportJson();
-  };
-
-  const handleConfirmClear = () => {
-    if (onClearLogs) {
-      onClearLogs();
-    } else {
-      apiClient.auditLogs.clear('Administrator SIMON');
-    }
-    setShowClearConfirm(false);
-    if (onRefreshLogs) onRefreshLogs();
   };
 
   const getActionBadge = (action: LogAction) => {
@@ -125,6 +111,12 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
             Sync Server
           </span>
         );
+      case 'LOGIN_GAGAL':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+            Login Gagal
+          </span>
+        );
       case 'RESET_DATA':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-200 text-slate-800 border border-slate-300">
@@ -150,6 +142,10 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
         return <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Stasiun</span>;
       case 'master_alat':
         return <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Aloptama</span>;
+      case 'perbaikan':
+        return <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Perbaikan</span>;
+      case 'genset':
+        return <span className="font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-200">Genset</span>;
       case 'sistem':
         return <span className="font-semibold text-slate-900 bg-slate-200 px-2 py-0.5 rounded border border-slate-300">Sistem</span>;
       default:
@@ -203,14 +199,6 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
             <span>Export JSON</span>
           </button>
 
-          <button
-            onClick={() => setShowClearConfirm(true)}
-            className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-            title="Bersihkan seluruh log audit"
-          >
-            <Trash2 size={14} />
-            <span>Bersihkan Log</span>
-          </button>
         </div>
       </div>
 
@@ -283,6 +271,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
               <option value="TAMBAH">+ Penambahan Master</option>
               <option value="EDIT">✎ Perubahan Master</option>
               <option value="HAPUS">✕ Penghapusan Master</option>
+              <option value="LOGIN_GAGAL">Login Gagal</option>
               <option value="SYNC_SERVER">Sync Server API</option>
               <option value="RESET_DATA">Reset System</option>
             </select>
@@ -299,6 +288,9 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
               <option value="kalibrasi">Modul Kalibrasi</option>
               <option value="master_stasiun">Master Stasiun UPT</option>
               <option value="master_alat">Master Peralatan Aloptama</option>
+              <option value="perbaikan">Modul Perbaikan</option>
+              <option value="genset">Modul Genset</option>
+              <option value="autentikasi">Autentikasi</option>
               <option value="sistem">Sistem Operasional</option>
             </select>
           </div>
@@ -451,39 +443,6 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({
                 className="w-full sm:w-auto px-5 py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold bg-[#0052CC] text-white hover:bg-blue-700 transition-colors cursor-pointer"
               >
                 Tutup Detail
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Clear Confirmation Modal */}
-      {showClearConfirm && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden p-4 sm:p-6 text-center space-y-3 sm:space-y-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto border border-rose-300">
-              <Trash2 size={20} className="sm:w-6 sm:h-6" />
-            </div>
-
-            <div>
-              <h3 className="font-heading font-bold text-base sm:text-lg text-slate-900">Bersihkan Audit Log Sistem?</h3>
-              <p className="text-[11px] sm:text-xs text-slate-600 mt-1">
-                Semua {totalCount} catatan riwayat aktivitas akan dihapus. Aksi ini akan dicatat kembali sebagai peristiwa reset log.
-              </p>
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-2 sm:gap-3 pt-2">
-              <button
-                onClick={() => setShowClearConfirm(false)}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleConfirmClear}
-                className="w-full sm:w-auto px-5 py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all cursor-pointer"
-              >
-                Ya, Bersihkan Log
               </button>
             </div>
           </div>

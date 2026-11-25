@@ -185,7 +185,6 @@ Perubahan data kalibrasi adalah data master; yang boleh menulis hanya **Admin** 
 | :--- | :--- | :--- |
 | GET | `/api/audit-logs` | Login (menu Audit Log di UI hanya tampil untuk Super Admin) |
 | POST | `/api/audit-logs` | Login + Super Admin |
-| DELETE | `/api/audit-logs/clear` | Login + Super Admin |
 
 * **Payload POST** (`recordId` wajib diisi — akan ditolak Prisma jika kosong):
 ```json

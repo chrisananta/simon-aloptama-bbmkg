@@ -594,9 +594,9 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 supaya UPT bisa mengisi banyak alat sekaligus dalam satu
                 sesi buka modal, tanpa perlu buka-tutup berulang kali. */}
             {matchingDevices.length > 0 ? (
-              <div className="space-y-1.5 bg-blue-50/60 p-3 rounded-xl border border-blue-200 animate-fade-in">
+              <div className="space-y-1.5 p-3 rounded-xl border border-blue-400 animate-fade-in">
                 <div className="flex items-center justify-between gap-2">
-                  <label className="block text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
+                  <label className="block text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
                     CENTANG ALAT YANG AKAN DIISI:
                   </label>
                   {matchingDevices.some((d) => !filledDeviceIds.has(d.devicesId)) && (
@@ -770,12 +770,6 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                     );
                   })}
                 </div>
-                {selectedDeviceIds.size > 0 && (
-                  <span className="text-[10px] text-blue-700 font-normal block mt-0.5">
-                    {selectedDeviceIds.size} alat dipilih - masing-masing disimpan dengan nilai SLA &amp; OLA-nya sendiri.
-                    
-                  </span>
-                )}
                 {matchingDevices.length > 0 && matchingDevices.every((d) => filledDeviceIds.has(d.devicesId)) && (
                   <div className="flex items-center gap-1.5 mt-1 px-2 py-1.5 bg-emerald-100 border border-emerald-300 rounded-lg text-[10px] font-bold text-emerald-800">
                     <Check size={12} /> Semua alat di kategori ini sudah diisi hari ini. Anda bisa ganti filter jenis peralatan atau tutup form ini.
@@ -811,7 +805,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                   ? "Menyimpan..."
                   : selectedDeviceIds.size > 0
                   ? `Simpan untuk ${selectedDeviceIds.size} Alat Terpilih`
-                  : "Pilih Alat Terlebih Dahulu"}
+                  : "Pilih Alat"}
               </button>
             </div>
           </form>

@@ -17,6 +17,8 @@ const createAuditLogInput = z.object({
     'sistem',
     'pengaturan',
     'autentikasi',
+    'perbaikan',
+    'genset',
   ]),
   action: z.enum([
     'TAMBAH',
@@ -30,6 +32,7 @@ const createAuditLogInput = z.object({
     'LOGIN',
     'LOGOUT',
     'REFRESH_TOKEN',
+    'LOGIN_GAGAL',
   ]),
   recordId: z.string().trim().min(1).max(200),
   recordName: z.string().trim().min(1).max(300),
@@ -83,26 +86,8 @@ export const auditLogController = {
     }
   },
 
-  // Clear all audit logs
-  clearAuditLogs: async (req: AuthRequest, res: Response) => {
-    try {
-      await prisma.auditLog.deleteMany({});
+  // CATATAN: endpoint "clear" (hapus seluruh audit log) sengaja DIHAPUS.
+  // Audit log bersifat append-only supaya jejak aktivitas tidak bisa dihilangkan,
+  // bahkan oleh Super Admin. Pengarsipan/retensi sebaiknya dilakukan di level DB.
 
-      await prisma.auditLog.create({
-        data: {
-          table: 'sistem',
-          action: 'RESET_DATA',
-          recordId: 'AUDIT_LOG_CLEAR',
-          recordName: 'Repository Log Aktivitas',
-          actor: req.user?.name || 'System',
-          details: 'Semua riwayat log aktivitas audit sistem dibersihkan oleh administrator.',
-        },
-      });
-
-      return res.json({ success: true, message: 'Semua audit log berhasil dibersihkan.' });
-    } catch (error) {
-      console.error('Error clearAuditLogs:', error);
-      return res.status(500).json({ success: false, message: 'Gagal membersihkan audit log.' });
-    }
-  },
 };

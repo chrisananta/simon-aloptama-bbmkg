@@ -63,13 +63,28 @@ export const gensetController = {
       const { tanggal, petugasList, ...rest } = parsed.data;
       const combinedPetugas = petugasList.join(", ");
 
-      const created = await prisma.gensetMonitoring.create({
-        data: {
-          ...rest,
-          tanggal: parseDateOnly(tanggal),
-          petugasList,
-          petugas: combinedPetugas,
-        },
+      // Data + audit log disimpan dalam satu transaksi (atomik).
+      const created = await prisma.$transaction(async (tx) => {
+        const row = await tx.gensetMonitoring.create({
+          data: {
+            ...rest,
+            tanggal: parseDateOnly(tanggal),
+            petugasList,
+            petugas: combinedPetugas,
+          },
+        });
+        await tx.auditLog.create({
+          data: {
+            table: "genset",
+            action: "TAMBAH",
+            recordId: row.id,
+            recordName: `Genset ${row.gedung} - ${tanggal}`.slice(0, 300),
+            actor: req.user?.name || "System",
+            details: `Penambahan monitoring genset gedung ${row.gedung}, tanggal ${tanggal}, jam ${row.jam}. Petugas: ${combinedPetugas}.`,
+            ipOrSource: req.ip || "SIMON API",
+          },
+        });
+        return row;
       });
       return res.status(201).json({
         success: true,
@@ -79,6 +94,7 @@ export const gensetController = {
         },
       });
     } catch (err) {
+      console.error("Error create genset:", err);
       return res
         .status(500)
         .json({ success: false, message: "Gagal menyimpan data." });
@@ -101,7 +117,20 @@ export const gensetController = {
           });
       }
 
-      await prisma.gensetMonitoring.delete({ where: { id } });
+      await prisma.$transaction(async (tx) => {
+        await tx.gensetMonitoring.delete({ where: { id } });
+        await tx.auditLog.create({
+          data: {
+            table: "genset",
+            action: "HAPUS",
+            recordId: existing.id,
+            recordName: `Genset ${existing.gedung} - ${formatDateOnly(existing.tanggal)}`.slice(0, 300),
+            actor: req.user?.name || "System",
+            details: `Penghapusan monitoring genset gedung ${existing.gedung}, tanggal ${formatDateOnly(existing.tanggal)}.`,
+            ipOrSource: req.ip || "SIMON API",
+          },
+        });
+      });
 
       return res.json({
         success: true,

@@ -53,11 +53,27 @@ export const perbaikanController = {
     }
     try {
       const { tanggal, ...rest } = parsed.data;
-      const created = await prisma.perbaikanInstalasi.create({
-        data: {
-          ...rest,
-          tanggal: parseDateOnly(tanggal),
-        }
+      // Simpan data + audit log dalam SATU transaksi: kalau salah satu gagal,
+      // keduanya dibatalkan, jadi tidak ada data tanpa jejak audit.
+      const created = await prisma.$transaction(async (tx) => {
+        const row = await tx.perbaikanInstalasi.create({
+          data: {
+            ...rest,
+            tanggal: parseDateOnly(tanggal),
+          }
+        });
+        await tx.auditLog.create({
+          data: {
+            table: 'perbaikan',
+            action: 'TAMBAH',
+            recordId: row.id,
+            recordName: `${row.namaAlat} - ${row.lokasiAlat}`.slice(0, 300),
+            actor: req.user?.name || 'System',
+            details: `Penambahan laporan perbaikan (${row.formType}) untuk alat \"${row.namaAlat}\" di ${row.lokasiAlat}, tanggal ${tanggal}.`,
+            ipOrSource: req.ip || 'SIMON API',
+          },
+        });
+        return row;
       });
       return res.status(201).json({
         success: true,
@@ -74,9 +90,27 @@ export const perbaikanController = {
   delete: async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
-      await prisma.perbaikanInstalasi.delete({ where: { id } });
+      const existing = await prisma.perbaikanInstalasi.findUnique({ where: { id } });
+      if (!existing) {
+        return res.status(404).json({ success: false, message: 'Data perbaikan tidak ditemukan.' });
+      }
+      await prisma.$transaction(async (tx) => {
+        await tx.perbaikanInstalasi.delete({ where: { id } });
+        await tx.auditLog.create({
+          data: {
+            table: 'perbaikan',
+            action: 'HAPUS',
+            recordId: existing.id,
+            recordName: `${existing.namaAlat} - ${existing.lokasiAlat}`.slice(0, 300),
+            actor: req.user?.name || 'System',
+            details: `Penghapusan laporan perbaikan (${existing.formType}) untuk alat \"${existing.namaAlat}\" di ${existing.lokasiAlat}.`,
+            ipOrSource: req.ip || 'SIMON API',
+          },
+        });
+      });
       return res.json({ success: true, message: 'Data perbaikan berhasil dihapus.' });
     } catch (err) {
+      console.error('Gagal menghapus data perbaikan:', err);
       return res.status(500).json({ success: false, message: 'Gagal menghapus data perbaikan.' });
     }
   }

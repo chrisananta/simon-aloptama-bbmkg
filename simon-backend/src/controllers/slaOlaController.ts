@@ -35,7 +35,8 @@ const updateSlaOlaLogInput = z.object({
   kondisiSla: z.union([z.boolean(), z.enum(['true', 'false']), z.literal(1), z.literal(0)]),
   kondisiOla: z.coerce.number().finite().min(0, 'Nilai OLA harus antara 0 sampai 100.').max(100, 'Nilai OLA harus antara 0 sampai 100.'),
   kendala: z.string().trim().max(2000).optional(),
-  actor: z.string().trim().max(200).optional(),
+  // CATATAN: field "actor" sengaja TIDAK diterima dari body. Pelaku di audit log
+  // selalu diambil dari token (req.user), supaya tidak bisa dipalsukan client.
 });
 
 function invalidSlaOla(res: Response, error: z.ZodError) {
@@ -530,12 +531,12 @@ export const slaOlaController = {
         return res.status(404).json({ success: false, message: 'Entri log SLA/OLA tidak ditemukan.' });
       }
 
-      const { kondisiSla, kondisiOla, kendala, actor } = parsed.data;
+      const { kondisiSla, kondisiOla, kendala } = parsed.data;
       const slaOn = kondisiSla === true || kondisiSla === 'true' || kondisiSla === 1;
       const ola = kondisiOla;
       // Jika field kendala tidak dikirim, nilai lama dipertahankan; string kosong = hapus keterangan.
       const kendalaData = kendala === undefined ? {} : { kendala };
-      const actorName = actor || req.user?.name || 'Admin INSKAL';
+      const actorName = req.user?.name || 'System';
 
       let newStatus: 'NORMAL' | 'GANGGUAN' | 'MATI' = 'NORMAL';
       if (!slaOn || ola === 0) {
@@ -603,7 +604,7 @@ export const slaOlaController = {
    */
   deleteSlaOlaLog: async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const actorName = (req.body?.actor as string) || req.user?.name || 'Admin INSKAL';
+    const actorName = req.user?.name || 'System';
 
     try {
       const existingLog = await prisma.slaOlaLog.findUnique({ where: { id } });

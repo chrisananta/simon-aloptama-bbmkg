@@ -27,6 +27,39 @@ function actorName(req: AuthRequest): string {
   return req.user?.name || 'System';
 }
 
+// Catat percobaan login yang GAGAL ke audit log (untuk deteksi brute-force /
+// akun yang diincar). Tidak pernah melempar error: kalau DB bermasalah, login
+// tetap harus membalas 401 seperti biasa.
+//
+// Username yang dicatat adalah input mentah dari penyerang, jadi dibersihkan
+// dari karakter kontrol dan dipotong supaya tidak merusak tampilan/CSV log.
+// Password TIDAK PERNAH dicatat. Alasan kegagalan hanya ada di log (bukan di
+// respons ke klien) supaya tidak membocorkan apakah username itu ada.
+async function logFailedLogin(
+  req: Request,
+  attemptedUsername: string,
+  reason: 'USERNAME_TIDAK_DITEMUKAN' | 'PASSWORD_SALAH' | 'AKUN_TANPA_PASSWORD',
+  userId?: string
+): Promise<void> {
+  try {
+    const safeName = attemptedUsername.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 100) || '(kosong)';
+    await prisma.auditLog.create({
+      data: {
+        table: 'autentikasi',
+        action: 'LOGIN_GAGAL',
+        recordId: userId || 'UNKNOWN',
+        recordName: `@${safeName}`,
+        actor: 'Anonim',
+        details: `Percobaan login gagal (${reason}).`,
+        status: 'FAILED',
+        ipOrSource: req.ip || 'SIMON API',
+      },
+    });
+  } catch {
+    // Audit log gagal (mis. DB unreachable) tidak boleh mengubah respons login.
+  }
+}
+
 function isUniqueConstraint(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 }
@@ -86,12 +119,14 @@ export const userController = {
       }
 
       if (!user) {
+        await logFailedLogin(req, username, 'USERNAME_TIDAK_DITEMUKAN');
         return res.status(401).json({ success: false, message: 'Username atau kata sandi tidak valid.' });
       }
 
       // Akun tanpa password tidak boleh bisa login. Admin harus melakukan reset password.
       if (!user.passwordHash) {
-        return res.status(403).json({ success: false, message: 'Akun belum memiliki kata sandi. Hubungi administrator.' });
+        await logFailedLogin(req, username, 'AKUN_TANPA_PASSWORD', user.id);
+        return res.status(401).json({ success: false, message: 'Username atau kata sandi tidak valid.' });
       }
 
       // Check password. Data lama teks polos dimigrasikan setelah autentikasi berhasil.
@@ -100,14 +135,16 @@ export const userController = {
           // Kasus normal: hash bcrypt asli, bandingkan pakai bcrypt.compare
           const isMatch = await bcrypt.compare(password, user.passwordHash);
           if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Kata sandi salah. Silakan periksa kembali kata sandi Anda.' });
+            await logFailedLogin(req, username, 'PASSWORD_SALAH', user.id);
+            return res.status(401).json({ success: false, message: 'Username atau kata sandi tidak valid.' });
           }
         } else {
           // Kasus migrasi: data lama masih teks polos (peninggalan sebelum bcrypt dipasang).
           // Bandingkan apa adanya dulu; kalau cocok, langsung hash & simpan ulang
           // supaya login berikutnya sudah aman pakai bcrypt.
           if (user.passwordHash !== password) {
-            return res.status(401).json({ success: false, message: 'Kata sandi salah. Silakan periksa kembali kata sandi Anda.' });
+            await logFailedLogin(req, username, 'PASSWORD_SALAH', user.id);
+            return res.status(401).json({ success: false, message: 'Username atau kata sandi tidak valid.' });
           }
           try {
             const newHash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -149,6 +186,7 @@ export const userController = {
             recordName: `${user.name} (@${user.username})`,
             actor: user.name,
             details: `Login berhasil ke sistem SIMON Aloptama. Role: ${user.role}.`,
+            ipOrSource: req.ip || 'SIMON API',
           },
         });
       } catch (e) {

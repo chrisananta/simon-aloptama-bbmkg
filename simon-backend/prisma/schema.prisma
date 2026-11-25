@@ -214,6 +214,7 @@ enum LogAction {
   LOGIN
   LOGOUT
   REFRESH_TOKEN
+  LOGIN_GAGAL
 }
 
 enum LogTable {
@@ -226,6 +227,8 @@ enum LogTable {
   sistem
   pengaturan
   autentikasi
+  perbaikan
+  genset
 }
 
 model GensetMonitoring {

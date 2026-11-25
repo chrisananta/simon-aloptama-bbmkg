@@ -240,11 +240,6 @@ function AppContent() {
     }
   };
 
-  const handleClearLogs = () => {
-    apiClient.auditLogs.clear(currentActor);
-    refreshAuditLogs();
-  };
-
   // Ambil data dari server setiap kali status login berubah jadi TERAUTENTIKASI.
   useEffect(() => {
     if (isAuthenticated) {
@@ -345,7 +340,6 @@ function AppContent() {
               <AuditLogView
                 changeLogs={changeLogsData}
                 onRefreshLogs={refreshAuditLogs}
-                onClearLogs={handleClearLogs}
               />
             )}
 
