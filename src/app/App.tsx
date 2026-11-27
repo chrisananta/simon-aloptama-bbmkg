@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { Activity } from 'lucide-react';
+import { SquarePen } from 'lucide-react';
 import { AloptamaDevice, UPTStation, ChangeLog } from '../shared/types';
 import { Sidebar } from '../layouts/Sidebar';
 import { Navbar } from '../layouts/Navbar';
@@ -402,7 +402,7 @@ function AppContent() {
             title="Buka Form Popup Pengisian SLA & OLA UPT"
           >
             <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-              <Activity size={14} className="text-white animate-pulse sm:w-4 sm:h-4" />
+              <SquarePen size={16} strokeWidth={2.5} className="text-white sm:w-[18px] sm:h-[18px]" />
             </div>
             <span className="tracking-wide uppercase font-extrabold pr-0.5 whitespace-nowrap">
               <span className="hidden sm:inline">PENGISIAN SLA OLA</span>

@@ -646,7 +646,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                               isFilled
                                 ? "bg-emerald-50 border-emerald-300 text-emerald-800 opacity-70"
                                 : isChecked
-                                ? "bg-blue-50 border-[#010d1e] text-slate-900"
+                                ? "bg-blue-50 border-blue-200  text-slate-900"
                                 : "bg-white border-blue-200 text-slate-700 hover:bg-blue-50"
                             }`}
                           >
@@ -676,7 +676,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                                 className={`w-[84px] min-h-[36px] whitespace-nowrap rounded-lg border text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 ${
                                   row.sla
                                     ? "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
-                                    : "bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200"
+                                    : "bg-white border-slate-300 text-slate-700 hover:bg-slate-200"
                                 }`}
                               >
                                 <span

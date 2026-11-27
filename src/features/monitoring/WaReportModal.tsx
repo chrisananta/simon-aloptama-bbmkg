@@ -186,25 +186,25 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-fade-in">
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto animate-fade-in">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden my-auto flex flex-col max-h-[95vh] sm:max-h-[90vh]">
-        <div className="bg-[#0A203C] text-white p-4 sm:p-5 flex items-start justify-between shrink-0 gap-3">
+        <div className="bg-gradient-to-r from-[#0A203C] to-[#12365F] text-white p-4 sm:p-5 flex items-start justify-between shrink-0 gap-3">
           <div className="flex items-start sm:items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 shrink-0">
               <MessageSquare size={20} />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <h3 className="font-heading text-base sm:text-lg font-bold">Format Laporan WA</h3>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-200/80 mt-0.5">
                 Format laporan pengingat SLA/OLA peralatan operasional untuk WhatsApp Group
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white transition-colors cursor-pointer shrink-0"
           >
             <X size={18} />
           </button>
@@ -217,7 +217,7 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
             </span>
             <button
               onClick={handleResetTemplate}
-              className="text-[11px] text-blue-600 hover:text-blue-800 font-bold bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200 flex items-center gap-1 cursor-pointer transition-colors"
+              className="text-[11px] text-blue-600 hover:text-blue-800 font-bold bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md border border-blue-200 flex items-center gap-1 cursor-pointer transition-colors"
             >
               <RefreshCw size={11} />
               Reset ke Format Default
@@ -227,14 +227,14 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
           <textarea
             value={reportText}
             onChange={(e) => setReportText(e.target.value)}
-            className="w-full h-64 sm:h-80 p-3 sm:p-4 bg-gray-200 text-slate-800 font-mono text-xs sm:text-sm rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none leading-relaxed shadow-inner"
+            className="w-full h-64 sm:h-80 p-3 sm:p-4 bg-slate-50 text-slate-800 font-mono text-xs sm:text-sm rounded-xl border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15 resize-none leading-relaxed shadow-inner transition-colors"
           />
         </div>
 
         <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
           <button
             onClick={handleOpenWhatsApp}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer"
           >
             <Share2 size={15} />
             Buka WhatsApp Direct
@@ -246,7 +246,7 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
               className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-md cursor-pointer ${
                 copied
                   ? 'bg-emerald-600'
-                  : 'bg-[#0052CC] hover:bg-blue-700 active:bg-blue-800'
+                  : 'bg-[#0052CC] hover:bg-[#0747A6] active:bg-[#093B80]'
               }`}
             >
               {copied ? (
@@ -263,7 +263,7 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+              className="bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 font-bold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
             >
               Tutup
             </button>

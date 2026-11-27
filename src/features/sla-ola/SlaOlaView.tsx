@@ -795,7 +795,7 @@ export const SlaOlaView: React.FC<SlaOlaViewProps> = ({ devices, stations }) => 
                 Grafik OLA Berdasarkan Jenis Peralatan
               </h3>
             </div>
-            <span className="text-xs font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-300">
+            <span className="text-xs font-bold text-slate-900 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
               {selectedMonth} {selectedYear}
             </span>
           </div>
