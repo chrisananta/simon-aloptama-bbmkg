@@ -195,11 +195,7 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <h3 className="font-heading text-base sm:text-lg font-bold">Format Laporan WA Grup</h3>
-                <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/30 flex items-center gap-1">
-                  <Calendar size={11} />
-                  UTC Kemarin: {dateStrUTC}
-                </span>
+                <h3 className="font-heading text-base sm:text-lg font-bold">Format Laporan WA</h3>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5">
                 Format laporan pengingat SLA/OLA peralatan operasional untuk WhatsApp Group
@@ -217,7 +213,6 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
         <div className="p-3.5 sm:p-5 overflow-y-auto flex-1 space-y-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs font-semibold text-slate-700 gap-2">
             <span className="flex items-center gap-1.5">
-              <MessageSquare size={14} className="text-[#0052CC]" />
               Teks Laporan Monitoring (Dapat Diedit):
             </span>
             <button
@@ -232,7 +227,7 @@ export const WaReportModal: React.FC<WaReportModalProps> = ({
           <textarea
             value={reportText}
             onChange={(e) => setReportText(e.target.value)}
-            className="w-full h-64 sm:h-80 p-3 sm:p-4 bg-slate-900 text-emerald-300 font-mono text-xs sm:text-sm rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none leading-relaxed shadow-inner"
+            className="w-full h-64 sm:h-80 p-3 sm:p-4 bg-gray-200 text-slate-800 font-mono text-xs sm:text-sm rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none leading-relaxed shadow-inner"
           />
         </div>
 

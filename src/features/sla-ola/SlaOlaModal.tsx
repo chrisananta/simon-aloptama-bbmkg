@@ -594,7 +594,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                 supaya UPT bisa mengisi banyak alat sekaligus dalam satu
                 sesi buka modal, tanpa perlu buka-tutup berulang kali. */}
             {matchingDevices.length > 0 ? (
-              <div className="space-y-1.5 p-3 rounded-xl border border-blue-400 animate-fade-in">
+              <div className="space-y-1.5 p-3 rounded-xl border border-slate-300 animate-fade-in">
                 <div className="flex items-center justify-between gap-2">
                   <label className="block text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
                     CENTANG ALAT YANG AKAN DIISI:
@@ -646,7 +646,7 @@ export const SlaOlaModal: React.FC<SlaOlaModalProps> = ({
                               isFilled
                                 ? "bg-emerald-50 border-emerald-300 text-emerald-800 opacity-70"
                                 : isChecked
-                                ? "bg-blue-50 border-[#0052CC] text-slate-900"
+                                ? "bg-blue-50 border-[#010d1e] text-slate-900"
                                 : "bg-white border-blue-200 text-slate-700 hover:bg-blue-50"
                             }`}
                           >
